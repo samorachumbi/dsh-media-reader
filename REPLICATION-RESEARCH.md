@@ -1,6 +1,8 @@
 # Replication-grade media analysis — research and pathway
 
 **Date:** 2026-10-30 · **Status:** research only, no implementation · **Trigger:** the Rick Ross MP4
+**Operator update:** Kie is the sole generation adapter; support `replica` and `transform`, with `local` / `assisted` / `cloud` profiles. The confirmed production design is in `PRODUCTION-PIPELINE.md`.
+
 **Goal:** turn an MP3/MP4 into enough *evidence and reference assets* that a generation model can make a
 close reproduction — or a deliberately better version — instead of a vague text summary.
 
