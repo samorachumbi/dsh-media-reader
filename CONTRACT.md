@@ -62,9 +62,9 @@ this gate.
 
 | Seam | File:line | Can it replace what the model sees? |
 |---|---|---|
-| `tools/post-execute` → `PostToolDecision{kind:'accept', content?}` | `dsh-tools/lib/types/index.d.ts:61`, `:431` | **YES** — the only content-replacement seam |
-| `tools/pre-execute` → `{allow,deny,ask}` | `:38`, `:418` | no |
-| `tools/execute` | `:49` | may change only `exec.signal` |
+| `tools/post-execute` → `PostToolDecision{kind:'accept', content?}` | `dsh-tools/lib/types/index.d.ts:61`, `:431`; implementation `dsh-tools/lib/index.js:3360-3394` | can replace content, **but preserves `isError`/`error`**; replacing `value` on a failed result throws (`:3381`). Not a failure→success fallback |
+| `tools/pre-execute` → `{allow,deny,ask}` | `:38`, `:418`; denial `dsh-tools/lib/index.js:3109-3125` | cannot supply a result, but `deny.reason` becomes model-visible `Error: …` — suitable for a corrective redirect |
+| `tools/execute` | `:49`; normalization `dsh-tools/lib/index.js:3436-3451` | around-dispatch wrapper; a synthetic success is normalized through the **owning tool's** output schema/renderer, so it cannot turn `read_image` into arbitrary text |
 | `agent/request` → `{provider, model, …}` | `dsh-agent-loop/lib/index.js:708` | route only, not messages |
 | `agent/request-error` → `{kind:'retry'}` | `dsh-agent-loop/lib/index.js:653` | retry only |
 | `agent/pre-step` → `{kind:'enter', messages}` | `dsh-agent/lib/types/runtime-types.d.ts:235` | injects messages before a step |
@@ -79,6 +79,8 @@ this gate.
 | `ctx.llm.resolveModelInfo(provider, model)` | the route-capability check | `dsh-tool-fs/lib/index.js:925-943` |
 | `ctx.attachments.saveImage({data, mediaType, name})` | mint an image block | `dsh-attachment/lib/types/index.d.ts:49` |
 | `ctx.subprocess.spawn(spec)` | run `ffmpeg`/`ffprobe` | `dsh-subprocess/lib/types/index.d.ts:91` |
+| `ctx.fs.resolve` / `stat` / `readBytes` | safe input resolution and bounded image reads | `dsh-tool-fs/lib/index.js:273-285`, `:1037-1045` |
+| `ctx.fs.processPath(target)` | canonical absolute path for ffmpeg argv; local backend returns `String(target.targetKey)` | `dsh-fs/lib/types/index.d.ts:88-97`; `dsh-fs-local/lib/index.js:713-715` |
 | image block shape | `{type:'image', attachment: {attachmentId, mediaType, bytes, width, height}}` | `dsh-tool-fs/lib/index.js` `imageReadContent` |
 
 ## 7. Installation contract
@@ -90,6 +92,9 @@ pnpm's own help). That is the known split-Symbol crash vector. **Install by copy
 ## 8. Limits this plugin cannot cross
 
 1. No audio modality → audio is always text.
-2. No request-rewrite seam → automatic fallback must ride `tools/post-execute`, never `llm/stream`.
+2. No request-rewrite seam → automatic help must be a **redirect** on `tools/pre-execute`. A
+   `post-execute` content replacement leaves the result failed, and a `tools/execute` synthetic success
+   is normalized through the owning tool's schema. Neither can turn a failed `read_image` into a clean
+   text success.
 3. A **user-attached** image on a text-only route is refused before the plugin is ever reached.
 4. Non-speech audio has no route through DSH at all.

@@ -1,7 +1,11 @@
 # Research — Video / Image / Voice reading plugin for DeepSeek Harness
 
-**Date:** 2026-10-30 · **Status:** research complete, no implementation · **Author:** agent session
+**Date:** 2026-10-30 · **Status:** research complete, audited same day; no implementation · **Author:** agent session
 **Project:** [[video-image-voice-plugin]] (`7aa517dd-094b-4af2-bba7-f57a1c50190e`)
+
+> **Audit errata (2026-10-30):** see `AUDIT.md` and `PLAN.md` v2. Two statements here are superseded:
+> D3's post-execute fallback cannot turn a failed `read_image` into a success (use a pre-execute
+> redirect), and video presentation is now route-aware on every route, not description-first.
 
 > Every claim below is tagged: **[verified]** = read in code/metadata/registry on this machine today,
 > with the file or URL named. **[claimed]** = a third party's own statement, not verified by us.

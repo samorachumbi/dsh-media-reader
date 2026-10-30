@@ -1,348 +1,286 @@
-# Coding plan — `dsh-media-reader` (Video / Image / Voice)
+# Coding pathway v2 — `dsh-media-reader` (Video / Image / Voice)
 
-**Date:** 2026-10-30 · **Status:** plan only — **no implementation started** · **Research:** `RESEARCH.md`
-**Box:** 2 build-days already scheduled (2026-10-30/31, 5 h/day) · **Honest estimate:** ~15 h ≈ **3 build-days**
+**Date:** 2026-10-30 · **Status:** plan only — **no implementation started**
+**Decision:** **Option A — three build-days, ~15 hours** · **Audit:** `AUDIT.md`
+**Third-day date:** TBD — 2026-11-01/02 is currently allocated to trading; do not collide with it silently.
 
-> Read `RESEARCH.md` §2 first. The plan leans on four verified facts: DSH has no audio modality; a
-> text-only model receives `[image omitted …]` instead of pixels; `llm/stream` cannot rewrite a request,
-> so automatic fallback must ride `tools/post-execute`; and a plugin can make its own model call through
-> `ctx.llm.stream()`.
-
----
-
-## 0. Preconditions (do not skip; each is a gate, not a warm-up)
-
-### 0.1 Version control before any code
-
-```bash
-cd ~/projects/Video_Image_Voice
-git init && git add RESEARCH.md PLAN.md && git commit -m "research + plan baseline (no code)"
-git tag -a baseline-research -m "research/plan baseline before implementation"
-git switch -c feat/media-reader
-```
-
-**Rollback path:** `git switch main` (or `master`) → tree returns to the baseline tag; the plugin is
-only mounted by one `cordis.patch.yml` row and one directory, both removed in §5.4.
-
-### 0.2 Pin the contract (documentation task, 20 min)
-
-Write `CONTRACT.md` recording, for DSH **0.1.1-rc.2**:
-
-- `MODEL_MODALITIES = ["text","image"]` — no audio, ever (`dsh-llm-deepseek/lib/index.js:1612`)
-- text-only placeholder text (`dsh-llm/lib/index.js:592`)
-- `read_image` rejection text (`dsh-tool-fs/lib/index.js:941`)
-- attachment admission refusal (`dsh-host-apiproxy/lib/index.js:2755`)
-- image budgets: 1 MB / 640 000 px request, 20 MB / 64 Mpx / 8192 px store
-- the four seams we use, with their type signatures
-- **the limits:** no audio modality, no request-rewrite seam, user attachments on a text-only route are
-  refused before we can help
-
-Re-verify by re-reading those lines. If upstream moves, the diff is the deliverable.
-
-### 0.3 Probe A — speech-to-text speed on THIS machine (blocking, ~45 min wall clock)
-
-```bash
-python3 -m venv ~/projects/Video_Image_Voice/.venv-stt
-.venv-stt/bin/pip install -q faster-whisper==1.2.1
-# 60 s clip of real speech, 16 kHz mono
-.venv-stt/bin/python probe/rtf.py clip60.wav --model small --compute-type int8 --threads 4
-```
-
-Record: wall time, real-time factor (RTF), peak RSS.
-
-| Measured RTF (`small` int8, 4 threads) | Decision |
-|---|---|
-| ≤ 1.5× | local STT is the default. Continue. |
-| 1.5×–3× | local `small` only up to a duration cap (default 5 min); `base` for longer. Document it. |
-| > 3× | **stop and ask the operator** — cloud ASR (audio leaves the machine) or scope-cut audio. Never silently degrade. |
-
-Write the measured numbers into `CONTRACT.md`. **A guess is not acceptable here** — this is the T4
-machine's binding constraint.
-
-### 0.4 Probe B — nested model call from inside a tool (blocking, ~30 min)
-
-Throwaway plugin, one tool `probe_nested`: builds `GenerateOptions` for
-`deepseek-official / deepseek-v4-flash-vision-exp` with one image block, calls
-`ctx.llm.stream(options)` inside `execute`, returns the text.
-
-- **Pass** → D3 is implementable as designed.
-- **Fail / deadlock / race** → fall back to a config-driven OpenAI-compatible endpoint (the prior art's
-  approach), and document that the plugin needs its own vision key.
-
-### 0.5 Probe C — the negative route is real (10 min)
-
-Switch the session to `deepseek-official / deepseek-v4-flash` (text-only, same key, no new credential)
-and invoke the built-in `read_image` on any PNG. **Expected and required:** the exact refusal from
-`dsh-tool-fs/lib/index.js:941`. Capture the message — it is the before-picture that Phase 2 changes.
-
-**Phase 0 exit gate:** CONTRACT.md written; RTF measured and recorded; nested-call verdict known;
-negative route reproduced. If Probe A fails and the operator has not answered `RESEARCH.md` §7.1,
-**stop here** and report.
+> v2 changes two load-bearing decisions from v1: the automatic `read_image` fallback becomes a
+> **pre-execute redirect** (post-execute cannot turn a failure into a success), and **video presentation
+> becomes route-aware** just like images. Read `AUDIT.md` F1/F2 before implementing anything.
 
 ---
 
-## 1. Skeleton, route resolver, `media_probe` (~2 h)
+## 1. Product contract
 
-### Files
+Any model on this harness can ask about a local image, audio recording, or video and receive an answer
+grounded in that file. On a vision-capable route the model receives real pixels; on a text-only route it
+receives text produced by the configured vision route. Audio is always transcribed locally to text.
+Every result carries source, processor, timing, and skipped content. Missing capabilities raise; nothing
+is mocked.
+
+### Defaults for the still-open scope questions
+
+These are v1 defaults, not silent expansions:
+
+- **Files only:** local image/audio/video paths; no URLs or YouTube.
+- **Recordings only:** no microphone, streaming, or real-time transcription.
+- **Private enabler:** tools-only plugin, no client UI, no npm publication.
+- **Audio stays local:** cloud ASR requires a fresh operator decision if local STT fails its measurement.
+- **Vision fallback:** uses the configured DeepSeek vision route; a config switch can disable that egress.
+
+## 2. Architecture (the better path)
 
 ```
-~/projects/Video_Image_Voice/
-├── package.json                # name dsh-media-reader, private, type module, exports . → lib/index.js
-├── cordis.patch.yml            # - insert: [{ id: media-reader, name: 'dsh-media-reader', config: {...} }]
-├── lib/
-│   ├── index.js                # plugin apply(): register 4 tools + the post-execute listener
-│   ├── route.js                # resolveRoute(exec) → { canSeeImages, provider, model }
-│   ├── probe.js                # ffprobe wrapper (serialized, timeout, size caps)
-│   ├── exec.js                 # spawn helper: argv arrays only, signal, timeout, arg-cap guard
-│   ├── image.js                # decode/downscale/frame-budget helpers
-│   ├── stt.js                  # local faster-whisper bridge (Phase 3)
-│   ├── video.js                # scdet sampling + fusion (Phase 4)
-│   └── describe.js             # vision-route description via ctx.llm.stream (Phase 2)
-├── probe/                      # bench scripts (rtf.py), never shipped
-├── artifacts/                  # default output root (git-ignored)
-└── tests/                      # node:test — starts in Phase 1, not Phase 5
+path → ctx.fs.resolve/stat → processPath/readBytes → probe
+                                      │
+              ┌───────────────────────┼────────────────────────┐
+              ▼                       ▼                        ▼
+            image                   audio                     video
+              │                       │                        │
+              │                ffmpeg → 16 kHz mono       scdet + uniform fallback
+              │                       │                        ├─ frames + contact sheet
+              │                  local Whisper                 └─ audio → local Whisper
+              │                       │                        │
+              └───────────────────────┴────────────────────────┘
+                                      │
+                    current route resolved with resolveModelInfo
+                                      │
+                    ┌─────────────────┴──────────────────┐
+                 declares image                       text-only
+                    │                                    │
+          attach image blocks + text          configured vision route via
+          (no auxiliary model call)           ctx.llm.stream → text only
+                    └─────────────────┬──────────────────┘
+                                      ▼
+                    bounded result + artifact paths + provenance
 ```
 
-### `route.js` — copied logic, not invented
+Services used: `tools`, `llm`, `attachments`, `fs`, `subprocess`. No raw model-supplied filesystem reads,
+no second credentials by default, no network outside the configured model route.
 
-Mirror `assertImageCapableRoute` (`dsh-tool-fs/lib/index.js:925-943`):
+## 3. Repository and configuration
 
-```js
-const routed = exec.agent?.session.requestHeader()?.config
-const provider = routed?.provider ?? exec.agent?.options.provider
-const model    = routed?.model    ?? exec.agent?.options.model
-const info     = await ctx.llm.resolveModelInfo(provider, model, exec.signal)
-const canSeeImages = info.inputModalities?.includes('image') === true
+```
+lib/
+  index.js        # register four tools + one pre-execute redirect
+  route.js        # current route + configured vision route
+  fs.js           # resolve/stat/processPath/readBytes helpers
+  exec.js         # subprocess argv, timeout, cancellation, cleanup
+  probe.js        # ffprobe metadata
+  describe.js     # auxiliary vision call via ctx.llm.stream + BlockAssembler
+  image.js        # image admission and route-aware presentation
+  stt.js          # local faster-whisper worker bridge
+  video.js        # scene detection, uniform fallback, frames, contact sheet, fusion
+  redirect.js     # read_image → media_image guidance on text-only routes
+probe/            # measurement scripts and fixtures, not shipped
+tests/            # node:test from the first implementation task
+artifacts/        # generated transcripts/frames/digests, git-ignored
 ```
 
-### Tool 1 — `media_probe`
+Config (all have safe defaults):
 
-| | |
-|---|---|
-| Parameters | `path` (string, required) |
-| Output | structured JSON: kind (image/video/audio), container, duration, dimensions, fps, codecs, audio-track count, subtitle count, byte size |
-| Model calls | **zero** |
-| Fails on | missing file, unreadable file, unsupported container, `-`-leading basename (option injection), ffprobe absent |
-
-**Acceptance:** one PNG, one MP4, one MP3 return correct metadata; a text file with a `.png` name and a
-missing path each return an explicit error. Nothing is inferred.
+| Key | Default | Meaning |
+|---|---|---|
+| `artifactsDir` | project `artifacts/` | durable outputs |
+| `visionProvider` / `visionModel` | `deepseek-official` / `deepseek-v4-flash-vision-exp` | auxiliary description route |
+| `visionFallback` | `configured-route` | `off` disables image egress and fails explicitly on text-only routes |
+| `autoRedirect` | `true` | redirect `read_image` on text-only routes |
+| `whisperModel` | chosen by Probe A | `base` or `small`, never assumed |
+| `whisperThreads` | `4` | measured against RAM/CPU pressure |
+| `maxAudioSeconds` | `300` | truncation must be stated |
+| `maxFrames` | `4` (hard cap `6` on T4) | visual budget |
+| `maxVideoSeconds` | `600` | video processing cap |
+| `ffmpegThreads` | `2` | leave CPU for the harness/browser |
 
 ---
 
-## 2. Image — `media_image` + the automatic `read_image` fallback (~2.5 h)
+## DAY 1 — measurements, walking skeleton, image path (~5 h)
 
-### Tool 2 — `media_image`
+### 1.1 Baseline and fixtures (0.75 h)
 
-| Parameter | Meaning |
+- Branch `feat/media-reader` from the audited commit.
+- Record the audited contract corrections in `CONTRACT.md` (already done in v2 docs).
+- Prepare fixtures: small PNG, mislabeled image, static video, three-shot video, narrated clip, silence,
+  no-audio video. Synthetic ffmpeg fixtures are acceptable for pipeline tests; acceptance also needs one
+  real speech sample and one real screen recording.
+
+### 1.2 Blocking probes (1.25 h, run downloads/benchmarks in the background)
+
+**Probe A — STT choice.** Install `faster-whisper==1.2.1` in the project venv. Run the same real 60-second
+speech clip through **`base` and `small`**, int8, fixed thread count. Record wall time, RTF, peak RSS and a
+hand-checked accuracy sample. Select the default from the table below, and write the actual numbers into
+the project notes.
+
+| Result | Decision |
 |---|---|
-| `path` | image file (PNG/JPEG/WebP/GIF) |
-| `question` | optional: what to look for — passed verbatim into the description prompt |
+| `small` fits RAM and RTF ≤ 1.5× | default `small` |
+| `small` works but RTF 1.5–3× | default `small` only within a shorter duration cap; document |
+| `small` too slow/heavy, `base` acceptable | default `base`; state the accuracy trade-off |
+| neither acceptable | **stop**; local audio is not viable on this machine. Ask before any cloud ASR |
 
-**Route-aware behaviour (D2):**
+**Probe B — nested model call.** A scratch tool makes one `ctx.llm.stream()` call with a real image block
+to the configured vision route from inside `execute`. Required: a valid text response, no deadlock, clean
+cancellation. If it fails, **stop and re-plan the describer**; direct HTTP is a fallback with new config
+and credential work, not a drop-in freebie.
 
-- `canSeeImages` → `ctx.attachments.saveImage(...)` → return `[{type:'text', text: envelope}, {type:'image', attachment}]`. Envelope names path, dimensions, and whether the harness downscaled.
-- else → `describe.js`: one `ctx.llm.stream()` call to the configured vision route with the image block
-  and a fixed instruction (*describe factually; quote on-screen text; state uncertainty; never guess*).
-  Return text with provenance: `source`, `processor: deepseek-v4-flash-vision-exp`, `latency_ms`.
-- no vision route / call fails → **throw** with what is missing. Never a mock, never a guess.
+**Probe C — before picture.** On `deepseek-v4-flash`, invoke built-in `read_image`; capture the exact
+refusal. This is the negative control that Day 1's redirect changes.
 
-### Automatic fallback (D3)
+### 1.3 Skeleton + `media_probe` (1.25 h)
 
-`tools/post-execute` listener:
+Implement plugin registration, config, FS resolution, subprocess wrapper, structured errors, and
+`media_probe(path)`. Unit tests begin here: missing file, directory instead of file, relative path,
+unsupported input, ffprobe failure. No model calls.
 
-```
-if (exec.name === 'read_image' && result is an error matching /does not declare image input/)
-    → run the same describe path on exec.arguments.file_path
-    → return { kind: 'accept', content: [{type:'text', text: description + provenance}] }
-```
+### 1.4 `media_image` + redirect (1.75 h)
 
-Guarded: only when `canSeeImages === false` (otherwise the native path already worked), bypassed by a
-config flag `autoFallback: true`, and it must never mask a *different* error class.
+`media_image(path, question?)`:
 
-**Acceptance matrix for this phase**
+1. Resolve through `ctx.fs`; validate regular file and supported media type.
+2. Read bytes with the attachment byte cap; `saveImage` performs real format/dimension validation.
+3. Current route declares image → return text envelope + image block. **No auxiliary call.**
+4. Otherwise, if `visionFallback=configured-route` → describe through the vision route with a fixed
+   anti-fabrication prompt; return text with provenance and latency.
+5. Otherwise/failure → explicit error naming the missing capability.
 
-| # | Route | Input | Required result |
-|---|---|---|---|
-| I1 | vision | real PNG | image block returned **and** text envelope; no extra model call (prove by latency + log) |
-| I2 | text-only (`deepseek-v4-flash`) | same PNG via `media_image` | text description naming visible content, with provenance |
-| I3 | text-only | same PNG via **`read_image`** | the refusal is **replaced** by a description — this is the headline proof |
-| I4 | either | missing file | explicit error, no description |
-| I5 | either | `.png` that is really a JPEG | explicit mismatch error (attachment store's `IMAGE_TYPE_MISMATCH` path) |
-| I6 | either | 6000×4000 photo | succeeds within budget; envelope states downscale |
-| I7 | text-only, vision route broken | any PNG | explicit failure naming the route — **not** a fabricated description |
+Register the `tools/pre-execute` redirect for `read_image` on text-only routes:
 
-**Mutation test for I3:** disable the listener → the refusal must reappear. A guard that cannot fail is
-not a guard.
+> `This model cannot consume image blocks. Call media_image with the same file_path; it returns a text description with provenance.`
+
+### Day 1 acceptance
+
+| # | Route / input | Required result |
+|---|---|---|
+| I1 | vision route, real PNG | image block + envelope; logs show no auxiliary call |
+| I2 | text-only, same PNG via `media_image` | factual description + processor/latency/source |
+| I3 | text-only via `read_image` | error redirects to `media_image`; follow-up call succeeds |
+| I4 | missing file | explicit FS error, no description |
+| I5 | JPEG named `.png` | attachment mismatch error, no inference |
+| I6 | oversized image | succeeds within documented limits or names the exact limit |
+| I7 | `visionFallback=off`, text-only | explicit refusal; no network call |
+| I8 | redirect disabled | original `read_image` refusal returns (mutation test) |
+
+**Day 1 stop gate:** image path passes both routes; Probe A numbers recorded; Probe B verdict known.
+Do not start audio on an unmeasured STT choice.
 
 ---
 
-## 3. Audio — `media_audio` (~3 h)
+## DAY 2 — local audio and video ingestion (~5 h)
 
-### Tool 3 — `media_audio`
+### 2.1 `media_audio` (2.5 h)
 
-| Parameter | Meaning |
-|---|---|
-| `path` | audio file, or a video whose audio track is wanted |
-| `language` | `auto` (default) / `en` / `sw` |
-| `model` | `small` (default from the machine profile) / `base` |
-| `maxSeconds` | hard duration cap, default 300 on T4 |
+Parameters: `path`, `language=auto|en|sw`, `model=<measured default>`, `maxSeconds=300`.
 
-**Pipeline:** `ffprobe` (has an audio track? what format?) → `ffmpeg` → 16 kHz mono WAV in a temp dir →
-`faster-whisper` with `vad_filter=True` → artifacts `transcript.txt`, `transcript.json` (segments +
-timestamps), `transcript.srt` → tool result carries the first N segments, the total duration, the word
-count and the artifact paths.
+Pipeline: FS/probe validation → reject absent audio track → extract at most `maxSeconds` to 16 kHz mono WAV
+→ local faster-whisper with Silero VAD → write `transcript.txt`, `transcript.json`, `transcript.srt` →
+return bounded segments plus artifact paths, duration, detected language, processor, RTF, and truncation.
 
-**Guardrails:** one job at a time (`flock` in the artifact dir — 2.4 GB free RAM), hard timeout merged
-with `exec.signal`, temp cleanup in `finally`, model cache in the project (not `~`), and a **named
-dependency error** if the venv or model is absent.
-
-**Acceptance matrix**
+Guardrails: one media job at a time; merged cancellation/timeout; temporary cleanup in `finally`; model
+cache inside the project; explicit dependency errors; no audio bytes sent to a model.
 
 | # | Input | Required result |
 |---|---|---|
-| A1 | 30 s clear English speech | transcript; ≥ 90 % word agreement on a hand-checked sample; timestamps land on the right words |
-| A2 | same, video file | audio track extracted; visuals untouched |
-| A3 | 10 s **silence** | empty transcript **and** the sentence "no speech detected in 10.0 s" — not an empty string |
-| A4 | music, no words | explicit "speech recognition found no words"; **states** that non-speech audio is out of scope |
-| A5 | no audio track (muted video) | explicit "this file has no audio track" |
-| A6 | venv / model absent | explicit dependency error naming the missing piece |
-| A7 | 20 min file, cap 300 s | processes the first 300 s and **says** it truncated |
+| A1 | clear speech | accurate transcript, timestamps checked against the clip |
+| A2 | video with speech | audio track transcribed; no visual claims |
+| A3 | silence | “no speech detected” with duration, not an empty success |
+| A4 | music only | no words + non-speech limitation stated |
+| A5 | no audio track | explicit “no audio track” |
+| A6 | missing venv/model | dependency error naming the missing piece |
+| A7 | input longer than cap | only capped portion processed; truncation stated |
+
+### 2.2 Video ingestion (2.5 h)
+
+Implement ffprobe metadata, `scdet` parsing, uniform midpoint fallback when no cuts are detected, one
+representative frame per selected shot, frame scaling inside the 1 MiB / 640 000 px request budget,
+contact-sheet generation, and reuse of `media_audio`. Write `frames/shot-NN.png`, `contact-sheet.png`,
+`timeline.json`, and transcript artifacts.
+
+Unit-test the `scdet` parser against captured output and prove the fallback with a static-video fixture.
+Enforce frame, duration, subprocess and concurrency caps.
+
+**Day 2 stop gate:** audio matrix passes; a three-shot sample yields timestamped frames + contact sheet +
+transcript; a static sample yields uniformly sampled frames and says why. Presentation to the model is
+Day 3, but the artifacts must already be real and inspectable.
 
 ---
 
-## 4. Video — `media_video` (~3.5 h)
+## DAY 3 — route-aware video, full acceptance, packaging (~5 h)
 
-### Tool 4 — `media_video`
+### 3.1 `media_video` presentation (2 h)
 
-| Parameter | Meaning |
-|---|---|
-| `path` | video file |
-| `question` | optional focus |
-| `maxFrames` | 1–6 on T4 (machine profile `video.max_shots`), default 4 |
-| `mode` | `digest` (default) / `frames` / `transcript` |
+Parameters: `path`, `question?`, `maxFrames=4`, `mode=digest|frames|transcript`.
 
-**Pipeline:** `ffprobe` → `scdet` shot boundaries (`threshold` configurable, default 10) → one
-representative frame per shot at the midpoint, **scaled to stay inside 640 000 px and 1 MB** → contact
-sheet PNG (one grid image) → audio track → `media_audio` → **fuse**:
+- `transcript`: return the audio result only; no frame work.
+- Vision route, `digest`/`frames`: attach the contact sheet (and selected frames for `frames`) as image
+  blocks, plus timestamp/shot metadata and transcript text. The current model answers `question` from
+  those pixels; **no auxiliary vision call**.
+- Text-only route, `digest`: send the contact sheet to the configured vision route for one coarse visual
+  digest; use at most three individual frames when `question` requires detail. Fuse visual text and
+  transcript into `digest.md`; return bounded text with provenance.
+- Text-only route, `frames`: reject clearly — raw frames cannot help this route; ask for `digest` instead.
 
-```
-[00:03:12] shot-07.png (12.4 s)
-           on screen: <from the vision route, or "(not described — call media_image on this frame)">
-           said: "now set the duty rate to twenty five percent"
-```
+`digest.md` rows carry timestamp, frame path, visual evidence (or “attached for the current model”), and
+speech evidence. On-screen text is marked as untrusted data, never as instructions.
 
-Artifacts: `digest.md`, `timeline.json`, `contact-sheet.png`, `frames/shot-NN.png`.
+### 3.2 Full acceptance + anti-fabrication review (1.5 h)
 
-**Coarse-to-fine (D5):** default returns the digest + contact sheet + transcript text. Individual frames
-are described only when `question` is given (then ≤ 3 frames) or when the model asks in a second call.
-`mode=frames` returns the shot frames themselves as image blocks **only** on a vision route.
-
-**Acceptance matrix**
-
-| # | Input | Required result |
-|---|---|---|
-| V1 | 2–3 min screen recording with narration | digest with ≥ 3 timestamped shots and aligned speech; artifact paths returned |
-| V2 | question whose answer is **visual** (e.g. "what does the error banner say?") | answered from a frame, frame cited by timestamp |
-| V3 | question whose answer is **spoken** | answered from the transcript, timestamp cited |
-| V4 | question needing **both** | on-screen + spoken evidence cited together |
-| V5 | silent video | shots present; each `said:` line says no audio track / no speech |
-| V6 | video with no detectable cuts | falls back to uniform sampling; **says so** |
-| V7 | text-only route | digest text still complete; frames described only through the vision route |
-| V8 | 20 min video, T4 | obeys the shot cap and the duration cap; states what was skipped |
-
----
-
-## 5. Acceptance, packaging, rollback (~2 h)
-
-### 5.1 The three-modality gate (the project's "done means")
-
-Each row is a **real DSH tool call on a real file**, run twice: on `deepseek-v4-flash-vision-exp` and on
-`deepseek-v4-flash` (text-only). All the per-phase matrices above, plus:
+Run every row on real files, on **both** `deepseek-v4-flash-vision-exp` and `deepseek-v4-flash`.
 
 | Modality | Vision route | Text-only route |
 |---|---|---|
-| Image | pixels returned, no wasted call | description via vision route, provenance shown |
-| Audio | transcript | transcript (identical — audio never reaches a model) |
-| Video | digest + frames | digest + frame descriptions |
+| Image | pixels attached; no auxiliary call | description with provenance |
+| Audio | local transcript | identical local transcript |
+| Video | contact sheet/frames + transcript; no auxiliary call | visual digest + transcript; no image blocks |
 
-**Negative controls that must fail correctly:** missing file · corrupt file · wrong extension · absent
-dependency · absent audio track · silent audio · vision route unreachable · unreadable permission.
+Negative controls: missing/corrupt/mislabeled file, absent dependency, absent audio, silence, music,
+static video, over-cap duration, `visionFallback=off`, unreachable vision route, redirect disabled.
 
-### 5.2 Anti-fabrication check
+Open each source beside the model's answer and check every material claim. A fabricated visual or spoken
+claim is a release blocker. This review does not replace `image-read-failure-handoff` for any image the
+agent itself could not read.
 
-Re-read every description produced during the matrix with the source file open. Any claim not visible in
-the file is a defect of the same severity as a crash. The plugin must never be a route to a fabricated
-visual approval (`image-read-failure-handoff` still governs).
+### 3.3 Package, document, test-boot, exit gate (1.5 h)
 
-### 5.3 Install (copy-restore — never `pnpm` inside the profile)
+- README: four tools, config, privacy/egress, resource limits, known gaps, artifacts, rollback.
+- Copy-restore into the profile's `node_modules`; add one `cordis.patch.yml` row. Never `dsh plugin add`.
+- `dsh-test-boot`: scratch web instance on a free port, left running for the operator; confirm tool
+  registration and at least one real call per modality before restarting the real server.
+- Rollback: remove the copied directory and patch row, restart; source returns to the baseline tag. STT
+  venv/model/artifacts remain inside the project and can be deleted independently.
+- Run `/task-exit-gate`, paste VERDICT, and list every unverified item.
 
-```bash
-# 1. copy the plugin into the profile's node_modules
-cp -r ~/projects/Video_Image_Voice ~/.dsh/profiles/web/node_modules/dsh-media-reader
-# 2. one row in the profile patch
-#    - insert: [{ id: media-reader, name: 'dsh-media-reader', config: { artifacts: '~/.../artifacts', maxFrames: 6, whisperModel: 'small' } }]
-```
-
-Then **test-boot before touching the real server** — `dsh-test-boot` skill: scratch web instance on a free
-port, leave it running for the operator's own eye-check, verify the four tools appear and one call
-succeeds. `dsh plugin add` is pnpm-inside-the-profile and re-prints pnpm's own help (re-confirmed today) —
-do not use it.
-
-### 5.4 Rollback (written before it is needed)
-
-```bash
-rm -rf ~/.dsh/profiles/web/node_modules/dsh-media-reader
-# remove the media-reader row from ~/.dsh/profiles/web/cordis.patch.yml
-# restart the web server; the profile returns to cost-bubble + planner + domain-watch + app-launcher
-```
-
-No host files touched; the STT venv and model cache live entirely inside the project directory;
-`git switch master` returns the source tree to `baseline-research`.
-
-### 5.5 Exit gate
-
-The official exit gate (`/task-exit-gate`) — run it and paste the VERDICT block, plus
-an explicit list of what was **not** verified.
+**Day 3 stop gate:** if any modality fails its real acceptance row, report the failure and request more
+time. Do not call the project complete.
 
 ---
 
-## 6. Estimates against the box
+## 4. Time and contingency
 
-| Phase | Hours | Cumulative |
+| Day | Work | Hours |
 |---|---|---|
-| 0 — git baseline, CONTRACT, probes A/B/C | 2.0 | 2.0 |
-| 1 — skeleton, route resolver, `media_probe` | 2.0 | 4.0 |
-| 2 — image + automatic fallback | 2.5 | 6.5 |
-| 3 — audio (local STT) | 3.0 | 9.5 |
-| 4 — video digest | 3.5 | 13.0 |
-| 5 — matrix, packaging, exit gate | 2.0 | 15.0 |
+| 1 | probes, skeleton/probe tool, image + redirect | 5 |
+| 2 | local audio, video ingestion | 5 |
+| 3 | route-aware video, acceptance, packaging | 5 |
+| **Total** | | **15** |
 
-**15 h against a 10 h box (2 × 5 h).** Three honest options for the operator:
+- **Probe B failure:** stop and re-estimate the describer; do not silently absorb a new credential/HTTP
+  subsystem into the same box.
+- **Probe A failure:** stop for an audio-privacy decision; image and video-frames work may continue only
+  if the operator explicitly re-scopes.
+- **Video overrun:** preserve honest partial delivery (image + audio proven; video ingestion demonstrated)
+  and ask for time. Never substitute a mocked digest.
 
-- **A. Extend** to 3 build-days — everything above, all three modalities proven.
-- **B. Cut video** — Phases 0–3 + 5 ≈ 11.5 h, still ~1 day over, but image + audio proven end to end.
-- **C. Cut the automatic fallback** (Phase 2's listener) — saves ~45 min, loses the headline claim, not
-  recommended.
+## 5. Explicit non-goals for v1
 
-Recommendation: **A**, because audio and video are the two modalities the priors have not solved
-locally, and because `RESEARCH.md` §7.4 says the box was already flagged as a time-box, not a fit.
+Live microphone or streaming · URLs/YouTube · live web reading · non-speech audio understanding · local
+VLM · cloud audio/video-native models · automatic whole-request model rerouting · shadowing built-in tools
+· a client bubble/settings UI · npm publication.
 
-## 7. Explicitly NOT in scope
+## 6. What must be true at the end
 
-- Live microphone capture, streaming, real-time transcription (a different, client-facing product).
-- Live web-page reading (`BRIEF.md` phase 1 — separate project).
-- YouTube/URL media (`youtube-link-reader` owns that; a later handoff can call `media_audio`).
-- Non-speech audio understanding (music, tone, sound events) — needs an audio-native model DSH cannot
-  address at all.
-- Any second vision/ASR provider key, unless Probe B fails.
-- Publishing to npm, a UI bubble, or a settings page — v1 is tools-only, deliberately
-  (`how-a-dsh-plugin-surfaces-to-the-user`: tools-only = no client bundle, no shell surface).
-
-## 8. Stop points
-
-1. **End of Phase 0** — if Probe A fails and the operator has not chosen, stop and report; do not build
-   on an unmeasured machine.
-2. **End of Phase 3** — show the image + audio matrix and the measured RTF; ask before spending the video
-   phase on a box that is already over its hours.
-3. **End of Phase 5** — if any modality fails, **report the failure and request an extension**; do not
-   call the project complete (project card `done means` #6).
+1. Image, audio and video each pass a real DSH invocation on real files, on both route types.
+2. Vision routes receive pixels without paying for redundant descriptions; text-only routes receive real
+   derived text with provenance.
+3. Every failure is explicit; negative controls and mutation tests fail correctly.
+4. Local audio stays local; visual fallback egress is configurable and documented.
+5. Install, rollback, privacy, limitations and measured STT numbers are documented; the exit gate runs.
