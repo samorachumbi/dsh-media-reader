@@ -106,3 +106,20 @@ test('parseWorkerOutput rejects empty output rather than inventing an empty tran
   assert.throws(() => parseWorkerOutput('  \n'), /no output/u)
   assert.throws(() => parseWorkerOutput('not json'), /Unexpected token|not valid JSON/u)
 })
+
+test('the audio envelope reports the FILE duration, never the transcribed window', async () => {
+  const { transcriptEnvelope } = await import('../lib/audio.js')
+  const transcript = {
+    model: 'base', computeType: 'int8', language: 'en', languageProbability: 0.97,
+    duration: 300, text: 'x', realTimeFactor: 0.16, truncated: true,
+    segments: [{ start: 0.5, end: 7.8, text: 'hello' }], artifacts: {}
+  }
+  const text = transcriptEnvelope('song.mp3', transcript, 368.013)
+  // The defect: a 368.013 s MP3 reported `durationSeconds 300.00`.
+  assert.match(text, /<durationSeconds>368\.01<\/durationSeconds>/u)
+  assert.match(text, /<processedSeconds>300\.00<\/processedSeconds>/u)
+  assert.match(text, /only the first 300\.0 of 368\.0 seconds were transcribed/u)
+  // Without a known file duration it must still not invent one.
+  const unknown = transcriptEnvelope('song.mp3', transcript)
+  assert.match(unknown, /<durationSeconds>300\.00<\/durationSeconds>/u)
+})

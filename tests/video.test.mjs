@@ -68,3 +68,34 @@ test('fuseTimeline reports null speech rather than an empty string', () => {
   const rows = fuseTimeline([{ index: 1, start: 0, end: 2, at: 1 }], [])
   assert.equal(rows[0].said, null)
 })
+
+test('the video digest names detected shots as well as the sampled count', async () => {
+  const { digestText } = await import('../lib/video.js')
+  // The real defect: a 196-shot video answered `<shots>4</shots>` and nothing else,
+  // so the digest described a 196-shot video as a 4-shot one.
+  const ingested = {
+    dir: '/tmp/job',
+    cuts: Array.from({ length: 195 }, (_, index) => ({ timeSec: 1 + index * 1.5, score: 20 })),
+    timeline: [
+      { index: 1, start: 0, end: 27.277, frame: 'shot-01.png' },
+      { index: 2, start: 132.1, end: 132.341, frame: 'shot-02.png' },
+      { index: 3, start: 194.2, end: 196.0, frame: 'shot-03.png', said: 'words' },
+      { index: 4, start: 282.5, end: 368.078, frame: 'shot-04.png' }
+    ],
+    contactSheetPath: '/tmp/job/contact-sheet.png',
+    frames: ['/tmp/job/shot-01.png'],
+    transcript: { truncated: false }
+  }
+  const text = digestText({ displayPath: 'v.mp4' }, { durationSeconds: 368.078 }, ingested, { canSeeImages: false })
+  assert.match(text, /<shots>4<\/shots>/u)
+  assert.match(text, /<shotsDetected>196<\/shotsDetected>/u)
+  assert.match(text, /<samplingBudget>4 of 196 detected shots were sampled/u)
+  assert.match(text, /<durationSeconds>368\.08<\/durationSeconds>/u)
+
+  // A short file where the budget does not bite must not claim a budget.
+  const small = digestText({ displayPath: 'v.mp4' }, { durationSeconds: 11 }, {
+    ...ingested, cuts: [{ timeSec: 5, score: 20 }], timeline: [{ index: 1, start: 0, end: 5, frame: 'a.png' }, { index: 2, start: 5, end: 11, frame: 'b.png' }]
+  }, { canSeeImages: false })
+  assert.match(small, /<shotsDetected>2<\/shotsDetected>/u)
+  assert.doesNotMatch(small, /samplingBudget/u)
+})
