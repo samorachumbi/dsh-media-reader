@@ -92,6 +92,24 @@ The host route is `POST /media-reader/ingest` (loopback-only, client marker requ
 browser did not render the page (Chrome timed out). The host route, bundle serving and boot are verified;
 the operator must confirm the drop interaction in the UI.
 
+## Native attachment gate vs drag-and-drop
+
+The operator reported that dropping an **MP4** produced DSH's native
+“Only PNG, JPG, WebP, and GIF images are supported” message. That is the host's
+attachment gate, so the drop was not reaching the plugin client.
+
+The client now installs `dragover`/`drop`/`paste` listeners on `window` in the
+**capture phase** and calls `preventDefault()` + `stopPropagation()` before the
+native handler. It accepts image/audio/video extensions by filename or MIME type,
+so MP4, MOV, MKV, WebM, MP3, WAV, M4A and the rest are routed to the upload host.
+The host route was already verified with `error-demo.mp4`; the change is about
+which handler sees the drop first.
+
+**Still not visually verified:** the drop target and the new window handler were
+not screenshotted; the sandboxed browser timed out. If a drop still produces the
+native PNG/JPG message, check the URL (the live 3080 does **not** have the plugin
+until install/restart) and confirm the client bundle is loaded.
+
 ## Not verified
 
 - Live-profile installation and a real server restart (the scratch instance is on port 3096).

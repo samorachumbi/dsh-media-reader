@@ -36,7 +36,11 @@ Properties:
   and the upload directory is deleted afterwards;
 - the host route is loopback-only and requires the client marker header;
 - the analysis is inserted into the draft, not auto-sent, so you can review it;
-- one job at a time, same media lock as the tools.
+- one job at a time, same media lock as the tools;
+- the drop handler is registered in the **window capture phase**, so it runs before DSH's native
+  attachment handler. Without that, MP4/MP3 drops are rejected with “Only PNG, JPG, WebP, and GIF images
+  are supported”. It accepts all common image, audio and video extensions, by name or MIME type.
+- media files pasted from the clipboard are handled the same way.
 
 ## What "route-aware" means
 
