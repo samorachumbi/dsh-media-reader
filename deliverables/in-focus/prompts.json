@@ -1,0 +1,121 @@
+{
+  "project": "IN FOCUS",
+  "status": "generation_package_only",
+  "description": "An original 48-second monochrome studio video using broad luxury music-video motifs. No source lyrics, audio, logos, artist identity, or title text are reused.",
+  "format": {
+    "duration_seconds": 48,
+    "clip_count": 8,
+    "clip_duration_seconds": 6,
+    "aspect_ratio": "16:9",
+    "resolution": "1920x1080",
+    "fps": 24
+  },
+  "global_prompt": "Photorealistic luxury music-video cinematography in high-contrast black and white. Fictional adult performers, unbranded white electric concept coupe, seamless pale-gray studio cyclorama, reflective dark floor, controlled overhead lighting, sculptural composition, restrained performance, realistic anatomy, natural fabric motion, consistent faces and wardrobe, subtle 35mm grain, crisp detail, 24 fps, cinematic 16:9 frame. The camera movement is slow and physically plausible.",
+  "negative_prompt": "real-person likeness, celebrity likeness, brand logo, manufacturer badge, watermark, caption, subtitle, generated lettering, extra fingers, malformed hands, face drift, changing identity, changing wardrobe, warped jewelry, flicker, exposure pumping, warped wheels, changing vehicle geometry, floating objects, clipping through the car, fast camera shake, cartoon, anime, plastic skin, oversharpening, low resolution",
+  "continuity": {
+    "performer_a": "A fictional adult lead performer with close-cropped hair and a trimmed beard. Studio wardrobe: plain charcoal crew-neck shirt, black wide-leg trousers, simple steel watch. Portrait wardrobe: ivory utility jacket with black piping, angular dark glasses, one geometric pendant, one ring, and one beaded bracelet. No real-person likeness.",
+    "performer_b": "A fictional adult dancer with long hair, wearing a structured sleeveless obsidian outfit and dark boots. Movement is controlled, minimal, and sculptural rather than acrobatic.",
+    "vehicle": "An unbranded white two-door electric concept coupe with smooth bodywork, flush door handles, a black panoramic roof, and geometric black wheels. The vehicle's shape, wheel design, and proportions must remain unchanged in every shot.",
+    "set": "A seamless pale-gray studio cyclorama with a reflective dark floor, soft overhead light grid, deep controlled shadows, and no visible crew or equipment."
+  },
+  "audio": {
+    "music": "Original 84 BPM half-time hip-hop instrumental with deep sub-bass, dry rim clicks, and sparse metallic percussion. No copied melody, lyrics, or samples.",
+    "voiceover": "Perfection is not louder. It is clearer.",
+    "ending": "Cut the final bass note at 00:47 and retain one second of room tone."
+  },
+  "generation_notes": [
+    "Create and approve character, vehicle, and studio reference stills before generating motion.",
+    "Use identical references for every applicable clip.",
+    "Generate clean footage without typography; add all titles in an editor.",
+    "Reject identity drift, malformed hands, warped jewelry, and vehicle geometry changes.",
+    "Apply one shared monochrome grade during final assembly."
+  ],
+  "clips": [
+    {
+      "id": "clip-01",
+      "name": "Signal",
+      "timecode": "00:00-00:06",
+      "duration_seconds": 6,
+      "prompt": "A nearly black frame. A single thin horizontal white light slowly opens across the center, revealing faint film grain and a narrow crimson editorial line beneath it. Minimal, precise, symmetrical composition. No people, vehicle, logo, or text. The light movement is smooth and slow.",
+      "camera": "Static, centered",
+      "editorial_overlay": [
+        "A STUDY IN CONTRAST",
+        "IN FOCUS"
+      ],
+      "transition_out": "Hard cut on the first downbeat"
+    },
+    {
+      "id": "clip-02",
+      "name": "The reveal",
+      "timecode": "00:06-00:12",
+      "duration_seconds": 6,
+      "prompt": "Low, hood-height wide shot of the unbranded white concept coupe in the seamless gray studio. Performer A stands at frame left in the charcoal studio wardrobe, facing camera. Performer B sits motionless on a separate matte-black cube at frame right. The car spans the lower half of the frame. Soft overhead lights turn on in sequence, creating deep shadows and clean highlights. Static camera, restrained poses, realistic anatomy.",
+      "camera": "Static low wide shot at hood height",
+      "editorial_overlay": [],
+      "transition_out": "Hard cut"
+    },
+    {
+      "id": "clip-03",
+      "name": "Presence",
+      "timecode": "00:12-00:18",
+      "duration_seconds": 6,
+      "prompt": "Slow lateral dolly from left to right at hood height. Performer A, in the charcoal studio wardrobe, stands beside the front quarter of the white concept coupe and addresses the camera with one calm hand gesture. Performer B remains a distant sculptural figure in the background. The vehicle stays rigid and geometrically consistent. High-contrast monochrome, shallow but readable depth, no lip-sync requirement.",
+      "camera": "Slow left-to-right lateral dolly",
+      "editorial_overlay": [],
+      "transition_out": "Hard cut on a percussion hit"
+    },
+    {
+      "id": "clip-04",
+      "name": "Detail portrait",
+      "timecode": "00:18-00:24",
+      "duration_seconds": 6,
+      "prompt": "Tight frontal portrait of Performer A in the ivory utility jacket with black piping, angular dark glasses, one geometric pendant, one ring, and one beaded bracelet, against a pure black background. The performer slowly raises an open palm toward the lens until the hand occupies the left foreground while the face remains partially visible. Harsh directional key light, deep blacks, realistic fingers and jewelry, shallow depth of field, very slow push-in.",
+      "camera": "Tight frontal portrait with very slow push-in",
+      "editorial_overlay": [],
+      "transition_out": "Match cut from palm to car-surface reflection"
+    },
+    {
+      "id": "clip-05",
+      "name": "Machine detail",
+      "timecode": "00:24-00:30",
+      "duration_seconds": 6,
+      "prompt": "Extreme close-up of the white concept coupe's front fender and geometric black wheel. A narrow overhead softbox reflection travels smoothly across the paint as the camera makes a short, slow slider move. Performer A appears only as a soft reflection passing across the bodywork. No badges or lettering. The wheel remains stationary and perfectly round.",
+      "camera": "Macro detail with short slow slider move",
+      "editorial_overlay": [],
+      "transition_out": "Hard cut to overhead view"
+    },
+    {
+      "id": "clip-06",
+      "name": "Geometry",
+      "timecode": "00:30-00:36",
+      "duration_seconds": 6,
+      "prompt": "Directly overhead locked-off shot. The white concept coupe forms a clean diagonal across the dark reflective studio floor. Performer A and Performer B move slowly into two balanced positions on opposite sides of the vehicle, creating a symmetrical graphic composition. No dancing acrobatics, no interaction with the vehicle, no camera rotation. Monochrome, precise shadows, realistic movement.",
+      "camera": "Locked-off directly overhead",
+      "editorial_overlay": [],
+      "transition_out": "Hard cut when both performers stop"
+    },
+    {
+      "id": "clip-07",
+      "name": "Statement",
+      "timecode": "00:36-00:42",
+      "duration_seconds": 6,
+      "prompt": "Centered low-angle hero shot. Performer A stands directly in front of the white concept coupe, wearing the charcoal studio wardrobe, with Performer B positioned farther back and off-center. The camera pushes in very slowly while the performer holds a calm, direct gaze. Overhead lights narrow into a single pool of light around the pair and vehicle. Strong symmetry, stable faces, no text or logos.",
+      "camera": "Centered low angle with very slow push-in",
+      "editorial_overlay": [],
+      "transition_out": "Two-frame black interruption, then final wide shot"
+    },
+    {
+      "id": "clip-08",
+      "name": "Resolution",
+      "timecode": "00:42-00:48",
+      "duration_seconds": 6,
+      "prompt": "Static extreme-wide shot of the empty studio with only the unbranded white concept coupe centered in the distance. Overhead light banks switch off one by one from the edges toward the center until only a thin rim light outlines the vehicle, then the image fades to pure black. No people, text, or logos. Slow, controlled, physically plausible lighting change.",
+      "camera": "Static extreme-wide shot",
+      "editorial_overlay": [
+        "IN FOCUS",
+        "AN ORIGINAL VISUAL STUDY"
+      ],
+      "transition_out": "Fade to black"
+    }
+  ]
+}

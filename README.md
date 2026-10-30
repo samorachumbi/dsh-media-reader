@@ -37,9 +37,11 @@ Properties:
 - the host route is loopback-only and requires the client marker header;
 - the analysis is inserted into the draft, not auto-sent, so you can review it;
 - one job at a time, same media lock as the tools;
-- the drop handler is registered in the **window capture phase**, so it runs before DSH's native
-  attachment handler. Without that, MP4/MP3 drops are rejected with “Only PNG, JPG, WebP, and GIF images
-  are supported”. It accepts all common image, audio and video extensions, by name or MIME type.
+- the drop handler is registered in the **window capture phase** for `dragenter`, `dragover`, `drop`
+  and `paste`, so it runs before DSH's native attachment handler. Without `dragenter` interception DSH's
+  “Drag images here” mask appears and then stays up when our drop handler stops the native reset; the
+  capture handler suppresses the mask, and drop dispatches the native `dragend` reset as a fallback.
+  It accepts all common image, audio and video extensions, by name or MIME type.
 - media files pasted from the clipboard are handled the same way.
 
 ## What "route-aware" means

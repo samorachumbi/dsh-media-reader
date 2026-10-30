@@ -110,6 +110,17 @@ not screenshotted; the sandboxed browser timed out. If a drop still produces the
 native PNG/JPG message, check the URL (the live 3080 does **not** have the plugin
 until install/restart) and confirm the client bundle is loaded.
 
+## Stuck native drag mask
+
+A second drop defect: DSH's native **“Drag images here to add them”** mask appeared on `dragenter` and
+stayed up after drop, because our capture-phase `drop` stopped the native `drop`/`dragend` reset. Fixed by
+intercepting `dragenter` in the capture phase too, and dispatching `window.dispatchEvent(new DragEvent('dragend'))`
+on drop as a fallback. The plugin's own status now shows **Analyzing …** / **Added … to the draft**
+instead of leaving the native mask.
+
+Not visually verified end-to-end: the sandboxed browser still cannot render the page, so the operator must
+confirm the mask disappears after a drop.
+
 ## Not verified
 
 - Live-profile installation and a real server restart (the scratch instance is on port 3096).
