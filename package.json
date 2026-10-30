@@ -17,14 +17,18 @@
   "files": [
     "lib",
     "python",
+    "bin",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "EVIDENCE-PACK.md"
   ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "evidence": "node bin/media-evidence.mjs",
+    "dsp-self-test": ".venv-stt/bin/python python/dsp_worker.py --self-test"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-tools": ">=0.1.0-rc.7"
@@ -41,5 +45,8 @@
     "client": {
       "platform": "web"
     }
+  },
+  "bin": {
+    "media-evidence": "./bin/media-evidence.mjs"
   }
 }

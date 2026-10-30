@@ -75,6 +75,15 @@ A profile change must never silently replace a measured fact with a model guess.
 
 ### Stage 1 — evidence pack (works in every profile)
 
+**IMPLEMENTED 2026-10-31** — `node bin/media-evidence.mjs <file>`; contract and measured results in
+`EVIDENCE-PACK.md`. Writes `replication/<job>/` with `source.json`, `audio-features.json`, `frames/`,
+`lyrics/`, `reference/`, `notes/skipped.json`, `replication.json`, `plan.json`, `REPLICATION.md`. Every
+field carries MEASURED / INFERRED / UNVERIFIED. No model call and no generation call. Measured on the test
+source: 368.078 s file fully analysed (`truncated: false`) in 4 min 34 s, ~536 MB peak RSS.
+
+Still open inside stage 1: stems and MIDI (Demucs / Basic Pitch are not installed — recorded as skipped,
+not faked), and OCR (tesseract absent).
+
 - Full-duration decode, probe, loudness, silence and file hash.
 - Local DSP: BPM/beats/onsets, key+confidence, chroma, HPSS, MFCC/timbre, energy and section boundaries.
 - Shot replication sheet with start/mid/end frames, OCR, camera/action/lighting/palette/transition fields.
@@ -144,7 +153,10 @@ Every artifact records profile, mode, provider/model, rights confirmation, and p
 
 1. **Evidence pack v1** — local measurements + shot sheet + artifact contract. No generation call.
 2. **Kie adapter skeleton** — credential check, upload helper, task create/poll/callback, ledger, download
-   and archive. A missing `KIE_API_KEY` fails loudly; it is not currently present in the shell environment.
+   and archive. The credential **exists**: the variable is `KIE_AI_API_KEY` (not `KIE_API_KEY`) and it is
+   held in `~/projects/Website_Builder/.env`, the key used for the Itikia build. It is not exported into a
+   shell environment, so the adapter must resolve it from that file (or `--env-file`) and fail loudly only
+   when both are absent.
 3. **Music pilot** — one cover, compare melody/structure against source.
 4. **Video pilot** — one replica shot and one anime-transformation shot, evaluate separately.
 5. **Profiles** — wire `local`/`assisted`/`cloud` through config, then measure Demucs on this machine to

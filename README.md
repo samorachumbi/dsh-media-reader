@@ -116,6 +116,22 @@ Same 7.30 s speech clip, int8, 4 threads, cached model, `/usr/bin/time`:
 `small`'s first measurement (251.79 s) included its 480 MB download and is **not** an RTF; only the
 cached run counts. Choose `small` for accuracy on short clips; choose `base` for latency and headroom.
 
+## Evidence pack (stage 1 of the replication pipeline)
+
+`bin/media-evidence.mjs` reads one media file and writes a directory of **measurements** with no model
+call, no network and no generation request: tempo, key, cadence, energy, timbre, regions, shot boundaries
+with start/mid/end frames, palette/luma, loudness, hashes, and lyrics with a confidence verdict.
+
+```bash
+node bin/media-evidence.mjs "source.mp4" --mode replica --profile local
+```
+
+Every field carries **MEASURED / INFERRED / UNVERIFIED**, and the fields most likely to be invented
+(instruments, camera, action, on-screen text) are emitted as UNVERIFIED with the reason and the route that
+could answer them. It runs without a DSH server, which is what makes it testable before any restart.
+
+Full contract, artifact layout and the synthetic ground-truth results: `EVIDENCE-PACK.md`.
+
 ## Privacy and limits
 
 - Audio is transcribed locally. No audio bytes are sent to a model.
@@ -133,6 +149,10 @@ cached run counts. Choose `small` for accuracy on short clips; choose `base` for
 
 `transcripts/<name>-<timestamp>/` → `transcript.txt`, `.json`, `.srt`
 `videos/<name>-<timestamp>/` → `digest.md`, `timeline.json`, `contact-sheet.png`, `frames/shot-NN.png`
+
+Replication evidence packs go to `replication/<job>/` (git-ignored): `source.json`,
+`audio-features.json`, `frames/`, `lyrics/`, `reference/`, `notes/skipped.json`, `replication.json`,
+`plan.json`, `REPLICATION.md`. See `EVIDENCE-PACK.md`.
 
 ## Rollback
 

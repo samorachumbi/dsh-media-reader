@@ -11,3 +11,6 @@ probe/err-*.txt
 # local dev symlink to the shared DSH package tree
 node_modules
 __pycache__/
+
+# replication evidence packs (large local artifacts, rebuilt on demand)
+replication/

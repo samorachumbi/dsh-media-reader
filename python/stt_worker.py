@@ -3,6 +3,10 @@
 
 One JSON document on stdout; diagnostics on stderr. The bridge must never treat
 an empty or unparseable output as a successful empty transcript.
+
+Each segment carries `avg_logprob` and `no_speech_prob` so a caller can tell a
+confident speech transcript from Whisper's guess at sung vocals. Without those
+numbers a music video's lyrics look exactly as trustworthy as a podcast.
 """
 import argparse
 import json
@@ -56,6 +60,8 @@ def main() -> int:
                     "start": float(segment.start),
                     "end": float(segment.end),
                     "text": text,
+                    "avgLogprob": round(float(getattr(segment, "avg_logprob", 0.0)), 4),
+                    "noSpeechProb": round(float(getattr(segment, "no_speech_prob", 0.0)), 4),
                 }
             )
         text = " ".join(segment["text"] for segment in segments).strip()
@@ -68,6 +74,7 @@ def main() -> int:
             "duration": getattr(info, "duration", None),
             "segments": segments,
             "text": text,
+            "durationAfterVad": sum(segment["end"] - segment["start"] for segment in segments),
         }
         print("MEDIA_READER_RESULT " + json.dumps(payload, ensure_ascii=False))
         return 0
