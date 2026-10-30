@@ -3,3 +3,5 @@ artifacts/
 models/
 node_modules/
 *.log
+.dsh-test-home/
+node_modules
