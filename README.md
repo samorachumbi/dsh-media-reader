@@ -114,9 +114,63 @@ deleted independently.
 
 See `ACCEPTANCE.md` for the 2026-10-30 evidence table (what passed, what was not verified).
 
-## Verification
+### Test before touching the live server
+
+The scratch instance in `.dsh-test-home` is a separate DSH home with its own profile, on port **3096**.
+It never boots `~/.dsh`, so the live server on 3080 is untouched.
+
+```bash
+# 1. The scratch home needs model credentials for real tool calls.
+#    This is a symlink to the live credential document — remove it after testing.
+ln -sfn ~/.dsh/.credentials.yaml .dsh-test-home/.credentials.yaml
+
+# 2. Start the scratch server (or leave the existing one running).
+DSH_HOME=$PWD/.dsh-test-home dsh web --port 3096
+```
+
+Open `http://127.0.0.1:3096`. The plugin is tools-only: there is no pill or page. Test it in chat.
+
+### One-command smoke test
+
+With the scratch server running:
+
+```bash
+DSH_TEST_URL=http://127.0.0.1:3096 node probe/smoke.mjs
+```
+
+It drives the real session API through 15 checks: probe, vision image, text-only image description,
+`read_image` redirect, local JFK transcription, text-only video digest with visual question, no-speech
+silence, and a missing-file error. Expected tail: `15/15 checks passed`.
+
+### Manual checks in the scratch UI
+
+1. Select **DeepSeek-V4-Flash-Vision-Exp**, then:
+   - `Call media_probe once on /home/samora/projects/Video_Image_Voice/fixtures/error-demo.mp4. Report duration, dimensions and audio-track count.`
+     → 11 s, 640×360, 1 audio track.
+   - `Call media_image once on /home/samora/projects/Video_Image_Voice/fixtures/hello.png and tell me the exact text.`
+     → the image is attached and the answer is **HELLO MEDIA**.
+2. Switch the model to **DeepSeek-V4-Flash** (text-only), then:
+   - `Call media_image once on …/hello.png and quote the description.`
+     → `<type>image-description</type>`, source `deepseek-official/deepseek-v4-flash-vision-exp`, and HELLO MEDIA.
+   - `Call read_image once on …/hello.png and quote the error.`
+     → an error directing you to `media_image`.
+   - `Call media_audio once on …/jfk.wav and quote the transcript.`
+     → “Ask not what your country can do for you…” from local `faster-whisper base`.
+   - `Call media_video once on …/error-demo.mp4 with mode=digest and the question "What error number is shown on screen?"`
+     → visual evidence says **ERROR 42**; the timeline also carries the JFK speech.
+3. Check `artifacts/transcripts/` and `artifacts/videos/` for the written transcripts, frames and digest.
+
+### Cleanup
+
+```bash
+rm -f .dsh-test-home/.credentials.yaml
+PID=$(pgrep -f 'node.*/dsh web --port 3096' | head -1); kill "$PID"
+```
+
+### Unit tests and measurements
 
 ```bash
 npm test
 bash probe/rtf.sh          # once the venv is installed; records base vs small
 ```
+

@@ -91,3 +91,18 @@ DSH_HOME=$PWD/.dsh-test-home dsh web --port 3096
 ```
 
 The scratch home has its own profile and a symlinked `.credentials.yaml`; it never boots `~/.dsh`.
+
+## Repeatable smoke harness
+
+`probe/smoke.mjs` drives the same 15 acceptance checks through the live session API and passed
+**15/15** against the scratch instance on port 3096 (session
+`session-1f5eeff9-3bf1-4c75-b147-1524c1aa688b`). It scopes every assertion to the turn it just ran;
+its first version searched whole-session history and false-failed because it matched an earlier
+vision-route image result. That was a harness bug, not a plugin bug — recorded here so the script is
+not "simplified" back into the same mistake.
+
+Run it with:
+
+```bash
+DSH_TEST_URL=http://127.0.0.1:3096 node probe/smoke.mjs
+```
