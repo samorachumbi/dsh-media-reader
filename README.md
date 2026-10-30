@@ -3,7 +3,7 @@
 Read local **images, audio and video** from DeepSeek Harness — including on a
 model route that cannot accept images.
 
-Four tools and one redirect:
+Four tools, one redirect, and a composer drop target:
 
 | Tool | What it does | Model calls |
 |---|---|---|
@@ -17,7 +17,29 @@ On a text-only route, `read_image` is denied with a corrective message naming
 failed read into a successful result, so the plugin redirects instead of
 pretending.
 
+## Drag and drop (the client half)
+
+The composer gets a **📎 Drop media** target. Drop an image, audio or video file
+on it — or drop anywhere in the composer — and the plugin uploads the bytes to
+the host route, runs the same local pipeline, and inserts the resulting text
+into the draft.
+
+This exists because the failure the user sees with an attachment is upstream of
+any tool: a text-only route refuses an attached image at admission, and DSH has
+no audio/video attachment modality at all. A file path works because a tool can
+read it. The drop target gives the same convenience without a path.
+
+Properties:
+
+- works on **every** model route; the upload is always converted to text;
+- the file is written to `artifacts/uploads/<uuid>/` with mode `0700`, processed,
+  and the upload directory is deleted afterwards;
+- the host route is loopback-only and requires the client marker header;
+- the analysis is inserted into the draft, not auto-sent, so you can review it;
+- one job at a time, same media lock as the tools.
+
 ## What "route-aware" means
+
 
 - **Vision route:** media evidence is attached as real image blocks and the
   current model interprets the pixels. No redundant description call.
@@ -35,6 +57,7 @@ known split-Symbol crash vector.
 DEST="$HOME/.dsh/profiles/web/node_modules/dsh-media-reader"
 mkdir -p "$DEST"
 cp -r lib python package.json cordis.patch.yml README.md "$DEST"/
+# lib/client.js is the drag-and-drop half; dsh.client.platform in package.json mounts it
 # add one row to ~/.dsh/profiles/web/cordis.patch.yml:
 # - insert:
 #     - id: media-reader
@@ -72,6 +95,8 @@ ffmpeg/ffprobe must be on `PATH` (6.0+ for `scdet`).
 | `maxFrames` | `4` | video frame cap (hard max 6 on this machine) |
 | `maxFrameSide` / `maxFramePixels` | `800` / `640000` | keeps frames inside the request image budget |
 | `sceneThreshold` | `10` | ffmpeg `scdet` threshold |
+| `maxUploadBytes` | `134217728` (128 MB) | drag-and-drop raw upload cap |
+| `uploadTimeoutMs` | `600000` | per-upload processing budget |
 
 ## Measured on this machine (2026-10-30)
 
@@ -138,9 +163,9 @@ With the scratch server running:
 DSH_TEST_URL=http://127.0.0.1:3096 node probe/smoke.mjs
 ```
 
-It drives the real session API through 15 checks: probe, vision image, text-only image description,
+It drives the real session API through 18 checks: probe, vision image, text-only image description,
 `read_image` redirect, local JFK transcription, text-only video digest with visual question, no-speech
-silence, and a missing-file error. Expected tail: `15/15 checks passed`.
+silence, a missing-file error, and the three drag-and-drop uploads. Expected tail: `18/18 checks passed`.
 
 ### Manual checks in the scratch UI
 
@@ -158,7 +183,10 @@ silence, and a missing-file error. Expected tail: `15/15 checks passed`.
      → “Ask not what your country can do for you…” from local `faster-whisper base`.
    - `Call media_video once on …/error-demo.mp4 with mode=digest and the question "What error number is shown on screen?"`
      → visual evidence says **ERROR 42**; the timeline also carries the JFK speech.
-3. Check `artifacts/transcripts/` and `artifacts/videos/` for the written transcripts, frames and digest.
+3. Drag `fixtures/hello.png`, `fixtures/jfk.wav` or `fixtures/error-demo.mp4` onto the **📎 Drop media** target
+   (or anywhere in the composer). Wait for “Added … to the draft”, then press Enter. The draft contains
+   the description/transcript/timeline as text.
+4. Check `artifacts/transcripts/` and `artifacts/videos/` for the written transcripts, frames and digest.
 
 ### Cleanup
 

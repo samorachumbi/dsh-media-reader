@@ -2,14 +2,17 @@
   "name": "dsh-media-reader",
   "version": "0.1.0",
   "private": true,
-  "description": "Read local images, audio and video from DeepSeek Harness, including on text-only model routes.",
+  "description": "Read local images, audio and video from DeepSeek Harness, including on text-only routes; includes a composer drag-and-drop target.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": {
       "default": "./lib/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": {
+      "default": "./lib/client.js"
+    }
   },
   "files": [
     "lib",
@@ -34,6 +37,9 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   }
 }

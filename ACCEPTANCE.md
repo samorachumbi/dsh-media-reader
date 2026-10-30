@@ -73,6 +73,25 @@ is available for short clips where its slightly better handling of one hard word
 5. **HF Hub/onnxruntime logging polluted stdout**; the worker now emits a `MEDIA_READER_RESULT` marker and
    the bridge searches for it instead of parsing the whole stream.
 
+## Drag-and-drop uploads
+
+The composer client registers a **📎 Drop media** target and accepts drops anywhere in the composer.
+The host route is `POST /media-reader/ingest` (loopback-only, client marker required, raw bytes).
+
+| Input | Result |
+|---|---|
+| `hello.png` | **PASS.** `{ok:true, kind:"image"}` with the HELLO MEDIA description. |
+| `jfk.wav` | **PASS.** `{ok:true, kind:"audio"}` with the JFK transcript. |
+| `error-demo.mp4` | **PASS.** `{ok:true, kind:"video"}` with the timeline, JFK speech and ERROR 42 visual description. |
+| missing `x-media-reader-client` | **PASS.** HTTP 403. |
+| `notes.txt` | **PASS.** HTTP 415, `UNSUPPORTED_MEDIA`. |
+| upload temp cleanup | **PASS.** `artifacts/uploads` empty after processing. |
+| client bundle served | **PASS.** `GET /plugins/dsh-media-reader/client.js` → 200 and scratch boot clean. |
+
+**Not visually verified:** the drop target's rendered position was not screenshotted — the sandboxed
+browser did not render the page (Chrome timed out). The host route, bundle serving and boot are verified;
+the operator must confirm the drop interaction in the UI.
+
 ## Not verified
 
 - Live-profile installation and a real server restart (the scratch instance is on port 3096).
@@ -95,8 +114,9 @@ The scratch home has its own profile and a symlinked `.credentials.yaml`; it nev
 ## Repeatable smoke harness
 
 `probe/smoke.mjs` drives the same 15 acceptance checks through the live session API and passed
-**15/15** against the scratch instance on port 3096 (session
-`session-1f5eeff9-3bf1-4c75-b147-1524c1aa688b`). It scopes every assertion to the turn it just ran;
+**18/18** against the scratch instance on port 3096 (session
+`session-47b329d2-f9b1-4636-946d-be73707c49fb`). The final three checks drive the drag-and-drop host
+route for image, audio and video uploads. It scopes every assertion to the turn it just ran;
 its first version searched whole-session history and false-failed because it matched an earlier
 vision-route image result. That was a harness bug, not a plugin bug — recorded here so the script is
 not "simplified" back into the same mistake.

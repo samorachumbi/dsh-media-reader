@@ -11,6 +11,7 @@
  * The scratch home must have working model credentials; the script does not
  * read, copy or print any credential.
  */
+import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -179,6 +180,27 @@ async function main() {
   events = await runPrompt(sessionId, `Call media_probe once on ${fixture('missing.png')} and quote the error.`)
   const missing = results(events).find((result) => result.name === 'media_probe')
   check('missing file fails explicitly', missing?.isError === true && /NOT_FOUND/u.test(missing.text), missing?.text?.slice(0, 600))
+
+  async function upload(name) {
+    const body = await readFile(fixture(name))
+    const response = await fetch(`${BASE}/media-reader/ingest`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/octet-stream',
+        'x-media-reader-client': '1',
+        'x-media-reader-name': encodeURIComponent(name)
+      },
+      body
+    })
+    return response.json()
+  }
+
+  const uploadedImage = await upload('hello.png')
+  check('drop upload describes an image', uploadedImage?.ok === true && /HELLO MEDIA/u.test(uploadedImage.text ?? ''), JSON.stringify(uploadedImage).slice(0, 800))
+  const uploadedAudio = await upload('jfk.wav')
+  check('drop upload transcribes audio', uploadedAudio?.ok === true && /fellow Americans/u.test(uploadedAudio.text ?? ''), JSON.stringify(uploadedAudio).slice(0, 800))
+  const uploadedVideo = await upload('error-demo.mp4')
+  check('drop upload digests video', uploadedVideo?.ok === true && /ERROR 42/u.test(uploadedVideo.text ?? '') && /fellow Americans/u.test(uploadedVideo.text ?? ''), JSON.stringify(uploadedVideo).slice(0, 1_000))
 
   console.log(`\n${checks.length}/${checks.length} checks passed against ${BASE}`)
   console.log(`session: ${sessionId}`)

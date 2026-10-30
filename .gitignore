@@ -6,6 +6,7 @@ probe/out-*.json
 probe/err-*.txt
 *.log
 .dsh-test-home/
+.chrome-test/
 
 # local dev symlink to the shared DSH package tree
 node_modules
