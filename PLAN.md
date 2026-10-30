@@ -301,7 +301,7 @@ No host files touched; the STT venv and model cache live entirely inside the pro
 
 ### 5.5 Exit gate
 
-`bash ~/projects/deepseek-test/second-brain/scripts/task-exit-gate.sh` and paste the VERDICT block, plus
+The official exit gate (`/task-exit-gate`) — run it and paste the VERDICT block, plus
 an explicit list of what was **not** verified.
 
 ---

@@ -158,7 +158,7 @@ scene sampling + fusion, and is re-read (not installed) before Phase 4.
 
 ## 4. What this machine can actually do — measured, not assumed
 
-From `second-brain/machine-profile.json` (2026-09-25) and re-checked today:
+From the machine profile produced by the `machine-profile` skill (2026-09-25) and re-checked today:
 
 | Fact | Value | Consequence |
 |---|---|---|
