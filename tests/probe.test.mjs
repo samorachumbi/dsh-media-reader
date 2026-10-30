@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { formatTimestamp, kindFromPath, parseProbe, parseRate } from '../lib/probe.js'
+import { parseWorkerOutput } from '../lib/stt.js'
 
 test('kindFromPath classifies every supported family and rejects unknown extensions', () => {
   assert.equal(kindFromPath('/tmp/a.PNG'), 'image')
@@ -61,7 +62,47 @@ test('parseProbe reports a video with no audio track as having zero tracks, not 
   assert.deepEqual(info.audio, [])
 })
 
+test('parseProbe does not present a still image as having a frame rate', () => {
+  const info = parseProbe(
+    {
+      format: { format_name: 'png_pipe' },
+      streams: [{ codec_type: 'video', codec_name: 'png', width: 640, height: 360, avg_frame_rate: '25/1' }]
+    },
+    { displayPath: '/fixtures/hello.png' }
+  )
+  assert.equal(info.kind, 'image')
+  assert.equal(info.image.width, 640)
+  assert.equal(info.image.fps, undefined)
+})
+
+test('parseProbe reports an audio-only file with a video extension as audio', () => {
+  const info = parseProbe(
+    {
+      format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2', duration: '3.0' },
+      streams: [{ codec_type: 'audio', codec_name: 'aac', sample_rate: '16000', channels: 1 }]
+    },
+    { displayPath: '/fixtures/voice.mp4' }
+  )
+  assert.equal(info.kind, 'audio')
+  assert.equal(info.image, undefined)
+  assert.equal(info.audioTracks, 1)
+})
+
 test('parseProbe rejects a non-object document instead of inventing metadata', () => {
   assert.throws(() => parseProbe(null, { displayPath: '/x.png' }), /no JSON document/u)
   assert.throws(() => parseProbe('nope', { displayPath: '/x.png' }), /no JSON document/u)
+})
+
+test('parseWorkerOutput finds the marker line even when a library logs to stdout', () => {
+  const stdout = [
+    '{"level":"ERROR","fields":{"message":"xet logging failed"}}',
+    'MEDIA_READER_RESULT {"ok":true,"segments":[],"text":""}',
+    'WARNING: unauthenticated hub request'
+  ].join('\n')
+  assert.deepEqual(parseWorkerOutput(stdout), { ok: true, segments: [], text: '' })
+})
+
+test('parseWorkerOutput rejects empty output rather than inventing an empty transcript', () => {
+  assert.throws(() => parseWorkerOutput('  \n'), /no output/u)
+  assert.throws(() => parseWorkerOutput('not json'), /Unexpected token|not valid JSON/u)
 })

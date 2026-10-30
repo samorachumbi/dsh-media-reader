@@ -32,7 +32,11 @@ for model in $MODELS; do
   if [ "$status" -eq 0 ]; then
     "$PY" - "$ROOT/probe/out-$model.json" <<'PY'
 import json,sys
-d=json.load(open(sys.argv[1]))
+text=open(sys.argv[1], encoding="utf-8").read()
+lines=[line for line in text.splitlines() if "MEDIA_READER_RESULT " in line]
+if not lines:
+    raise SystemExit("no MEDIA_READER_RESULT line in worker output")
+d=json.loads(lines[-1].split("MEDIA_READER_RESULT ",1)[1])
 print("segments=%d text_len=%d language=%s" % (len(d.get("segments",[])), len(d.get("text","")), d.get("language")))
 print("text:", d.get("text","")[:400])
 PY

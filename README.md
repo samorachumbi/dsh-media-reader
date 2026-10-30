@@ -48,7 +48,7 @@ server. See `/dsh-test-boot`.
 
 ```bash
 python3 -m venv .venv-stt
-.venv-stt/bin/pip install faster-whisper==1.2.1
+.venv-stt/bin/pip install -r python/requirements.txt
 ```
 
 The default interpreter path is
@@ -65,12 +65,25 @@ ffmpeg/ffprobe must be on `PATH` (6.0+ for `scdet`).
 | `visionFallback` | `configured-route` | `off` disables sending images to a vision route |
 | `autoRedirect` | `true` | redirect `read_image` on a text-only route |
 | `visionTimeoutMs` | `90000` | per description call |
-| `sttModel` | `small` | `tiny`/`base`/`small`/`medium` |
+| `visionMaxTokens` | `2000` | output budget for a description; too small a value returns no text |
+| `sttModel` | `base` | `tiny`/`base`/`small`/`medium`; see measured table |
 | `sttThreads` | `4` | local CPU threads |
 | `maxAudioSeconds` | `300` | hard audio cap; truncation is reported |
 | `maxFrames` | `4` | video frame cap (hard max 6 on this machine) |
 | `maxFrameSide` / `maxFramePixels` | `800` / `640000` | keeps frames inside the request image budget |
 | `sceneThreshold` | `10` | ffmpeg `scdet` threshold |
+
+## Measured on this machine (2026-10-30)
+
+Same 7.30 s speech clip, int8, 4 threads, cached model, `/usr/bin/time`:
+
+| Model | Wall time | RTF | Peak RSS | Note |
+|---|---|---|---|---|
+| `base` | 8.40 s | 1.15× | 390 MB | **default**; fits comfortably beside Chrome |
+| `small` | 18.76 s | 2.57× | 791 MB | better on one hard word in the fixture; ~2.2× slower |
+
+`small`'s first measurement (251.79 s) included its 480 MB download and is **not** an RTF; only the
+cached run counts. Choose `small` for accuracy on short clips; choose `base` for latency and headroom.
 
 ## Privacy and limits
 
@@ -96,6 +109,10 @@ Remove `~/.dsh/profiles/web/node_modules/dsh-media-reader` and the
 `media-reader` row from `cordis.patch.yml`, then restart the server. The STT
 venv, model cache and artifacts live in the project directory and can be
 deleted independently.
+
+## Verification and acceptance
+
+See `ACCEPTANCE.md` for the 2026-10-30 evidence table (what passed, what was not verified).
 
 ## Verification
 

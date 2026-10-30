@@ -2,6 +2,11 @@ artifacts/
 .venv-stt/
 models/
 node_modules/
+probe/out-*.json
+probe/err-*.txt
 *.log
 .dsh-test-home/
+
+# local dev symlink to the shared DSH package tree
 node_modules
+__pycache__/

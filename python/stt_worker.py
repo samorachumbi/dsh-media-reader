@@ -10,6 +10,8 @@ import os
 import sys
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 
 
 def main() -> int:
@@ -67,7 +69,7 @@ def main() -> int:
             "segments": segments,
             "text": text,
         }
-        print(json.dumps(payload, ensure_ascii=False))
+        print("MEDIA_READER_RESULT " + json.dumps(payload, ensure_ascii=False))
         return 0
     except ModuleNotFoundError as error:
         print(json.dumps({
