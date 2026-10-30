@@ -218,3 +218,113 @@ test('jobNameFor builds a safe directory name from an awkward filename', () => {
   assert.match(name, /^album-artist-a-long-track-title-official-video-20261031-002000$/u)
   assert.equal(jobNameFor('/tmp/!!!.mp4', new Date('2026-10-31T00:20:00Z')), 'job-20261031-002000')
 })
+
+test('formatEvidenceSummary groups claims by evidence strength and never puts a guess in MEASURED', async () => {
+  const { formatEvidenceSummary } = await import('../lib/evidence/summary.js')
+  const { buildPack, buildPlan } = await import('../lib/evidence/pack.js')
+  const pack = buildPack({
+    source: {
+      hasVideo: true, hasAudio: true, path: '/tmp/x.mp4', bytes: 1, sha256: 'abcdef1234567890',
+      container: 'mp4', durationSeconds: 368.078, bitRate: 1,
+      video: { codec: 'h264', width: 1280, height: 720, fps: 23.97616 },
+      audio: { codec: 'aac', sampleRate: 44100, channels: 2 },
+      loudness: { integratedLufs: -11.1, loudnessRangeLu: 9.3, truePeakDbfs: 1.5 }, silenceWindows: []
+    },
+    audio: {
+      features: {
+        audio: { durationSec: 368.036, truncated: false },
+        tempo: { bpm: 158.27, confidence: 0.443, ambiguous: false, octaveAlternative: { bpm: 79.14, relation: 'half', score: 0.073 }, candidates: [{ bpm: 159.8, score: 0.08 }] },
+        key: { tonic: 'A', mode: 'minor', correlation: 0.7167, margin: 0.2156, alternatives: [] },
+        cadence: { ioiMedianSec: 0.348, dominantIoiSec: 0.175, beatAlternationRatio: 0.046, accentSpread4: 0.077 },
+        onsets: { count: 703, ratePerSec: 1.91 },
+        energy: { rmsDb: -12.74, peakDb: 0, dynamicRangeDb: 23.37 },
+        timbre: { harmonicPercussiveRatio: 0.483, mfcc: { mean: [1], std: [0.1] } },
+        sections: [{ index: 1, startSec: 0, endSec: 48, energyDb: -27.45, harmonicRatio: 0.511, topPitchClasses: ['D'] }],
+        analysis: { audioSeconds: 368.036, coverage: 1, elapsedMs: 6500 },
+        unmeasured: {}
+      }
+    },
+    shots: { detected: 196, truncated: true, shots: [] },
+    lyrics: {
+      transcript: { text: 'mumbled bars over a beat', segments: [{}], language: 'en' },
+      confidence: { segments: 70, words: 692, meanAvgLogprob: -0.5203, meanNoSpeechProb: 0.5032, verdict: 'sung-or-uncertain' }
+    },
+    mode: 'replica', profile: 'local',
+    artifacts: { jobDir: '/tmp/job' }, timings: { source: 1 },
+    skipped: [{ stage: 'stems (Demucs)', reason: 'not installed' }],
+    ocrAvailable: false
+  })
+  const text = formatEvidenceSummary({
+    pack,
+    plan: buildPlan(pack),
+    paths: { replicationMd: '/tmp/job/REPLICATION.md', replicationJson: '/tmp/job/replication.json' }
+  })
+  const measuredBlock = text.slice(text.indexOf('MEASURED'), text.indexOf('INFERRED'))
+  const inferredBlock = text.slice(text.indexOf('INFERRED'), text.indexOf('NOT CLAIMED'))
+  assert.match(measuredBlock, /A minor/u, 'a strong key belongs in MEASURED')
+  assert.doesNotMatch(measuredBlock, /158\.27/u, 'an INFERRED tempo must not appear in the MEASURED block')
+  assert.match(inferredBlock, /158\.27/u)
+  assert.match(inferredBlock, /79\.14/u, 'the octave rival must be named')
+  // Lyrics are rendered in their own block, tagged with their own verdict.
+  assert.match(text, /LYRICS: 692 words · verdict sung-or-uncertain/u)
+  assert.match(text, /mean log-probability -0\.52  \[INFERRED\]/u)
+  assert.match(text, /instruments: —/u)
+  assert.match(text, /NOT RUN/u)
+  assert.match(text, /no generation call was made/u)
+  assert.match(text, /REPLICATION\.md/u)
+})
+
+test('every block contains only its own tag — UNVERIFIED never appears under INFERRED', async () => {
+  const { formatEvidenceSummary } = await import('../lib/evidence/summary.js')
+  const { buildPack, buildPlan } = await import('../lib/evidence/pack.js')
+  // A speech clip: tempo and key are both UNVERIFIED, which is exactly the case
+  // that printed "[UNVERIFIED]" inside the INFERRED heading before the fix.
+  const pack = buildPack({
+    source: {
+      hasVideo: false, hasAudio: true, path: '/tmp/a.mp4', bytes: 1, sha256: 'aa', container: 'mp4',
+      durationSeconds: 11, bitRate: 1, video: null,
+      audio: { codec: 'aac', sampleRate: 16000, channels: 1 },
+      loudness: { integratedLufs: -15.4, loudnessRangeLu: 4.1, truePeakDbfs: -2.1 }, silenceWindows: []
+    },
+    audio: {
+      features: {
+        audio: { durationSec: 11, truncated: false },
+        tempo: { bpm: 90.72, confidence: 0.071, ambiguous: false, octaveAlternative: { bpm: 181.44, relation: 'double', score: 0.15 }, candidates: [] },
+        key: { tonic: 'A', mode: 'minor', correlation: 0.3891, margin: 0.1416, alternatives: [] },
+        cadence: { ioiMedianSec: 0.29, dominantIoiSec: 0.302, beatAlternationRatio: 0.354, accentSpread4: 0.608 },
+        onsets: { count: 25, ratePerSec: 2.27 },
+        energy: { rmsDb: -17, peakDb: 0, dynamicRangeDb: 30 },
+        timbre: { harmonicPercussiveRatio: 0.493, mfcc: { mean: [1], std: [0.1] } },
+        sections: [],
+        analysis: { audioSeconds: 11, coverage: 1, elapsedMs: 1 },
+        unmeasured: {}
+      }
+    },
+    shots: null,
+    lyrics: null,
+    mode: 'replica', profile: 'local',
+    artifacts: { jobDir: '/tmp/job' }, timings: { source: 1 },
+    skipped: [], ocrAvailable: false
+  })
+  const text = formatEvidenceSummary({ pack, plan: buildPlan(pack), paths: { replicationMd: '/tmp/REPLICATION.md', replicationJson: '/tmp/r.json' } })
+  // Slice to the NEXT present heading, not to a heading that may be absent:
+  // text.indexOf returns -1 for a missing heading and slice(…, -1) silently
+  // returns almost the whole document (which made the first version of this
+  // test assert about the wrong block).
+  const sectionOf = (heading, nextHeadings) => {
+    const start = text.indexOf(heading)
+    if (start < 0) return ''
+    const ends = nextHeadings.map((next) => text.indexOf(next, start + heading.length)).filter((at) => at > start)
+    return text.slice(start, ends.length === 0 ? undefined : Math.min(...ends))
+  }
+  const measuredBlock = sectionOf('MEASURED (computed', ['INFERRED (', 'NOT CLAIMED ('])
+  const inferredBlock = sectionOf('INFERRED (', ['NOT CLAIMED ('])
+  const notClaimedBlock = sectionOf('NOT CLAIMED (', ['coverage:'])
+  assert.doesNotMatch(measuredBlock, /UNVERIFIED/u)
+  assert.doesNotMatch(inferredBlock, /UNVERIFIED/u, 'UNVERIFIED must not be printed under the INFERRED heading')
+  assert.match(notClaimedBlock, /tempo: 90.72 BPM  \[UNVERIFIED\]/u)
+  assert.match(notClaimedBlock, /cadence: .*\[UNVERIFIED\]/u)
+  // A weak key prints its estimate with the UNVERIFIED tag: the reading exists,
+  // the claim does not. That distinction is the point.
+  assert.match(notClaimedBlock, /key: A minor  \[UNVERIFIED\]/u)
+})

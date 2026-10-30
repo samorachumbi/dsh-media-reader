@@ -72,7 +72,7 @@ function execFor(model, filePath = '/fixtures/photo.png') {
 test('apply registers the Day 1 tools and the read_image redirect listener', () => {
   const { ctx, tools, listeners } = fakePluginContext()
   apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision' })
-  assert.deepEqual([...tools.keys()].sort(), ['media_audio', 'media_image', 'media_probe', 'media_video'])
+  assert.deepEqual([...tools.keys()].sort(), ['media_audio', 'media_evidence', 'media_image', 'media_probe', 'media_video'])
   assert.equal(listeners.filter((entry) => entry.event === 'tools/pre-execute').length, 1)
 })
 
@@ -127,6 +127,26 @@ test('the redirect ignores other tools and missing file paths', async () => {
   const next = async () => ({ kind: 'allow' })
   assert.deepEqual(await redirect({ name: 'media_probe', arguments: { path: '/x' }, agent: execFor('text-only').agent }, next), { kind: 'allow' })
   assert.deepEqual(await redirect({ name: 'read_image', arguments: {}, agent: execFor('text-only').agent }, next), { kind: 'allow' })
+})
+
+test('media_evidence refuses an image path and says where to go instead', async () => {
+  const { ctx, tools } = fakePluginContext()
+  apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision', evidenceRunner: async () => ({ exitCode: 0, stdout: '', stderr: '' }) })
+  await assert.rejects(
+    tools.get('media_evidence').execute({ path: '/fixtures/photo.png' }, { ...execFor('vision'), arguments: { path: '/fixtures/photo.png' } }),
+    /media_image/u
+  )
+})
+
+test('media_evidence refuses an unsupported extension before spawning anything', async () => {
+  const { ctx, tools } = fakePluginContext()
+  let spawned = 0
+  apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision', evidenceRunner: async () => { spawned += 1; return { exitCode: 0, stdout: '', stderr: '' } } })
+  await assert.rejects(
+    tools.get('media_evidence').execute({ path: '/fixtures/notes.txt' }, execFor('vision', '/fixtures/notes.txt')),
+    /UNSUPPORTED_MEDIA/u
+  )
+  assert.equal(spawned, 0, 'nothing may be spawned for a rejected path')
 })
 
 test('media_image refuses a non-image path with a named error', async () => {

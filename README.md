@@ -11,6 +11,7 @@ Four tools, one redirect, and a composer drop target:
 | `media_image` | PNG/JPEG/WebP/GIF. Vision route → the real image block. Text-only route → a factual description from the configured vision route | 0 or 1 auxiliary call |
 | `media_audio` | Local Whisper transcription with timestamps; writes `transcript.txt/.json/.srt` | none |
 | `media_video` | Shot detection + bounded frames + contact sheet + transcript timeline. Vision route → frames attached. Text-only route → described by the vision route | 0–3 auxiliary calls |
+| `media_evidence` | Replication evidence pack: tempo, key, cadence, loudness, timbre, regions, shot boundaries with frames, lyrics confidence. Every field tagged MEASURED/INFERRED/UNVERIFIED. Slow (~1–4 min), one job at a time, **no generation call** | none |
 
 On a text-only route, `read_image` is denied with a corrective message naming
 `media_image`. The denial is deliberate: `tools/post-execute` cannot turn a

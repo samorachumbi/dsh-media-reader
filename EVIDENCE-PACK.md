@@ -14,6 +14,17 @@ node bin/media-evidence.mjs "source.mp4" --mode replica --profile local
 It needs no DSH server, no network and no API key, which is exactly what makes it testable before any
 restart.
 
+**In a chat session** it is also a tool — `media_evidence` — so the same measurement can be requested
+without a terminal:
+
+```
+media_evidence(path="…/video.mp4", mode="replica", shots=20, lyrics=true)
+```
+
+The tool returns the claims grouped by evidence strength (MEASURED / INFERRED / NOT CLAIMED) and the paths
+to the full pack. It is deliberately slow (about 1–4 min for a full-length music video) and is not
+concurrency-safe: one measurement at a time on this machine.
+
 ## Why it exists
 
 The Rick Ross test file proved the gap concretely: the plugin's `media_audio` capped transcription at
@@ -47,7 +58,7 @@ template string.
 
 | Stage | Implementation | Network |
 |---|---|---|
-| Source facts | `ffprobe`, `sha256sum`, `ebur128`, `silencedetect` | none |
+| Source facts | `ffprobe`, `sha256sum`, one ffmpeg pass running `ebur128` + `silencedetect` | none |
 | Audio measurement | `python/dsp_worker.py` (numpy only) | none |
 | Shot sheet | `ffmpeg scdet` + frame extraction + 16×16 pixel statistics | none |
 | Lyrics | local `faster-whisper` via `python/stt_worker.py` | model download only if uncached |
