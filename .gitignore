@@ -1,0 +1,5 @@
+artifacts/
+.venv-stt/
+models/
+node_modules/
+*.log
