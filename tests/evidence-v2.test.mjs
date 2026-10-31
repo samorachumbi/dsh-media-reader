@@ -12,7 +12,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chordTemplate, identifyChords, NOTE_NAMES, scoreChroma } from '../lib/evidence/chords.js'
-import { EVIDENCE, buildPack, gradeChords, gradeSemantic, gradeStems } from '../lib/evidence/pack.js'
+import { EVIDENCE, buildPack, gradeChords, gradeSemantic, gradeStems, keyChordFit } from '../lib/evidence/pack.js'
 import { planShotRanges, selectPilotShots } from '../lib/evidence/shots.js'
 import { buildSemanticPrompt, normaliseSemantic, parseSemanticJson } from '../lib/evidence/semantic.js'
 import { appendLedger, maskKey, resolveKieKey } from '../lib/kie/client.js'
@@ -85,6 +85,27 @@ test('selectPilotShots prefers continuous shots long enough to generate from', (
   const long = picked.pilots.find((pilot) => pilot.detectedShot === 3)
   assert.equal(long.wholeShot, false)
   assert.equal(long.endSec - long.startSec, 8)
+})
+
+test('selectPilotShots prefers the measured main region over the longest shots', () => {
+  const boundaries = [
+    { detectedShot: 1, startSec: 0, endSec: 20, durationSec: 20 },
+    { detectedShot: 2, startSec: 20, endSec: 31, durationSec: 11 },
+    { detectedShot: 3, startSec: 60, endSec: 65, durationSec: 5 },
+    { detectedShot: 4, startSec: 90, endSec: 96, durationSec: 6 },
+    { detectedShot: 5, startSec: 120, endSec: 126, durationSec: 6 },
+    { detectedShot: 6, startSec: 200, endSec: 230, durationSec: 30 }
+  ]
+  const regions = [
+    { startSec: 0, endSec: 40, energyDb: -30 },
+    { startSec: 40, endSec: 180, energyDb: -12 },
+    { startSec: 180, endSec: 230, energyDb: -26 }
+  ]
+  const picked = selectPilotShots(boundaries, { minSeconds: 3, maxSeconds: 8, count: 3, regions })
+  assert.equal(picked.pickedFromPeakRegion, true)
+  assert.deepEqual(picked.pilots.map((pilot) => pilot.detectedShot), [3, 4, 5])
+  // The 20 s title card and the 30 s end card are excluded even though they are longer.
+  assert.ok(!picked.pilots.some((pilot) => pilot.detectedShot === 1 || pilot.detectedShot === 6))
 })
 
 test('selectPilotShots reports honestly when nothing is long enough', () => {
@@ -306,4 +327,95 @@ test('extractStems reads the Suno response fields and their fallback list', () =
 test('note names are the canonical twelve', () => {
   assert.equal(NOTE_NAMES.length, 12)
   assert.equal(NOTE_NAMES[9], 'A')
+})
+
+test('keyChordFit corroborates the key with the chord reading, and says nothing without a key', () => {
+  // E major's diatonic triads: I, ii, vi, IV, V. (B MINOR is not among them —
+  // the v is B major — which is exactly the kind of confusion this check exists
+  // to expose.)
+  const diatonic = [{ chord: 'E major' }, { chord: 'F# minor' }, { chord: 'C# minor' }, { chord: 'A major' }, { chord: 'B major' }]
+  const fit = keyChordFit(diatonic, 'E major')
+  assert.deepEqual(fit, { fitting: 5, total: 5, ratio: 1 })
+  // A minor triad in E major is NOT diatonic; the check must notice.
+  assert.equal(keyChordFit([{ chord: 'B minor' }, { chord: 'B major' }], 'E major').fitting, 1)
+  const mixed = [{ chord: 'E major' }, { chord: 'F major' }]
+  assert.equal(keyChordFit(mixed, 'E major').fitting, 1)
+  assert.equal(keyChordFit(diatonic, null), null)
+  assert.equal(keyChordFit([], 'E major'), null)
+})
+
+test('a single-shot video is told to use its keyframe, not a clip pilot', () => {
+  const pack = buildPack({
+    source: {
+      hasVideo: true, hasAudio: true, path: '/tmp/x.mp4', bytes: 1, sha256: 'aa', container: 'mp4',
+      durationSeconds: 700, bitRate: 1,
+      video: { codec: 'h264', width: 1280, height: 720, fps: 30 }, audio: { codec: 'aac', sampleRate: 44100, channels: 2 },
+      loudness: { integratedLufs: -14, loudnessRangeLu: 6, truePeakDbfs: -1 }, silenceWindows: []
+    },
+    audio: {
+      features: {
+        audio: { durationSec: 700, truncated: false },
+        tempo: { bpm: 100.3, confidence: 0.5, ambiguous: false, octaveAlternative: null, candidates: [] },
+        key: { tonic: 'E', mode: 'major', correlation: 0.64, margin: 0.089, alternatives: [] },
+        cadence: { ioiMedianSec: 0.44 }, onsets: { count: 100, ratePerSec: 0.5 },
+        energy: { rmsDb: -14, peakDb: 0, dynamicRangeDb: 10 },
+        timbre: { harmonicPercussiveRatio: 0.7, mfcc: { mean: [1], std: [0.1] } },
+        sections: [{ index: 1, startSec: 0, endSec: 700, energyDb: -14, topPitchClasses: ['E'] }],
+        analysis: { audioSeconds: 700, coverage: 1, elapsedMs: 1 }, unmeasured: {}
+      }
+    },
+    shots: {
+      detected: 1, truncated: false, cuts: 0,
+      boundaries: [{ detectedShot: 1, startSec: 0, endSec: 700, durationSec: 700 }],
+      pilots: { pilots: [{ detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, wholeShot: false }], candidatesInRange: 1, totalShots: 1, peakRegion: { startSec: 0, endSec: 700, energyDb: -14 } },
+      shots: [{ index: 1, detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, frames: [{ role: 'mid', atSec: 4 }], files: { mid: '/tmp/f.png' }, palette: { mid: { meanLuma: 40, dominant: [] } } }]
+    },
+    lyrics: null, chords: { segments: [{ startSec: 0, endSec: 8, chord: 'E major', confidence: 0.6 }], method: 'triads' },
+    stems: null, semantic: null,
+    mode: 'replica', profile: 'local', artifacts: { jobDir: '/tmp/job' }, timings: {}, skipped: [], ocrAvailable: false
+  })
+  assert.match(pack.video.pilotShots.note, /single continuous shot/u)
+  assert.match(pack.video.pilotShots.note, /image-to-video/u)
+  assert.match(pack.music.chords.note, /1 of 1 segments fit the measured key/u)
+})
+
+test('the rendered shot table keeps a multi-line model answer on one row', async () => {
+  const { buildPack, buildPlan } = await import('../lib/evidence/pack.js')
+  const { renderReplicationMarkdown } = await import('../lib/evidence/render.js')
+  const source = {
+    hasVideo: true, hasAudio: false, path: '/tmp/x.mp4', bytes: 1, sha256: 'aa', container: 'mp4',
+    durationSeconds: 60, bitRate: 1, video: { codec: 'h264', width: 1280, height: 720, fps: 30 },
+    audio: null, loudness: null, silenceWindows: []
+  }
+  const pack = buildPack({
+    source,
+    audio: null,
+    shots: {
+      detected: 1, truncated: false, cuts: 0,
+      boundaries: [{ detectedShot: 1, startSec: 0, endSec: 60, durationSec: 60 }],
+      pilots: { pilots: [{ detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, wholeShot: false }], candidatesInRange: 1, totalShots: 1, peakRegion: null },
+      shots: [{ index: 1, detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, frames: [{ role: 'mid', atSec: 4 }], files: { mid: '/tmp/f.png' }, palette: { mid: { meanLuma: 10, dominant: [] } } }]
+    },
+    lyrics: null, chords: null, stems: null,
+    semantic: {
+      provider: 'kie', model: 'gemini-3-pro', latencyMs: 10, mediaCount: 2, audio: null,
+      fields: {
+        genre: null, vibe: null, era: null, mood: null, instruments: [], vocal: null,
+        sections: [], chords: [], mix: null, cautions: [],
+        shots: [{ mediaItem: 2, detectedShot: 1, action: 'static mountain', camera: 'wide',
+          lighting: null, transition: 'none', onScreenText: 'Journey To The Stars\nSAVFK', confidence: 0.8 }]
+      }
+    },
+    mode: 'replica', profile: 'assisted', artifacts: { jobDir: '/tmp/job' }, timings: {},
+    skipped: [], ocrAvailable: false
+  })
+  const markdown = renderReplicationMarkdown({
+    pack, plan: buildPlan(pack), jobDir: '/tmp/job', sourceName: 'x.mp4', timings: {}, skipped: [],
+    artifacts: { referenceAudio: null, dspWav: null }
+  })
+  const row = markdown.split('\n').find((line) => line.startsWith('| 1 (1)'))
+  assert.ok(row !== undefined, 'the shot row must exist')
+  assert.match(row, /Journey To The Stars \/ SAVFK/u, 'the newline must be folded, not break the table')
+  assert.match(row, /Static wide shot|wide \*\*INFERRED\*\*/u)
+  assert.doesNotMatch(row, /\n/u)
 })

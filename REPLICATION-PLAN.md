@@ -1,6 +1,7 @@
 # Replication plan — from evidence pack to replica / transform
 
-**Date:** 2026-10-31 · **Status:** plan only, no code written · **Generation provider:** **Kie only**
+**Date:** 2026-10-31 · **Status:** phase 1 (evidence pack v2) **built and run**; phases 2–5 planned ·
+**Generation provider:** **Kie only**
 **Test source:** `RICK ROSS - HIGH DEFINITION (OFFICIAL VIDEO).mp4` (operator confirmed usage rights)
 
 ## 1. Why the current state cannot produce a replica yet
@@ -100,7 +101,8 @@ Model choice stays a **pilot decision**, not a commitment.
 ### Phase 0 — close the MP3 drop question without guessing
 
 **Finding:** `lib/client.js` already accepts `.mp3` by extension and any `audio/*` MIME type, and the MP3
-the operator dropped produced a real transcript. There is no demonstrated code defect to fix.
+the operator dropped produced a real transcript. No code defect was ever demonstrated, so nothing was changed
+blindly — that remains the position.
 
 **Do not change working code blindly.** If the failure is seen again, capture the exact status/error text
 and the bundle URL (`/plugins/dsh-media-reader/client.js`) before editing. Add a small client regression
@@ -127,6 +129,9 @@ recorded before any fix.
    1. separate the **generated** track (the cover is not in the catalogue) and measure that;
    2. a vetted local separator (Demucs) — still unmeasured on this 7.6 GB machine;
    3. a crude local mid/side split, labelled as such, for chord/lyric work only.
+
+   The gate also refused a **copyright-free** track, so treat this as a property of the provider rather
+   than of the material: do not spend another attempt on source stems through Kie.
    Basic Pitch remains optional and must be vetted/measured before adoption.
 4. **Chord and vocal detail.** Derive per-window chord candidates from the measured chroma series and
    compare them with the semantic hypotheses. On the vocal stem, add pitch/onset measurements only where
@@ -211,4 +216,15 @@ run before this.
 4. **Replica and anime-transform video pilots**, evaluated separately.
 5. Only then: full-length assembly.
 
-No code was written for this plan.
+## 6. What is done, as of this revision
+
+| Phase | State |
+|---|---|
+| 0 — MP3 drop question | closed: no defect demonstrated; client accepts `.mp3` and `audio/*` |
+| 1 — evidence pack v2 | **built and run** (`ba5857f`, tag `evidence-pack-v2`, 78 tests) |
+| 2 — Kie adapter | not started (this is the next build step) |
+| 3–5 — pilots and assembly | not started; blocked on phase 2 |
+
+Two results from the phase-1 runs changed the plan: Kie refuses stem separation for **catalogued** audio
+(verified, uncharged), and the semantic pass costs ~2.5 credits per run, which makes pilots affordable.
+Pilot clips are now chosen from the measured high-energy region rather than from the longest shots.

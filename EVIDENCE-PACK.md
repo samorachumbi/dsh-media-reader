@@ -87,6 +87,39 @@ leaving a reader to assume the model found nothing.
 Cost of that run: **2.56 credits**, wall time 8 min 40 s (local measurement 4 min, paid stages ~4 min 40 s).
 Credits are read before and after every call and written into `kie-jobs.jsonl`.
 
+#### Report defects found by reading the rendered document (2026-10-31, fixed)
+
+The operator read `REPLICATION.md` against `replication.json` and found three places where the document
+disagreed with its own data:
+
+1. **The shot table hardcoded `_UNVERIFIED_`** in the camera/action/transition column, so a pack whose JSON
+   held real descriptions still rendered "unverified". The report now prints each graded value with its own
+   tag, and a closing line says how many sampled shots carry an interpretation.
+2. **The OCR note lied in one case**: it said "no semantic pass read this frame" even when the pass had been
+   shown the frame and simply returned no text. Three situations are now distinguished — read-and-found-
+   nothing, not-among-the-sent-frames, and no-pass-ran.
+3. **A model answer containing a newline broke the table** (on-screen text came back as two lines). Table
+   cells are folded to one line.
+
+Also corrected from the same review: pilot clips were chosen as the **three longest shots**, which on a
+music video means the title card, the spoken intro and the end card. They are now chosen from the measured
+**highest-energy region**, spread across it, and a single-shot video is told to use its keyframe with
+image-to-video instead of a clip.
+
+#### Measured on a second source (copyright-free, 776.5 s)
+
+`Copyright Free Epic Music - Journey To The Stars (Savfk)`, 1280×720 @ 30 fps, one paid run, **2.76 credits**:
+
+| Result | Value | Tag |
+|---|---|---|
+| Key / tempo | E major (correlation 0.638) / 100.3 BPM | MEASURED / INFERRED |
+| Regions | 17 novelty regions | MEASURED |
+| Chords | 22 segments; **14 of 22 fit E major's diatonic set** (0.636), with the major/minor-third caveat stated | INFERRED |
+| Semantic | "cinematic orchestral", epic/majestic, Strings 0.95 · Brass 0.90 · Orchestral Percussion 0.95 · Piano 0.90 · Choir 0.90; wordless SATB choir, legato, heavy hall reverb | INFERRED |
+| Video | **one continuous static shot** — piloted as a keyframe for image-to-video, not as a clip | MEASURED |
+| On-screen text | "Journey To The Stars / SAVFK" read from the keyframe | INFERRED |
+| Lyrics | no speech detected (instrumental) | UNVERIFIED |
+
 #### The stem blocker, measured
 
 Kie's Suno stem separation **refuses commercially released audio**:
@@ -96,9 +129,20 @@ GENERATE_AUDIO_FAILED: This audio matches an existing recording in our catalog.
 ```
 
 That was verified for **both** `split_stem` and `separate_vocal`, and the failed task was **not charged**.
-So for a released track the pack reports stems as UNVERIFIED *with that exact reason*, and the plan's stem
-step has to come from either a local separator (Demucs, still unmeasured here), a crude local mid/side
-split, or from audio that is not in the provider's catalogue — i.e. the generated cover itself.
+It also fires on a *copyright-free* track (the Savfk piece above was refused too), so the trigger is
+"recognisable in their catalogue", not "copyrighted". **Kie stem separation is therefore not a usable route
+for arbitrary music uploads**, and the pack reports stems as UNVERIFIED with the provider's own message.
+
+Remaining options, in order of preference: separate the **generated** cover (not in their catalogue), a
+vetted local separator (Demucs is still unmeasured on this machine), or a crude local mid/side split that
+would be labelled as such.
+
+#### One more provider limit, measured
+
+The semantic pass uploads audio and asks the model to fetch it. An **18.6 MB** upload produced
+`400 Failed to get the file information` — which reads like a credential or format failure and is really a
+size problem. The pass now encodes a **64 kbps mono** copy (≤8 MB; a 776 s track lands at ~6 MB) and states
+in the pack which audio the model actually heard.
 
 ## The three tags
 
