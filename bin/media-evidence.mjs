@@ -14,7 +14,10 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import { resolveKieKey, maskKey } from '../lib/kie/client.js'
+import { readFile, writeFile } from 'node:fs/promises'
+import { basename, dirname } from 'node:path'
 import { buildEvidencePack, jobNameFor } from '../lib/evidence/index.js'
+import { renderReplicationMarkdown } from '../lib/evidence/render.js'
 import { createNodeRunner } from '../lib/evidence/runner.js'
 
 const USAGE = `usage: media-evidence <file> [options]
@@ -37,6 +40,8 @@ const USAGE = `usage: media-evidence <file> [options]
   --no-lyrics            skip transcription
   --no-reference-audio   do not keep a lossless audio copy
   --json                 print the machine-readable summary only
+  --rerender <pack.json> re-render REPLICATION.md from an existing replication.json (no network, no
+                         re-measurement; presentation only — grading is not recomputed)
   --help                 show this text
 `
 
@@ -70,10 +75,16 @@ function parseArgs(argv) {
       case '--no-lyrics': options.lyrics = false; break
       case '--no-reference-audio': options.referenceAudio = false; break
       case '--json': options.json = true; break
+      case '--rerender': options.rerender = next(); break
       default:
         if (arg.startsWith('--')) throw new Error(`unknown option ${arg}`)
         rest.push(arg)
     }
+  }
+  if (options.help === true) return options
+  if (options.rerender !== undefined) {
+    if (rest.length > 0) throw new Error('--rerender takes its path itself; do not also pass a media file')
+    return options
   }
   if (rest.length !== 1) throw new Error('exactly one media file is required')
   options.filePath = rest[0]
@@ -98,6 +109,7 @@ async function main() {
     process.stdout.write(USAGE)
     return 0
   }
+  if (options.rerender !== undefined) return rerender(resolve(options.rerender))
   const filePath = resolve(options.filePath)
   if (!existsSync(filePath)) {
     line(`media-evidence: no such file: ${filePath}`)
@@ -209,7 +221,12 @@ async function main() {
   line(`sections     ${summary.sections}`)
   line(`shots        ${summary.shots === null ? 'n/a' : `${summary.shots.sampled}/${summary.shots.detected} sampled`}`)
   line(`inventory    ${summary.shotInventory === null ? 'n/a' : `${summary.shotInventory.detected} boundaries, median ${summary.shotInventory.medianShotSec}s`}`)
-  line(`pilots       ${summary.pilotShots === null ? 'none' : summary.pilotShots.map((pilot) => `#${pilot.detectedShot} ${pilot.startSec}-${pilot.endSec}s`).join(', ')}`)
+  const pilotsLine = summary.pilotShots === null
+    ? 'none'
+    : summary.pilotShots.mode === 'keyframe'
+      ? `keyframe @${summary.pilotShots.atSec}s of detected shot ${summary.pilotShots.detectedShot} (single continuous shot)`
+      : summary.pilotShots.map((pilot) => `#${pilot.detectedShot} ${pilot.startSec}-${pilot.endSec}s`).join(', ')
+  line(`pilots       ${pilotsLine}`)
   line(`chords       ${summary.chords === null ? 'none' : `${summary.chords.segments} segments [${summary.chords.evidence}]`}`)
   line(`stems        ${summary.stems === null ? 'not separated' : `${summary.stems.count} stems (${summary.stems.labels.join(', ')})`}`)
   line(`semantic     ${summary.semantic === null ? 'not run' : `${summary.semantic.evidence}, ${summary.semantic.instruments} instrument hypotheses`}`)
@@ -220,6 +237,42 @@ async function main() {
   line(`written      ${result.paths.replicationMd}`)
   line(`             ${result.paths.replicationJson}`)
   line(`             ${result.paths.planJson}`)
+  return 0
+}
+
+/**
+ * Re-render REPLICATION.md from a pack that already exists.
+ * Presentation only: the graded fields are read back from replication.json, so a
+ * change to how a value is DISPLAYED applies to old artifacts, while a change to
+ * how a value is GRADED does not (that needs a fresh run).
+ */
+async function rerender(packPath) {
+  if (!existsSync(packPath)) {
+    line(`media-evidence: no such pack: ${packPath}`)
+    return 2
+  }
+  const jobDir = dirname(packPath)
+  const pack = JSON.parse(await readFile(packPath, 'utf8'))
+  let plan
+  try {
+    plan = JSON.parse(await readFile(resolve(jobDir, 'plan.json'), 'utf8'))
+  } catch {
+    line('media-evidence: plan.json missing beside the pack; using an empty plan')
+    plan = { preserve: [], preserveWithCaution: [], change: [], changeNote: '', evaluation: [] }
+  }
+  const markdown = renderReplicationMarkdown({
+    pack,
+    plan,
+    jobDir,
+    sourceName: basename(pack?.source?.path ?? 'media'),
+    timings: pack.timings ?? {},
+    skipped: pack.skipped ?? [],
+    artifacts: pack.artifacts ?? {}
+  })
+  const target = resolve(jobDir, 'REPLICATION.md')
+  await writeFile(target, `${markdown}\n`, 'utf8')
+  line(`re-rendered ${target}`)
+  line('presentation only — grading was not recomputed')
   return 0
 }
 

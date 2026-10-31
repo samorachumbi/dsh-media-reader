@@ -419,3 +419,52 @@ test('the rendered shot table keeps a multi-line model answer on one row', async
   assert.match(row, /Static wide shot|wide \*\*INFERRED\*\*/u)
   assert.doesNotMatch(row, /\n/u)
 })
+
+test('a single-shot video reports a keyframe, not a pilot clip', async () => {
+  const { buildPack, gradePilotShots } = await import('../lib/evidence/pack.js')
+  const shots = {
+    detected: 1, truncated: false, cuts: 0,
+    boundaries: [{ detectedShot: 1, startSec: 0, endSec: 700, durationSec: 700 }],
+    pilots: { pilots: [{ detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, wholeShot: false }], singleShot: true, candidatesInRange: 1, totalShots: 1, peakRegion: null },
+    shots: [{ index: 1, detectedShot: 1, startSec: 0, endSec: 700, durationSec: 700, frames: [{ role: 'mid', atSec: 350 }], files: { mid: '/tmp/job/frames/shot-001-mid.png' }, palette: { mid: { meanLuma: 40, dominant: [] } } }]
+  }
+  const graded = gradePilotShots(shots)
+  assert.equal(graded.value.mode, 'keyframe')
+  assert.equal(graded.value.atSec, 350)
+  assert.equal(graded.value.detectedShot, 1)
+  assert.match(graded.value.file, /shot-001-mid\.png$/u)
+  assert.match(graded.note, /image-to-video/u)
+  assert.equal(graded.evidence, EVIDENCE.MEASURED)
+
+  // A multi-shot video still gets real clip windows.
+  const multi = gradePilotShots({ ...shots, boundaries: [{ detectedShot: 1, startSec: 0, endSec: 10, durationSec: 10 }, { detectedShot: 2, startSec: 10, endSec: 40, durationSec: 30 }], pilots: { ...shots.pilots, singleShot: false, totalShots: 2, candidatesInRange: 2 } })
+  assert.ok(Array.isArray(multi.value))
+  assert.equal(multi.value[0].mode, undefined)
+})
+
+test('the single-shot report prints a keyframe line and no pilot-window table', async () => {
+  const { buildPack, buildPlan } = await import('../lib/evidence/pack.js')
+  const { renderReplicationMarkdown } = await import('../lib/evidence/render.js')
+  const pack = buildPack({
+    source: {
+      hasVideo: true, hasAudio: false, path: '/tmp/x.mp4', bytes: 1, sha256: 'aa', container: 'mp4',
+      durationSeconds: 700, bitRate: 1, video: { codec: 'h264', width: 1280, height: 720, fps: 30 },
+      audio: null, loudness: null, silenceWindows: []
+    },
+    audio: null,
+    shots: {
+      detected: 1, truncated: false, cuts: 0,
+      boundaries: [{ detectedShot: 1, startSec: 0, endSec: 700, durationSec: 700 }],
+      pilots: { pilots: [{ detectedShot: 1, startSec: 0, endSec: 8, durationSec: 8, wholeShot: false }], singleShot: true, candidatesInRange: 1, totalShots: 1, peakRegion: null },
+      shots: [{ index: 1, detectedShot: 1, startSec: 0, endSec: 700, durationSec: 700, frames: [{ role: 'mid', atSec: 350 }], files: { mid: '/tmp/job/frames/shot-001-mid.png' }, palette: { mid: { meanLuma: 40, dominant: [] } } }]
+    },
+    lyrics: null, chords: null, stems: null, semantic: null,
+    mode: 'replica', profile: 'local', artifacts: { jobDir: '/tmp/job' }, timings: {}, skipped: [], ocrAvailable: false
+  })
+  const markdown = renderReplicationMarkdown({
+    pack, plan: buildPlan(pack), jobDir: '/tmp/job', sourceName: 'x.mp4', timings: {}, skipped: [],
+    artifacts: { referenceAudio: null, dspWav: null }
+  })
+  assert.match(markdown, /Pilot reference: \*\*MEASURED\*\* keyframe at 350s of detected shot 1/u)
+  assert.doesNotMatch(markdown, /\| Detected shot \| Clip start \|/u, 'a single shot must not print a clip table')
+})

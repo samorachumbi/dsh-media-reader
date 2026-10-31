@@ -120,6 +120,19 @@ image-to-video instead of a clip.
 | On-screen text | "Journey To The Stars / SAVFK" read from the keyframe | INFERRED |
 | Lyrics | no speech detected (instrumental) | UNVERIFIED |
 
+#### Two presentation fixes from the second review round (2026-10-31)
+
+1. **Single-shot videos no longer print a pilot window.** The note said "use the keyframe" while the table
+   still offered a 0–8 s clip, i.e. advice and data disagreed. A single continuous shot now produces
+   `mode: "keyframe"` with the frame timestamp and path, and the report prints one line instead of a table.
+2. **Old packs can be re-rendered without re-measuring.** `--rerender <pack.json>` rebuilds
+   `REPLICATION.md` from the pack's own JSON: no network, no credits. This is what lets a rendering
+   improvement reach artifacts produced earlier — it re-presents, it does not re-grade, and it says so.
+
+```bash
+node bin/media-evidence.mjs --rerender replication/<job>/replication.json
+```
+
 #### The stem blocker, measured
 
 Kie's Suno stem separation **refuses commercially released audio**:
