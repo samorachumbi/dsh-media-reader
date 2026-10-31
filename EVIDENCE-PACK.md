@@ -44,6 +44,62 @@ So this stage measures what can be measured locally, and **says so** where it ca
 | What is on screen? | shot boundaries, start/mid/end frames, luma and palette; **not** camera, action, transition or text |
 | What are the lyrics? | the transcript, plus Whisper's own confidence deciding speech-like vs sung-or-uncertain |
 
+## What v2 adds (2026-10-31)
+
+v1 measured the mix and the shots. v2 adds the four things a generator actually needs, and keeps the same
+tagging rule:
+
+| Stage | What it produces | Evidence tag |
+|---|---|---|
+| **Full shot inventory** | every detected boundary in `shots.json`, plus pilot clips chosen to satisfy the generation endpoints (3–8 s continuous) | MEASURED |
+| **Chord candidates** | major/minor triads from the measured chroma, majority-filtered, with a confidence margin | **INFERRED** |
+| **Stems** | Kie Suno `split_stem` separation, downloaded, then **each stem decoded and measured locally** | MEASURED (files + their own numbers) |
+| **Semantic pass** | Kie Gemini 3 Pro conditioned on the measured facts: genre, vibe, instrument hypotheses, vocal delivery, structural roles, camera/action/transition/on-screen text for sampled shots | **INFERRED** |
+
+Paid stages run **only** in the `assisted` or `cloud` profile:
+
+```bash
+node bin/media-evidence.mjs "source.mp4" --profile assisted --budget-credits 100
+```
+
+Every paid call is appended to `replication/<job>/kie-jobs.jsonl` with task id, model, media sent,
+latency, credits before/after and the local files. The credential is `KIE_AI_API_KEY` from
+`~/projects/Website_Builder/.env`; it is never printed (only a shape mask) and never written to the ledger.
+
+New skipped-stage honesty: `local` now says **why** stems and the semantic pass did not run, instead of
+leaving a reader to assume the model found nothing.
+
+### Measured on the real source (assisted profile)
+
+`RICK ROSS - HIGH DEFINITION (OFFICIAL VIDEO).mp4`, 368.078 s, one paid run:
+
+| Result | Value | Tag |
+|---|---|---|
+| Shot inventory | **196 boundaries**, median 0.959 s, longest 85.5 s — 9 are long enough for a 3–8 s generation clip | MEASURED |
+| Pilot clips | `#1 0–8 s`, `#6 37.913–45.913 s`, `#196 282.574–290.574 s` | MEASURED |
+| Chords | 9 segments, all confidence ≥ 0.46, A minor dominant (agrees with the measured key) | INFERRED |
+| Instruments | Synthesizer 0.90, Drum Machine 0.95, 808 Bass 0.95 | INFERRED |
+| Vocal | "steady, deliberate, heavily punctuated", low register, gruff delivery | INFERRED |
+| Structural roles | intro 0–48 s · verse 48–88 s · hook 88–252 s · bridge 252–280 s · outro 280–368 s | INFERRED |
+| Per-shot descriptions | 6 sampled shots described (action, camera, on-screen text) — correctly mapped to **detected** shots 1, 8, 14, 21, 28, 35 | INFERRED |
+| Stems | **refused by the provider** — see below | UNVERIFIED |
+
+Cost of that run: **2.56 credits**, wall time 8 min 40 s (local measurement 4 min, paid stages ~4 min 40 s).
+Credits are read before and after every call and written into `kie-jobs.jsonl`.
+
+#### The stem blocker, measured
+
+Kie's Suno stem separation **refuses commercially released audio**:
+
+```
+GENERATE_AUDIO_FAILED: This audio matches an existing recording in our catalog.
+```
+
+That was verified for **both** `split_stem` and `separate_vocal`, and the failed task was **not charged**.
+So for a released track the pack reports stems as UNVERIFIED *with that exact reason*, and the plan's stem
+step has to come from either a local separator (Demucs, still unmeasured here), a crude local mid/side
+split, or from audio that is not in the provider's catalogue — i.e. the generated cover itself.
+
 ## The three tags
 
 - **MEASURED** — a number computed from the samples or the pixels.
@@ -61,7 +117,10 @@ template string.
 | Source facts | `ffprobe`, `sha256sum`, one ffmpeg pass running `ebur128` + `silencedetect` | none |
 | Audio measurement | `python/dsp_worker.py` (numpy only) | none |
 | Shot sheet | `ffmpeg scdet` + frame extraction + 16×16 pixel statistics | none |
+| Chord candidates | `lib/evidence/chords.js` (triad templates over the measured chroma) | none |
 | Lyrics | local `faster-whisper` via `python/stt_worker.py` | model download only if uncached |
+| Stems | Kie `ai-music-api/separate-vocals`, `split_stem` (≤20 MB upload) | **paid** |
+| Semantic pass | Kie `gemini-3-pro` chat completions with audio + keyframes | **paid** |
 | Pack + render | `lib/evidence/*` | none |
 | Generation | **not in this stage** | — |
 

@@ -111,7 +111,7 @@ the wait is not itself a failure.
 **Acceptance:** MP3 and MP4 both pass the synthetic drop test; if a live failure exists, its exact error is
 recorded before any fix.
 
-### Phase 1 — evidence pack v2 (complete the evidence needed for generation)
+### Phase 1 — evidence pack v2 (complete the evidence needed for generation) — **BUILT 2026-10-31**
 
 1. **Full shot inventory.** Write every detected boundary to `shots.json` (index, start, end, duration, cut
    score), not only the sampled shots. Keep frame extraction budgeted, but allow `--all-shot-frames` for a
@@ -121,9 +121,13 @@ recorded before any fix.
    - audio: genre/vibe/instrument hypotheses, vocal delivery, section roles, chord hypotheses;
    - video/keyframes: action, camera, lighting design, transition, on-screen text.
    Store model, latency, prompt and raw response. Tag everything **INFERRED**.
-3. **Stems.** Run Suno `split_stem` on the MP3, download all returned stems into `stems/`, then re-run DSP
-   per stem and Whisper on the vocal stem. Basic Pitch remains optional and must be vetted/measured before
-   adoption.
+3. **Stems.** ~~Run Suno `split_stem` on the MP3~~ — **blocked for released audio**: Kie refuses it with
+   "This audio matches an existing recording in our catalog" (verified for both separation types; the failed
+   task is not charged). Options, in order of preference:
+   1. separate the **generated** track (the cover is not in the catalogue) and measure that;
+   2. a vetted local separator (Demucs) — still unmeasured on this 7.6 GB machine;
+   3. a crude local mid/side split, labelled as such, for chord/lyric work only.
+   Basic Pitch remains optional and must be vetted/measured before adoption.
 4. **Chord and vocal detail.** Derive per-window chord candidates from the measured chroma series and
    compare them with the semantic hypotheses. On the vocal stem, add pitch/onset measurements only where
    the implementation can be checked against synthetic ground truth. Otherwise leave UNVERIFIED.
