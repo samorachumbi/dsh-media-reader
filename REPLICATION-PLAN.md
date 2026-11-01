@@ -197,6 +197,20 @@ run before this.
 - Write `REVIEW.md` with measured drift, remaining differences, cost, and the exact fallback decisions.
 - Re-run the evidence pack on the assembled master and compare against the source.
 
+## 3b. Voice matching — what it would take, and why it is not built
+
+The operator asked for a **voice match** as part of a replica. Recording the requirement with its blockers,
+so a later session does not treat it as a small add-on:
+
+- it needs an **isolated vocal stem** (blocked: no separator has produced one for these sources — see the
+  stem section above);
+- it needs a **voice-cloning system** that is not part of this pack and has not been vetted;
+- it needs the **performer's permission**, which is a legal question for the operator, not a technical one;
+- the honest deliverable this pack supports is **an original performance in a similar style**, described by
+  the semantic pass (delivery, register, flow, ad-libs) — explicitly *not* an identical voice.
+
+No voiceprint is created, stored or transmitted anywhere in this build.
+
 ## 4. Acceptance gates for the whole effort
 
 1. No exact-reproduction claim anywhere; the result is a reconstruction or transformation.
