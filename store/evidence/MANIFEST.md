@@ -39,3 +39,22 @@ Measured from the live DOM at each width, not from the stylesheet:
 - Nothing about a real phone: these are emulated viewports, not a device.
 - Nothing about the checkout: it has not been enabled, so the paid path is untested by construction.
 - Nothing about contrast ratios: measured colours were not compared against WCAG thresholds.
+
+## Buy-area behaviour, verified both ways
+
+The `#pay-area` is the one part of this page a buyer must be able to act on, so it was checked in both
+states and with scripting disabled:
+
+| state | status note | CTA links | blank or `#` hrefs |
+|---|---|---|---|
+| JavaScript **off** (static markup) | shown | 2, both visible | 0 |
+| JavaScript **on**, no rail configured | shown | 2, both visible | 0 |
+| JavaScript **on**, one rail configured (local test URL) | hidden | 1 — `Pay by card, M-Pesa or PayPal · $79`, 56 px tall | 0 |
+
+The third row was exercised with a **local test URL** (`checkout.example.test`), not a real processor, to
+prove the switch-on branch replaces the fallback instead of stacking on it. It does **not** prove a real
+checkout works: no rail has taken a payment yet.
+
+Before the fix, the whole buy area was script-rendered, so with JavaScript off the only calls to action on
+a sales page disappeared. The markup now carries the fallback and the script clears the area before
+repainting.

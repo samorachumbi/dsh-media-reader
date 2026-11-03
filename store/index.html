@@ -179,7 +179,13 @@
       <p class="price-unit">Per team, one time. 12 months of updates included.</p>
 
       <div id="pay-area">
-        <!-- Rendered by script; never a button that cannot take money. -->
+        <!-- Static fallback for a reader with JavaScript off. The script below repaints this
+             area when a payment rail is live; it never leaves a dead button behind. -->
+        <p class="pay-status"><strong>Checkout is not open yet.</strong> The payment rail is being
+          verified with a live test transaction, because a checkout that has never taken a payment is a
+          promise, not a feature. The plugin itself is available now for personal use.</p>
+        <a class="btn secondary" href="https://github.com/samorachumbi/dsh-media-reader">Get it free for personal use</a>
+        <a class="btn" href="https://github.com/samorachumbi/dsh-media-reader/issues/new/choose?title=Commercial%20licence%20enquiry">Ask about a commercial licence</a>
       </div>
 
       <p class="method-note" id="free-line">
@@ -338,6 +344,7 @@
   document.getElementById('free-link').href = cfg.freeDownload;
 
   var area = document.getElementById('pay-area');
+  area.innerHTML = '';   // the markup carries a no-JS fallback; never stack both
   var live = cfg.methods.filter(function (m) { return m.url && m.verified; });
 
   if (live.length === 0) {
@@ -362,9 +369,6 @@
     ask.textContent = 'Ask about a commercial licence';
     area.appendChild(ask);
 
-    var unit = document.querySelector('.price-unit');
-    if (unit) unit.insertAdjacentHTML('afterend',
-      '<p class="method-note" style="margin-top:0">Buying opens as soon as the first live payment clears.</p>');
     return;
   }
 
