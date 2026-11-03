@@ -87,3 +87,19 @@ one would be the single fastest way to lose the first real buyer.
 4. Decide the refund line — the FAQ currently says "I will either fix it or refund you", which is a
    promise only you can make.
 5. Deploy, then re-check the page at 320px on a real phone.
+
+## Contact and portfolio
+
+Who is selling, and how to reach them:
+
+- **Itikia Digital Solutions**, Nairobi, Kenya — <hello@itikia.co.ke> (SMTP `RCPT TO` returns
+  `250 2.1.0 Ok`, and a `550` for an unknown mailbox, so the route is proven to accept mail).
+- Open an issue on the plugin repository: <https://github.com/samorachumbi/dsh-media-reader/issues>
+
+The rest of the workbench this store sits on:
+
+- [dsh-plugin-install-guide](https://github.com/samorachumbi/dsh-plugin-install-guide) — why
+  `dsh plugin add` can leave a profile unable to run any tool call, and the install method that cannot
+- [dsh-cost-bubble](https://github.com/samorachumbi/dsh-cost-bubble) — live cost of the current chat
+- [dsh-app-launcher](https://github.com/samorachumbi/dsh-app-launcher) — plugin pages in their own OS window
+- [dsh-daily-progress-tab](https://github.com/samorachumbi/dsh-daily-progress-tab) — the planner tab
