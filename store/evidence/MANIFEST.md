@@ -129,3 +129,26 @@ hello.png]"`. All 8 checks pass on the fixed page.
   with an honest message, which is *not* the same as the plugin accepting them.
 - The client-side measurement is a convenience, not the product: it does not read, describe, transcribe or
   detect anything.
+
+## Self-serve setup wizard
+
+19 assertions, all passing, driven by real mouse clicks and asserted on the generated text:
+
+| scenario | what the page produced |
+|---|---|
+| DSH + vision + video | `media_video` task, sha256 check, `./smoke.sh` → 18/18, `dsh plugin add` forbidden, model advice names a vision route |
+| DSH + text-only + audio | `media_audio`, "no vision model needed" |
+| DSH + text-only + evidence pack | `media_evidence`, "a text-only route is fine", no generation call |
+| DSH + Node missing | blocked with the prerequisite; copy button and model card hidden |
+| non-DSH harness | "installs into DeepSeek Harness only", offers the architecture instead |
+| a supplied file path | the first task names that exact file |
+
+A visual read through the plugin's own `media_image` tool confirmed the section heading, all eight field
+labels and the Generate button, and caught one truncation — "Analyse video (shots + trans…" in the goal
+dropdown — so the option labels were shortened to fit at every width.
+
+**Harness defects found while testing this, and fixed:** the click landed outside the viewport because the
+wizard sits below the fold (the harness now scrolls first); the width sweep crashed on `pay-area` being null
+because it was navigating to port 8099, a server that had been stopped; and a "wizard" screenshot was
+actually the hero because the clip used viewport-relative coordinates after a scroll (now absolute page
+coordinates plus `window.scrollY`).

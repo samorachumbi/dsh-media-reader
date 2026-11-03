@@ -136,3 +136,39 @@ visitors abandon because the demo is not *their* file.
 
 **Nothing about A implies B.** The page never suggests the visitor's file is being analysed; the panel
 states what was measured, by what, and what was not.
+
+## Self-serve setup: a prompt for the visitor's own agent
+
+The section **"Install it with your own agent — no call, no booking"** replaces the live-demo option. The
+visitor answers their harness, runtime, model route and goal; the page generates a prompt for **their** LLM,
+on their device, with nothing uploaded.
+
+Why this and not a booking: a booked demo needs a time zone, a language and a stranger's file on your disk.
+A generated prompt needs none of those — it is an artifact written for a model, so the language barrier
+disappears by construction, and the visitor's own machine does the work and bears the cost.
+
+The prompt is not a tutorial to read. It tells the agent to:
+
+1. download the bundle and **verify its sha256** before trusting it;
+2. run `./install.sh --dry-run`, then `./install.sh`, then `./install-skills.sh`;
+3. **never** run `dsh plugin add` (the split-Symbol crash), and read the bundle's
+   `skills/dsh-plugin-install-safety/SKILL.md` first;
+4. restart, or boot a scratch instance per `skills/dsh-test-boot/SKILL.md`;
+5. **verify** with `DSH_TEST_URL=… ./smoke.sh` and stop if it is not `18/18 checks passed`;
+6. run a first task chosen from the visitor's goal (`media_image` / `media_audio` / `media_video` /
+   `media_evidence`), personalised with the file path they supplied.
+
+Model advice is computed from **route × goal**, not from preference: audio and the evidence pack need no
+vision model at all; images and video want a vision-capable route, or `visionFallback` pointed at one on a
+text-only route. Model names are labelled dated observations and linked to the provider's release note.
+
+**Two honest branches, so the page never hands out a prompt that cannot work:** a non-DeepSeek harness gets
+the architecture and an explicit "this bundle does not install here", and `Node < 20` gets the prerequisite
+instead of an install prompt. Both hide the copy button.
+
+Verified with real mouse clicks and by reading the generated text: 19 assertions across six scenarios
+(vision+video, text-only+audio, text-only+evidence, Node missing, a non-DSH harness, and a supplied file
+path personalising the first task).
+
+`llms.txt` sits beside this page for the same reason: it is the machine-readable index an agent can read
+before deciding anything.

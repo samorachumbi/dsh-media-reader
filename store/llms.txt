@@ -1,0 +1,28 @@
+# dsh-media-reader
+
+> A plugin that lets a DeepSeek Harness agent read local images, audio and video — including on a model
+> route that cannot accept media at all. Commercial licence, $79 / KSh 10,000 per team, one time. Free for
+> personal, non-commercial use.
+
+## What to hand your agent
+
+- The storefront's "Install it with your own agent" section generates a prompt tailored to the visitor's
+  harness, runtime, model route and goal. It is generated on the visitor's device; nothing is uploaded.
+- The bundle ships four skills written to be read by an agent: dsh-plugin-install-safety,
+  dsh-skill-install, dsh-test-boot, product-motion-studio.
+
+## Facts an agent can rely on
+
+- Install is copy-restore, never `dsh plugin add` and never a package manager.
+- Verification is a command, not a claim: `DSH_TEST_URL=<scratch-instance> ./smoke.sh` → `18/18 checks passed`.
+- The bundle's sha256 is published beside it; `MANIFEST.json` lists every file with its own hash.
+- Requirements: Node >=20, ffmpeg, python3 (faster-whisper for local transcription).
+- Known defect: audio and video drops insert absolute artifact paths into the composer draft; image drops
+  carry only the file name.
+
+## Links
+
+- Source and bundle: https://github.com/samorachumbi/dsh-media-reader
+- Acceptance record: https://github.com/samorachumbi/dsh-media-reader/blob/main/ACCEPTANCE.md
+- Licence terms: https://github.com/samorachumbi/dsh-media-reader/blob/main/LICENSE
+- Support: https://github.com/samorachumbi/dsh-media-reader/issues

@@ -127,6 +127,28 @@
   .limits h3 { color: #c2410c; }
   @media (prefers-color-scheme: dark) { .limits h3 { color: #ff9f6e; } .limits { border-left-color: #ff9f6e; } }
 
+  /* self-serve setup wizard */
+  .agent-form { margin-top: 20px; }
+  .agent-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-bottom: 16px; }
+  .agent-field { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; }
+  .agent-field .opt { font-weight: 400; color: var(--ink-soft); }
+  .agent-field select, .agent-field input {
+    font: inherit; font-size: .95rem; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 9px; padding: 12px 10px; min-height: 48px; width: 100%;
+  }
+  .agent-field select:focus-visible, .agent-field input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #agent-generate { max-width: 340px; }
+  .agent-out { margin-top: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .agent-model { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; margin: 0 0 14px; font-size: .9rem; color: var(--ink-soft); }
+  .agent-prompt {
+    margin: 0 0 14px; padding: 14px; max-height: 460px; overflow: auto;
+    background: color-mix(in srgb, var(--ink) 5%, var(--card)); border: 1px solid var(--line); border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; line-height: 1.6;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .agent-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .agent-actions .btn { width: auto; min-width: 170px; }
+  #agent-status { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; }
   footer.site { padding-block: 32px 56px; font-size: .875rem; color: var(--ink-soft); }
   footer.site p { margin: 0 0 6px; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875em; background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 1px 5px; border-radius: 5px;
@@ -297,6 +319,82 @@ Details: The background is a uniform dark blue with no visible objects or patter
         </div>
       </figure>
 
+  </section>
+
+  <section id="agent" class="wrap" aria-labelledby="agent-h">
+    <h2 id="agent-h">Install it with your own agent — no call, no booking</h2>
+    <p class="lede">Answer a few questions and get a prompt that drives <strong>your</strong> LLM through the
+      install, the verification and the first real task. Nothing is sent anywhere: the prompt is generated on
+      your device, and it is written for a model, not for you — so a language barrier cannot get in the way.</p>
+
+    <form id="agent-form" class="agent-form" novalidate>
+      <div class="agent-grid">
+        <label class="agent-field">Which harness do you run?
+          <select name="harness">
+            <option value="dsh">DeepSeek Harness</option>
+            <option value="claude-code">Claude Code</option>
+            <option value="cursor">Cursor</option>
+            <option value="other">Something else / not sure</option>
+          </select>
+        </label>
+        <label class="agent-field">Harness version <span class="opt">(optional)</span>
+          <input name="version" type="text" placeholder="e.g. 0.1.1-rc.2" autocomplete="off">
+        </label>
+        <label class="agent-field">Node 20 or newer?
+          <select name="node">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="unsure" selected>Not sure</option>
+          </select>
+        </label>
+        <label class="agent-field">ffmpeg installed?
+          <select name="ffmpeg">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="unsure" selected>Not sure</option>
+          </select>
+        </label>
+        <label class="agent-field">python3 with faster-whisper?
+          <select name="python">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="unsure" selected>Not sure</option>
+          </select>
+        </label>
+        <label class="agent-field">Is your model route vision-capable?
+          <select name="route">
+            <option value="vision">Yes — it accepts images</option>
+            <option value="text-only">No — text only</option>
+            <option value="unsure" selected>Not sure</option>
+          </select>
+        </label>
+        <label class="agent-field">What are you trying to do?
+          <select name="goal">
+            <option value="image">Read images</option>
+            <option value="audio">Transcribe audio</option>
+            <option value="video">Analyse video</option>
+            <option value="evidence">Evidence pack</option>
+            <option value="mixed">All of it</option>
+          </select>
+        </label>
+        <label class="agent-field">A file to start with <span class="opt">(optional)</span>
+          <input name="file" type="text" placeholder="/path/to/your-file.png" autocomplete="off">
+        </label>
+      </div>
+      <button class="btn" type="submit" id="agent-generate">Generate my prompt</button>
+    </form>
+
+    <div id="agent-out" class="agent-out" hidden>
+      <h3 id="agent-out-title"></h3>
+      <div id="agent-model" class="agent-model" hidden></div>
+      <pre id="agent-prompt" class="agent-prompt"></pre>
+      <div class="agent-actions">
+        <button class="btn" type="button" id="agent-copy">Copy the prompt</button>
+        <button class="btn secondary" type="button" id="agent-download">Download as .md</button>
+      </div>
+      <p class="method-note" id="agent-out-note"></p>
+    </div>
+    <p id="agent-status" class="demo-status" role="status" aria-live="polite"></p>
   </section>
 
   <section id="what" class="wrap" aria-labelledby="what-h">
@@ -762,6 +860,233 @@ Details: The background is a uniform dark blue with no visible objects or patter
     b.addEventListener('click', function () {
       if (headRight) headRight.textContent = defaultHeadRight;
     });
+  });
+})();
+</script>
+<script>
+// Self-serve setup: turn the visitor's three answers into a prompt for THEIR agent.
+//
+// The point is to move the work, not to hide it. A customer who books nothing still gets an install that
+// is verified on their own machine, because the prompt ends by running the bundle's own smoke test and
+// pasting back any failure. Everything is computed on the device; nothing is sent anywhere.
+(function () {
+  var form = document.getElementById('agent-form');
+  if (!form) return;
+
+  var V = 'dsh-media-reader-0.1.0';
+  var REPO = 'https://github.com/samorachumbi/dsh-media-reader';
+  var RAW = 'https://raw.githubusercontent.com/samorachumbi/dsh-media-reader/main/dist/' + V + '.tar.gz';
+  var HASH = '32440c11751feb27456a4d6ff24c0d1372b83461d301efb09b269d52762f6889';
+
+  function val(name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    return el ? el.value : '';
+  }
+
+  // The model advice depends on the ROUTE and the GOAL, not on taste. Names are dated observations,
+  // so the prompt says to confirm them against the provider's own catalogue.
+  function modelAdvice(route, goal) {
+    var install = 'For the install itself, your ordinary code model is enough — the steps are commands, '
+      + 'not reasoning. Any model you already drive the harness with will do.';
+    if (goal === 'audio') {
+      return install + '\n\nFor the analysis: **no vision model needed.** Transcription is local '
+        + '(faster-whisper on your CPU), so a text-only route works end to end.';
+    }
+    if (goal === 'evidence') {
+      return install + '\n\nFor the analysis: a **text-only route is fine.** `media_evidence` is produced '
+        + 'locally (ffprobe, faster-whisper, numpy/scipy DSP) and makes no generation call.';
+    }
+    if (route === 'vision') {
+      return install + '\n\nFor the analysis: use a **vision-capable route**, e.g. '
+        + '`deepseek-v4-flash-vision-exp`, so the agent receives the real image/frames instead of a '
+        + 'description. If you stay on a text-only route, set `visionFallback` to a vision-capable provider '
+        + 'and the plugin describes images through that instead.';
+    }
+    if (route === 'text-only') {
+      return install + '\n\nFor the analysis: keep your text-only model for the agent, and set the '
+        + 'plugin\'s `visionFallback` to a vision-capable provider (e.g. `deepseek-v4-flash-vision-exp`). '
+        + 'The agent then gets a factual description instead of the image. Audio needs no vision at all. '
+        + 'Do not disable the fallback unless you accept that images cannot be read.';
+    }
+    return install + '\n\nFor the analysis: tell your agent which route you have and it will pick. '
+      + 'Vision route → real image/frames; text-only route → description via `visionFallback`.';
+  }
+
+  function goalLine(goal) {
+    return {
+      image: 'Read local images on a DeepSeek Harness — descriptions and on-screen text via `media_image`.',
+      audio: 'Transcribe local audio on a DeepSeek Harness with `media_audio` (local Whisper, timestamps).',
+      video: 'Read local video on a DeepSeek Harness with `media_video` (shots, frames, transcript timeline).',
+      evidence: 'Produce a replication evidence pack with `media_evidence` (tempo, key, onsets, chords, shots, lyrics).',
+      mixed: 'Read local images, audio and video on a DeepSeek Harness.'
+    }[goal] || 'Read local media on a DeepSeek Harness.';
+  }
+
+  function firstTask(goal, file) {
+    var f = file ? '`' + file + '`' : '`<path-to-your-file>`';
+    switch (goal) {
+      case 'image': return 'Run `media_probe` on ' + f + ', then `media_image` on it and tell me the exact on-screen text.';
+      case 'audio': return 'Run `media_audio` on ' + f + ' and give me the timestamped transcript.';
+      case 'video': return 'Run `media_video` on ' + f + ' and give me the shot timeline with the spoken transcript fused in.';
+      case 'evidence': return 'Run `media_evidence` on ' + f + ' and report tempo, key and the shot list. It is slow (1-4 minutes) and makes no network call in the local profile.';
+      default: return 'Run `media_probe` on ' + f + ' and tell me what kind of file it is, then use the matching `media_*` tool.';
+    }
+  }
+
+  function build() {
+    var harness = val('harness');
+    var node = val('node');
+    var ffmpeg = val('ffmpeg');
+    var python = val('python');
+    var route = val('route');
+    var goal = val('goal');
+    var file = (val('file') || '').trim();
+    var version = (val('version') || '').trim();
+
+    // Honest blocking branches. A prompt that cannot work is worse than a clear "not this one".
+    if (harness !== 'dsh') {
+      return {
+        blocked: true,
+        title: 'This bundle installs into DeepSeek Harness only',
+        body: 'Nothing here can install into ' + (harness || 'another harness') + '. What transfers is the '
+          + 'architecture: ffprobe for container facts, faster-whisper for local transcription, a vision '
+          + 'provider for descriptions and frames, and a text evidence pack with every field tagged '
+          + 'MEASURED / INFERRED / UNVERIFIED. The research and the pipeline docs are in the public '
+          + 'repository if you want to rebuild it on your own stack.\n\n' + REPO
+      };
+    }
+    if (node === 'no') {
+      return {
+        blocked: true,
+        title: 'Node 20 or newer is required first',
+        body: 'The plugin declares `"engines": { "node": ">=20" }`. Install Node 20+ and then generate the '
+          + 'prompt again. On Debian/Ubuntu: `sudo apt install nodejs npm`, or use nvm. Nothing else is '
+          + 'blocked by this answer.'
+      };
+    }
+
+    var lines = [];
+    lines.push('# Install dsh-media-reader for me');
+    lines.push('');
+    lines.push('GOAL');
+    lines.push(goalLine(goal));
+    if (version) lines.push('My harness reports version: ' + version + '. If the bundle requires newer, tell me.');
+    lines.push('');
+    lines.push('BEFORE ANYTHING ELSE');
+    lines.push('- NEVER run `dsh plugin add`. It can split the profile\'s package graph and kill every tool call.');
+    lines.push('  Read `skills/dsh-plugin-install-safety/SKILL.md` inside the extracted bundle before installing.');
+    lines.push('- This bundle installs with copy-restore, not a package manager. If you reach for pnpm, stop.');
+    lines.push('- Work from the directory the tarball is extracted into; do not invent paths.');
+    if (ffmpeg === 'no') lines.push('- ffmpeg is MISSING on this machine. Install it first (`sudo apt install ffmpeg`), or `media_probe` and `media_video` cannot run.');
+    if (ffmpeg === 'unsure') lines.push('- I do not know whether ffmpeg is installed. Check with `ffmpeg -version` and install it if it is missing.');
+    if (python === 'no') lines.push('- python3 / faster-whisper is MISSING, so audio transcription will not work until I create a venv with `pip install faster-whisper av`. Images and ffprobe still work.');
+    if (python === 'unsure') lines.push('- I do not know whether faster-whisper is available. Audio needs it; if the smoke test\'s transcription check fails, install it and re-run.');
+    if (route === 'unsure') lines.push('- I do not know whether my model route is vision-capable. Determine it and configure `visionFallback` accordingly.');
+    lines.push('');
+    lines.push('STEPS');
+    lines.push('1. Download the bundle and verify its sha256 before trusting it:');
+    lines.push('   ' + RAW);
+    lines.push('   expected sha256: ' + HASH);
+    lines.push('2. Extract it, then run `./install.sh --dry-run` and read every action it lists.');
+    lines.push('3. Run `./install.sh`, then `./install-skills.sh`.');
+    lines.push('4. Restart the harness so the tools register. If this is a machine I work in, follow');
+    lines.push('   `skills/dsh-test-boot/SKILL.md` first: boot a scratch instance on a spare port and check it there.');
+    lines.push('5. VERIFY, do not assume. From the extracted directory run:');
+    lines.push('   DSH_TEST_URL=http://127.0.0.1:3096 ./smoke.sh');
+    lines.push('   Expect `18/18 checks passed`. If anything fails, stop and paste the full output back to me.');
+    lines.push('6. Then run the first real task:');
+    lines.push('   ' + firstTask(goal, file));
+    lines.push('');
+    lines.push('WHICH MODEL TO USE');
+    lines.push(modelAdvice(route, goal));
+    lines.push('');
+    lines.push('Model names are dated observations, not guarantees: confirm them against your provider\'s');
+    lines.push('current catalogue. The release note for the vision route is at');
+    lines.push('https://api-docs.deepseek.com/news/news260821');
+    lines.push('');
+    lines.push('READ THE BUNDLE\'S OWN SKILLS');
+    lines.push('Four skills ship with it and are written to be read by you, the agent:');
+    lines.push('- skills/dsh-plugin-install-safety  (why the install method is what it is)');
+    lines.push('- skills/dsh-skill-install          (how skills become slash commands)');
+    lines.push('- skills/dsh-test-boot              (how to verify before restarting a real server)');
+    lines.push('- skills/product-motion-studio      (the production method if I go beyond reading files)');
+    lines.push('');
+    lines.push('SUPPORT');
+    lines.push('If the smoke test fails or the first task misbehaves, paste the exact output and I will');
+    lines.push('diagnose it with you. Do not claim success you have not measured.');
+
+    return {
+      blocked: false,
+      model: modelAdvice(route, goal).split('\n\n')[1] || modelAdvice(route, goal),
+      prompt: lines.join('\n'),
+      goal: goal,
+      route: route
+    };
+  }
+
+  var out = document.getElementById('agent-out');
+  var outTitle = document.getElementById('agent-out-title');
+  var outModel = document.getElementById('agent-model');
+  var outPre = document.getElementById('agent-prompt');
+  var outNote = document.getElementById('agent-out-note');
+  var copyBtn = document.getElementById('agent-copy');
+  var dlBtn = document.getElementById('agent-download');
+  var status = document.getElementById('agent-status');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var plan = build();
+    out.hidden = false;
+    copyBtn.hidden = plan.blocked;
+    dlBtn.hidden = plan.blocked;
+    outModel.hidden = plan.blocked;
+
+    if (plan.blocked) {
+      outTitle.textContent = plan.title;
+      outPre.textContent = plan.body;
+      outNote.textContent = 'No prompt generated, because a prompt that cannot work is worse than a clear answer.';
+      status.textContent = 'Blocked: ' + plan.title;
+    } else {
+      outTitle.textContent = 'Paste this into your agent';
+      outPre.textContent = plan.prompt;
+      outModel.textContent = plan.model;
+      outNote.textContent = 'Generated on your device from your answers. Nothing was sent anywhere, and no account is needed.';
+      status.textContent = 'Prompt generated: ' + plan.prompt.length + ' characters, ready to copy.';
+    }
+    out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  copyBtn.addEventListener('click', function () {
+    var text = outPre.textContent;
+    var done = function () {
+      copyBtn.textContent = 'Copied';
+      status.textContent = 'Copied to the clipboard. Paste it into a new agent session.';
+      setTimeout(function () { copyBtn.textContent = 'Copy the prompt'; }, 2500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
+    } else { fallback(); }
+    function fallback() {
+      var range = document.createRange();
+      range.selectNodeContents(outPre);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      status.textContent = 'Clipboard unavailable here, so the prompt is selected — press Ctrl/Cmd-C.';
+    }
+  });
+
+  dlBtn.addEventListener('click', function () {
+    var blob = new Blob([outPre.textContent], { type: 'text/markdown' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'dsh-media-reader-agent-prompt.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    status.textContent = 'Downloaded dsh-media-reader-agent-prompt.md — hand it to your agent as a file.';
   });
 })();
 </script>
