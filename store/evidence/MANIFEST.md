@@ -6,10 +6,17 @@ was committed with. Full-page captures, lazy images forced to load first.
 
 | file | viewport | page height | horizontal overflow | images |
 |---|---|---|---|---|
-| `page-320.png` | 320 × 900 | 5841 px | none | 2/2 loaded |
-| `page-390.png` | 390 × 900 | 5064 px | none | 2/2 loaded |
-| `page-768.png` | 768 × 900 | 3969 px | none | 2/2 loaded |
-| `page-1440.png` | 1440 × 900 | 2901 px | none | 2/2 loaded |
+| `page-320.png` | 320 × 900 | 5985 px | none | 2/2 loaded |
+| `page-390.png` | 390 × 900 | 5186 px | none | 2/2 loaded |
+| `page-768.png` | 768 × 900 | 4044 px | none | 2/2 loaded |
+| `page-1440.png` | 1440 × 900 | 2910 px | none | 2/2 loaded |
+
+The PNG's own pixel height equals the page height in this table — checked with `ffprobe`, because an
+earlier capture pass wrote 900 px strips while its console cheerfully printed "done". The cause was a
+`Page.navigate` followed by a fixed 500 ms sleep: it sometimes measured `about:blank` (exactly viewport
+height) before the document committed. The capture now polls until `readyState === "complete"`, an `<h1>`
+exists and `scrollHeight > innerHeight`, and **refuses to write a file** whose height is not greater than
+the viewport.
 
 Measured from the live DOM at each width, not from the stylesheet:
 
