@@ -29,7 +29,7 @@ installed in `.dsh-test-home/profiles/web`, scratch profile default model switch
 ```
 
 Also on 2026-11-03: the **installed** copy's `media_evidence` tool (not the working tree) was run against a
-real delivered film — `/home/samora/Music/essence of the Maasai.mp4`, 149.221 s, 1920x1080, 24 fps — and
+real delivered film — `$REVIEW_DIR/essence of the Maasai.mp4`, 149.221 s, 1920x1080, 24 fps — and
 returned a text pack reporting the source facts, **31 detected shots with a median 4.5 s shot**, the key
 (C major, MEASURED), loudness (-12.8 LUFS), 537 onsets, an 8-segment chord map (INFERRED), three pilot
 intervals, and an explicit list of what did not run (stems, MIDI, OCR, semantic pass) rather than

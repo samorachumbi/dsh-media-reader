@@ -30,7 +30,7 @@ Three properties make that a real goal rather than a slogan:
 ## 2. What the harness actually does today (the gap, measured)
 
 This is the part the whole design hangs on. Verified in the installed harness at
-`dsh/` = `/home/samora/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
+`dsh/` = `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
 (DSH **0.1.1-rc.2**, `dsh-tools` **0.1.1-rc.2**).
 
 ### 2.1 There are only two modalities. Audio does not exist in the protocol. **[verified]**
