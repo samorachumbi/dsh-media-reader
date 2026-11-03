@@ -20,6 +20,7 @@ Readable as plain text on purpose: a human can install it, and an LLM can read t
 | **docs/** | the research, the production pipeline, the acceptance record, the evidence-pack format, the two direction workflows, and the reproducible film-pipeline commands |
 | **fixtures/** | the small files the smoke test needs |
 | **install.sh / install-skills.sh / uninstall.sh / smoke.sh** | everything, in four commands, reversible |
+| **LICENSE** | the terms you are granted — proprietary, all rights reserved; personal non-commercial use only |
 
 Requirements: **node**, **ffmpeg**, **python3** (with `faster-whisper` + `av` in a venv for local
 transcription — see `docs/README.md`). No package manager is used and none is required.
@@ -110,5 +111,15 @@ the skill both say so, because the published "from" price is the cheapest tier, 
 
 ## Licence and provenance
 
-See `docs/ACCEPTANCE.md` for what was verified on which date, on which harness version, and what remains
-unverified. Model ids and prices in `docs/` are dated observations, not guarantees — re-check them.
+**Proprietary — all rights reserved.** The full terms are in `LICENSE`, which ships in this bundle at both
+the top level and beside the payload in `plugin/LICENSE`. In short: you may read, study, install and run
+this for your own **personal, non-commercial** use; you may not copy, redistribute, resell or use it in a
+commercial product without a written agreement. Commercial use is available on paid terms — open an issue at
+<https://github.com/samorachumbi/dsh-media-reader/issues>.
+
+Third-party components keep their own licences: `ffmpeg`, `faster-whisper` and the Whisper model weights
+(downloaded at run time, **not** redistributed here), and the DeepSeek Harness packages. Those licences are
+unaffected by the notice above.
+
+Provenance: see `docs/ACCEPTANCE.md` for what was verified, on which date and harness version, and what
+remains unverified. Model ids and prices in `docs/` are dated observations, not guarantees — re-check them.

@@ -30,6 +30,7 @@ Readable as plain text on purpose: a human can install it, and an LLM can read t
 | **docs/** | the research, the production pipeline, the acceptance record, the evidence-pack format, the two direction workflows, and the reproducible film-pipeline commands |
 | **fixtures/** | the small files the smoke test needs |
 | **install.sh / install-skills.sh / uninstall.sh / smoke.sh** | everything, in four commands, reversible |
+| **LICENSE** | the terms you are granted — proprietary, all rights reserved; personal non-commercial use only |
 
 Requirements: **node**, **ffmpeg**, **python3** (with `faster-whisper` + `av` in a venv for local
 transcription — see `docs/README.md`). No package manager is used and none is required.
@@ -120,8 +121,18 @@ the skill both say so, because the published "from" price is the cheapest tier, 
 
 ## Licence and provenance
 
-See `docs/ACCEPTANCE.md` for what was verified on which date, on which harness version, and what remains
-unverified. Model ids and prices in `docs/` are dated observations, not guarantees — re-check them.
+**Proprietary — all rights reserved.** The full terms are in `LICENSE`, which ships in this bundle at both
+the top level and beside the payload in `plugin/LICENSE`. In short: you may read, study, install and run
+this for your own **personal, non-commercial** use; you may not copy, redistribute, resell or use it in a
+commercial product without a written agreement. Commercial use is available on paid terms — open an issue at
+<https://github.com/samorachumbi/dsh-media-reader/issues>.
+
+Third-party components keep their own licences: `ffmpeg`, `faster-whisper` and the Whisper model weights
+(downloaded at run time, **not** redistributed here), and the DeepSeek Harness packages. Those licences are
+unaffected by the notice above.
+
+Provenance: see `docs/ACCEPTANCE.md` for what was verified, on which date and harness version, and what
+remains unverified. Model ids and prices in `docs/` are dated observations, not guarantees — re-check them.
 
 ```
 
@@ -151,6 +162,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   ]
  },
  "roles": {
+  "LICENSE": "the licence the buyer is granted \u2014 a bundle without it grants nothing",
+  "plugin/LICENSE": "the same terms, beside the payload, for a consumer who vendors plugin/ alone",
   "plugin/lib/index.js": "plugin entry \u2014 registers the five tools",
   "plugin/package.json": "package metadata; dsh.client.platform mounts the drag-and-drop half",
   "plugin/cordis.patch.yml": "the profile patch row that loads the plugin",
@@ -170,13 +183,18 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   "path": "MANIFEST.json",
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
- "file_count": 75,
- "total_bytes": 1791428,
+ "file_count": 76,
+ "total_bytes": 1747516,
  "files": [
   {
+   "path": "LICENSE",
+   "bytes": 1935,
+   "sha256": "fea04d512def6f29e41ab72454916a62d6f34f748b38599ebfde4a0211657a0e"
+  },
+  {
    "path": "README.md",
-   "bytes": 6080,
-   "sha256": "3fb5c4fbc6718b20770d7746281755d52fcc5ee1b67f3801fcef47b44b03ef5a"
+   "bytes": 6939,
+   "sha256": "7f8449cdf134970414ec7522f4de2bc2887b3acadf028dec3dd65b3ae2533259"
   },
   {
    "path": "docs/ACCEPTANCE.md",
@@ -185,13 +203,13 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "docs/AUDIT.md",
-   "bytes": 12053,
-   "sha256": "c271ad02662b932dd3b3f6865ada4cd1e79134c0fa61c0d4b1afd4a2c27eff8f"
+   "bytes": 12017,
+   "sha256": "8a5340d242c3e36fcd9917321a1695008b964f051bf1b2fc0428e149430967cd"
   },
   {
    "path": "docs/CONTRACT.md",
-   "bytes": 6200,
-   "sha256": "87210db8046ffb69c267243708bca296e8cd0d02884f7b5ab3804ec617ac5557"
+   "bytes": 6164,
+   "sha256": "7146ebc36affcbd87e59f24ba95f08df04f413df27d2541a934cc289dfd234f2"
   },
   {
    "path": "docs/EVIDENCE-PACK.md",
@@ -200,8 +218,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "docs/PATH-PLACEHOLDERS.md",
-   "bytes": 665,
-   "sha256": "8848176efe1b39a679fff6a5580894102eaf9215fa5286074407e7ce57c9cc32"
+   "bytes": 698,
+   "sha256": "669a88ddd76f6e6e4b08235a4e6d84068704a7bb73f54b092377755813b3e140"
   },
   {
    "path": "docs/PLAN.md",
@@ -215,8 +233,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "docs/README.md",
-   "bytes": 14777,
-   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+   "bytes": 16162,
+   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -225,8 +243,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "docs/RESEARCH.md",
-   "bytes": 18147,
-   "sha256": "047d6ee291bb10680b76d67cc20849cbab68fc6c1e56180d6e71ab5df4b3e469"
+   "bytes": 18111,
+   "sha256": "72c7930f100c2ae27953167a9a6e69d6e9a2d3dedd93da80cf92d680c04962e9"
   },
   {
    "path": "docs/dance-direction.md",
@@ -284,9 +302,14 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
    "sha256": "6fe84c5e282297f5c3e2cb0f198594d459a401cf5ba88f9f9eabeb176c758a9a"
   },
   {
+   "path": "plugin/LICENSE",
+   "bytes": 1935,
+   "sha256": "fea04d512def6f29e41ab72454916a62d6f34f748b38599ebfde4a0211657a0e"
+  },
+  {
    "path": "plugin/README.md",
-   "bytes": 14777,
-   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+   "bytes": 16162,
+   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -460,8 +483,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "plugin/package.json",
-   "bytes": 1232,
-   "sha256": "9d6ccef61543379d16b9206a79790e33ceae9e03e5a2d4acbc86b264b6b16852"
+   "bytes": 1803,
+   "sha256": "297c5cc88a949ff59e91177d2874189c7e6e71dba24c50376bffb5bb1699577f"
   },
   {
    "path": "plugin/probe/err-base.txt",
@@ -497,11 +520,6 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
    "path": "plugin/probe/verify-installed-tool.mjs",
    "bytes": 3879,
    "sha256": "13b4efbb6cae3fc324500d3eb8773ba2a5f631838894c474bbd97a97c743b82b"
-  },
-  {
-   "path": "plugin/python/__pycache__/dsp_worker.cpython-312.pyc",
-   "bytes": 51907,
-   "sha256": "5d61d3edd89d02925eb1014191571b76b9278bbf1c723347b3e553859efc9f71"
   },
   {
    "path": "plugin/python/dsp_worker.py",
@@ -1012,7 +1030,7 @@ DSH_TEST_URL=http://127.0.0.1:3096 node probe/smoke.mjs
 
 - Previous deliverables: git `a438faba50c75f463362f0408a35647a587019c4` (`RESEARCH.md`, `CONTRACT.md`, `PLAN.md`).
 - Harness: DSH `0.1.1-rc.2`, `@deepseek-ai/dsh-tools` `0.1.1-rc.2`; paths below are relative to
-  `$HOME/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`.
+  `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`.
 - Prior art: npm registry metadata and `dsh-video-lens-0.3.2.tgz`, fetched 2026-10-30.
 - STT: `faster-whisper` PyPI metadata and official README, fetched 2026-10-30.
 - Empirical media probes: local `ffmpeg`/`ffprobe` 6.1.1, synthetic files in `/tmp/media-probe`, 2026-10-30.
@@ -1181,7 +1199,7 @@ Proceed with **Option A**, using the revised `PLAN.md` (v2). The architecture is
 # DSH modality contract — pinned
 
 **Pinned:** 2026-10-30 · **Against:** DSH `0.1.1-rc.2`, `@deepseek-ai/dsh-tools` `0.1.1-rc.2`
-**Root:** `dsh/` = `$HOME/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
+**Root:** `dsh/` = `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
 
 Re-verify by re-reading these lines. If upstream moves, the diff between this file and the tree **is**
 the finding.
@@ -1603,16 +1621,18 @@ does not retry catalog refusals or modify the source to bypass them.
 ```
 # Path placeholders in this bundle
 
-Absolute paths from the development machine were replaced so this bundle works anywhere:
+Absolute paths from the machine that built this bundle were replaced so it works anywhere:
 
 | Placeholder | Meaning |
 |---|---|
 | `$HOME` | the installing user's home directory |
-| `$VAULT` | the operator's private notes vault; referenced as background reading only, the bundle does not need it |
+| `$VAULT` | the builder's private notes vault; background reading only, the bundle does not need it |
 | `$WORKSPACE` | wherever this bundle was extracted |
-| `$REVIEW_DIR` | the operator's review folder for generated media; any folder works |
+| `$REVIEW_DIR` | the builder's review folder for generated media; any folder works |
 
-Rewritten files: docs/ACCEPTANCE.md, docs/AUDIT.md, docs/CONTRACT.md, docs/README.md, docs/RESEARCH.md, docs/image-read-failure-handoff.md, plugin/README.md, skills/dsh-skill-install/SKILL.md
+Placeholders that appear in this build: $HOME, $VAULT, $WORKSPACE, $REVIEW_DIR
+
+Rewritten files: docs/ACCEPTANCE.md, docs/README.md, docs/RESEARCH.md, docs/image-read-failure-handoff.md, plugin/README.md, skills/dsh-skill-install/SKILL.md
 
 ```
 
@@ -2313,7 +2333,7 @@ Three properties make that a real goal rather than a slogan:
 ## 2. What the harness actually does today (the gap, measured)
 
 This is the part the whole design hangs on. Verified in the installed harness at
-`dsh/` = `$HOME/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
+`dsh/` = `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
 (DSH **0.1.1-rc.2**, `dsh-tools` **0.1.1-rc.2**).
 
 ### 2.1 There are only two modalities. Audio does not exist in the protocol. **[verified]**

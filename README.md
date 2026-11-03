@@ -314,6 +314,7 @@ non-commercial use is permitted; copying, redistributing, selling or using it in
 product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
 open an issue if you want to discuss commercial use.
 
-The prebuilt bundle in `dist/` was produced before this notice was added; the repository and
-its source are governed by it, and the bundle will be rebuilt with the licence file included
-before it is distributed separately.
+The prebuilt bundle in `dist/` was rebuilt after this notice was added, so it carries the licence at both
+the top level and beside the payload (`plugin/LICENSE`) — a copy of the terms travels with the artifact, not
+just with the repository. Its sha256 is beside it in `dsh-media-reader-0.1.0.tar.gz.sha256`, and the build
+now **fails** if a required file, the licence included, is missing.

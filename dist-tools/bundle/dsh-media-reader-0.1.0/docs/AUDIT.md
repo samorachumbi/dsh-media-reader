@@ -7,7 +7,7 @@
 
 - Previous deliverables: git `a438faba50c75f463362f0408a35647a587019c4` (`RESEARCH.md`, `CONTRACT.md`, `PLAN.md`).
 - Harness: DSH `0.1.1-rc.2`, `@deepseek-ai/dsh-tools` `0.1.1-rc.2`; paths below are relative to
-  `$HOME/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`.
+  `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`.
 - Prior art: npm registry metadata and `dsh-video-lens-0.3.2.tgz`, fetched 2026-10-30.
 - STT: `faster-whisper` PyPI metadata and official README, fetched 2026-10-30.
 - Empirical media probes: local `ffmpeg`/`ffprobe` 6.1.1, synthetic files in `/tmp/media-probe`, 2026-10-30.

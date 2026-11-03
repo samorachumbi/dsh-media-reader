@@ -18,6 +18,8 @@
   ]
  },
  "roles": {
+  "LICENSE": "the licence the buyer is granted \u2014 a bundle without it grants nothing",
+  "plugin/LICENSE": "the same terms, beside the payload, for a consumer who vendors plugin/ alone",
   "plugin/lib/index.js": "plugin entry \u2014 registers the five tools",
   "plugin/package.json": "package metadata; dsh.client.platform mounts the drag-and-drop half",
   "plugin/cordis.patch.yml": "the profile patch row that loads the plugin",
@@ -37,13 +39,18 @@
   "path": "MANIFEST.json",
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
- "file_count": 75,
- "total_bytes": 1791428,
+ "file_count": 76,
+ "total_bytes": 1747516,
  "files": [
   {
+   "path": "LICENSE",
+   "bytes": 1935,
+   "sha256": "fea04d512def6f29e41ab72454916a62d6f34f748b38599ebfde4a0211657a0e"
+  },
+  {
    "path": "README.md",
-   "bytes": 6080,
-   "sha256": "3fb5c4fbc6718b20770d7746281755d52fcc5ee1b67f3801fcef47b44b03ef5a"
+   "bytes": 6939,
+   "sha256": "7f8449cdf134970414ec7522f4de2bc2887b3acadf028dec3dd65b3ae2533259"
   },
   {
    "path": "docs/ACCEPTANCE.md",
@@ -52,13 +59,13 @@
   },
   {
    "path": "docs/AUDIT.md",
-   "bytes": 12053,
-   "sha256": "c271ad02662b932dd3b3f6865ada4cd1e79134c0fa61c0d4b1afd4a2c27eff8f"
+   "bytes": 12017,
+   "sha256": "8a5340d242c3e36fcd9917321a1695008b964f051bf1b2fc0428e149430967cd"
   },
   {
    "path": "docs/CONTRACT.md",
-   "bytes": 6200,
-   "sha256": "87210db8046ffb69c267243708bca296e8cd0d02884f7b5ab3804ec617ac5557"
+   "bytes": 6164,
+   "sha256": "7146ebc36affcbd87e59f24ba95f08df04f413df27d2541a934cc289dfd234f2"
   },
   {
    "path": "docs/EVIDENCE-PACK.md",
@@ -67,8 +74,8 @@
   },
   {
    "path": "docs/PATH-PLACEHOLDERS.md",
-   "bytes": 665,
-   "sha256": "8848176efe1b39a679fff6a5580894102eaf9215fa5286074407e7ce57c9cc32"
+   "bytes": 698,
+   "sha256": "669a88ddd76f6e6e4b08235a4e6d84068704a7bb73f54b092377755813b3e140"
   },
   {
    "path": "docs/PLAN.md",
@@ -82,8 +89,8 @@
   },
   {
    "path": "docs/README.md",
-   "bytes": 14777,
-   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+   "bytes": 16162,
+   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -92,8 +99,8 @@
   },
   {
    "path": "docs/RESEARCH.md",
-   "bytes": 18147,
-   "sha256": "047d6ee291bb10680b76d67cc20849cbab68fc6c1e56180d6e71ab5df4b3e469"
+   "bytes": 18111,
+   "sha256": "72c7930f100c2ae27953167a9a6e69d6e9a2d3dedd93da80cf92d680c04962e9"
   },
   {
    "path": "docs/dance-direction.md",
@@ -151,9 +158,14 @@
    "sha256": "6fe84c5e282297f5c3e2cb0f198594d459a401cf5ba88f9f9eabeb176c758a9a"
   },
   {
+   "path": "plugin/LICENSE",
+   "bytes": 1935,
+   "sha256": "fea04d512def6f29e41ab72454916a62d6f34f748b38599ebfde4a0211657a0e"
+  },
+  {
    "path": "plugin/README.md",
-   "bytes": 14777,
-   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+   "bytes": 16162,
+   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -327,8 +339,8 @@
   },
   {
    "path": "plugin/package.json",
-   "bytes": 1232,
-   "sha256": "9d6ccef61543379d16b9206a79790e33ceae9e03e5a2d4acbc86b264b6b16852"
+   "bytes": 1803,
+   "sha256": "297c5cc88a949ff59e91177d2874189c7e6e71dba24c50376bffb5bb1699577f"
   },
   {
    "path": "plugin/probe/err-base.txt",
@@ -364,11 +376,6 @@
    "path": "plugin/probe/verify-installed-tool.mjs",
    "bytes": 3879,
    "sha256": "13b4efbb6cae3fc324500d3eb8773ba2a5f631838894c474bbd97a97c743b82b"
-  },
-  {
-   "path": "plugin/python/__pycache__/dsp_worker.cpython-312.pyc",
-   "bytes": 51907,
-   "sha256": "5d61d3edd89d02925eb1014191571b76b9278bbf1c723347b3e553859efc9f71"
   },
   {
    "path": "plugin/python/dsp_worker.py",

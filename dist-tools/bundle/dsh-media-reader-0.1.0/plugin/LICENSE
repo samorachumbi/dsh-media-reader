@@ -1,0 +1,42 @@
+Copyright (c) 2026 samorachumbi. All rights reserved.
+
+# Proprietary licence — all rights reserved
+
+This software and its documentation (the "Work") are proprietary. No licence is granted
+except as stated below, and no rights are waived by the public availability of this
+repository.
+
+## You MAY
+
+- read, study and evaluate the Work;
+- install and run it for your own **personal, non-commercial** use;
+- quote short passages with attribution and a link to this repository.
+
+## You MAY NOT, without prior written permission from the copyright holder
+
+- copy, publish, distribute, sublicense or sell the Work, in whole or in substantial part;
+- use the Work, or any derivative of it, in a commercial product or a paid service;
+- offer the Work or a derivative as a hosted or managed service;
+- remove or alter this notice or any copyright notice;
+- represent the Work as your own.
+
+## Commercial use
+
+Commercial use, integration into a product, redistribution, or a licence to sell requires a
+paid agreement. Open an issue at <https://github.com/samorachumbi/dsh-media-reader/issues>
+or contact the copyright holder to discuss terms.
+
+## No warranty
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS IN THE WORK.
+
+## Third-party components
+
+The Work depends on third-party packages that carry their own licences (for example
+ffmpeg, faster-whisper/Whisper models and the DeepSeek Harness packages). Those licences
+govern those components and are unaffected by this notice. Model weights downloaded at
+runtime are **not** part of the Work and are not redistributed here.

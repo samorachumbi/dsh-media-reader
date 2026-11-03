@@ -16,6 +16,8 @@ for path in sorted(root.rglob("*")):
     files.append({"path": rel, "bytes": path.stat().st_size, "sha256": digest})
 
 required = {
+    "LICENSE": "the licence the buyer is granted — a bundle without it grants nothing",
+    "plugin/LICENSE": "the same terms, beside the payload, for a consumer who vendors plugin/ alone",
     "plugin/lib/index.js": "plugin entry — registers the five tools",
     "plugin/package.json": "package metadata; dsh.client.platform mounts the drag-and-drop half",
     "plugin/cordis.patch.yml": "the profile patch row that loads the plugin",
@@ -55,3 +57,6 @@ manifest = {
 }
 (root / "MANIFEST.json").write_text(json.dumps(manifest, indent=1) + "\n")
 print(json.dumps({"file_count": manifest["file_count"], "total_bytes": manifest["total_bytes"], "missing_required": missing}, indent=2))
+if missing:
+    # A bundle that silently ships without a required piece is the defect this manifest exists to catch.
+    raise SystemExit("FATAL: bundle is missing required file(s): " + ", ".join(missing))

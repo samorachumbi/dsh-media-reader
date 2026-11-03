@@ -1,7 +1,7 @@
 # DSH modality contract — pinned
 
 **Pinned:** 2026-10-30 · **Against:** DSH `0.1.1-rc.2`, `@deepseek-ai/dsh-tools` `0.1.1-rc.2`
-**Root:** `dsh/` = `$HOME/.nvm/versions/node/v24.20.0/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
+**Root:** `dsh/` = `$(npm root -g)/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
 
 Re-verify by re-reading these lines. If upstream moves, the diff between this file and the tree **is**
 the finding.

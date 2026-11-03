@@ -260,9 +260,9 @@ silence, a missing-file error, and the three drag-and-drop uploads. Expected tai
 ### Manual checks in the scratch UI
 
 1. Select **DeepSeek-V4-Flash-Vision-Exp**, then:
-   - `Call media_probe once on $WORKSPACE/fixtures/error-demo.mp4. Report duration, dimensions and audio-track count.`
+   - `Call media_probe once on ./fixtures/error-demo.mp4. Report duration, dimensions and audio-track count.`
      → 11 s, 640×360, 1 audio track.
-   - `Call media_image once on $WORKSPACE/fixtures/hello.png and tell me the exact text.`
+   - `Call media_image once on ./fixtures/hello.png and tell me the exact text.`
      → the image is attached and the answer is **HELLO MEDIA**.
 2. Switch the model to **DeepSeek-V4-Flash** (text-only), then:
    - `Call media_image once on …/hello.png and quote the description.`
@@ -292,3 +292,28 @@ npm test
 bash probe/rtf.sh          # once the venv is installed; records base vs small
 ```
 
+
+## More from this workbench
+
+Plugins that came out of the same DeepSeek Harness work, and the guide that explains how to
+install any of them without breaking a profile:
+
+- [`dsh-plugin-install-guide`](https://github.com/samorachumbi/dsh-plugin-install-guide) — why
+  `dsh plugin add` can brick a profile, and the install method that cannot.
+- [`dsh-cost-bubble`](https://github.com/samorachumbi/dsh-cost-bubble) — a pill showing the
+  live cost of the current chat, from provider-reported token usage.
+- [`dsh-app-launcher`](https://github.com/samorachumbi/dsh-app-launcher) — one-click plugin
+  pages in their own OS window, with a liveness dot per app.
+- [`dsh-daily-progress-tab`](https://github.com/samorachumbi/dsh-daily-progress-tab) — a
+  planner in its own tab: ranked venture board, pickable task pool, feedback loop.
+
+## Licence
+
+**Proprietary — all rights reserved.** Reading, studying and running this for personal,
+non-commercial use is permitted; copying, redistributing, selling or using it in a commercial
+product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
+open an issue if you want to discuss commercial use.
+
+The prebuilt bundle in `dist/` was produced before this notice was added; the repository and
+its source are governed by it, and the bundle will be rebuilt with the licence file included
+before it is distributed separately.

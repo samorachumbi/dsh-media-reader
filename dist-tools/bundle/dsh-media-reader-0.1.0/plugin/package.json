@@ -3,6 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "description": "Read local images, audio and video from DeepSeek Harness, including on text-only routes; includes a composer drag-and-drop target.",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "media",
+    "image",
+    "audio",
+    "video",
+    "transcription",
+    "whisper",
+    "ffmpeg",
+    "accessibility"
+  ],
+  "author": "samorachumbi (https://github.com/samorachumbi)",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/samorachumbi/dsh-media-reader#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samorachumbi/dsh-media-reader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samorachumbi/dsh-media-reader/issues"
+  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -19,6 +42,7 @@
     "python",
     "bin",
     "cordis.patch.yml",
+    "LICENSE",
     "README.md",
     "EVIDENCE-PACK.md"
   ],
