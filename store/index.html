@@ -315,10 +315,19 @@
 </main>
 
 <footer class="site wrap">
-  <p><strong>Itikia Digital Solutions</strong>, Nairobi, Kenya. USD prices; M-Pesa and cards accepted.</p>
-  <p>Plugin: <a href="https://github.com/samorachumbi/dsh-media-reader">github.com/samorachumbi/dsh-media-reader</a>
-     · Support: <a id="support-link" href="#">open an issue</a></p>
-  <p>Not affiliated with DeepSeek. Model ids and prices in the docs are dated observations, not guarantees.</p>
+  <p><strong>Itikia Digital Solutions</strong>, Nairobi, Kenya · USD prices; M-Pesa and cards accepted.</p>
+  <p>Talk to a person:
+     <a href="https://github.com/samorachumbi/dsh-media-reader/issues/new/choose">open an issue</a> or
+     <a href="mailto:hello@itikia.co.ke?subject=dsh-media-reader">email hello@itikia.co.ke</a>
+     — say what your harness is running and I will tell you honestly whether this is the right tool.</p>
+  <p>More from the same workbench:
+     <a href="https://github.com/samorachumbi/dsh-plugin-install-guide">the install guide</a> (why
+     <code>dsh plugin add</code> breaks profiles),
+     <a href="https://github.com/samorachumbi/dsh-cost-bubble">cost-bubble</a>,
+     <a href="https://github.com/samorachumbi/dsh-app-launcher">app-launcher</a>,
+     <a href="https://github.com/samorachumbi/dsh-daily-progress-tab">daily-progress-tab</a>.</p>
+  <p>Plugin source: <a href="https://github.com/samorachumbi/dsh-media-reader">github.com/samorachumbi/dsh-media-reader</a>.
+     Not affiliated with DeepSeek. Model ids and prices in the docs are dated observations, not guarantees.</p>
 </footer>
 
 <script>
@@ -327,7 +336,6 @@
 
   // The free path is always a real link.
   document.getElementById('free-link').href = cfg.freeDownload;
-  document.getElementById('support-link').href = cfg.support;
 
   var area = document.getElementById('pay-area');
   var live = cfg.methods.filter(function (m) { return m.url && m.verified; });
@@ -350,7 +358,7 @@
 
     var ask = document.createElement('a');
     ask.className = 'btn';
-    ask.href = cfg.support + '/new/choose?title=Commercial%20licence%20enquiry';
+    ask.href = cfg.support + '/new/choose?title=Commercial%20licence%20enquiry';  // cfg-driven; the footer carries a static fallback
     ask.textContent = 'Ask about a commercial licence';
     area.appendChild(ask);
 
