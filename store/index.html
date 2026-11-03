@@ -137,8 +137,57 @@
 
   @media (min-width: 900px) {
     .hero { grid-template-columns: 1.55fr 1fr; align-items: start; }
+    /* the demo is a full-width band under the text and the buy card, not a third cell */
+    .hero > .hero-demo { grid-column: 1 / -1; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
   }
+  /* ---- interactive demo (pattern from the approved Itikia hero) ---- */
+  .hero-demo { margin: 32px 0 0; }
+  .demo-shell { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .demo-topline {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 1px solid var(--line);
+    font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .demo-topline strong { color: var(--ink); letter-spacing: .08em; }
+  .demo-cue { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-weight: 650; letter-spacing: 0; text-transform: none; font-size: .82rem; }
+  .demo-cue svg { flex: none; }
+  .demo-provenance { font-size: .74rem; letter-spacing: 0; text-transform: none; }
+
+  .demo-files { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--line); }
+  .demo-file {
+    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    min-height: 48px; padding: 8px 13px; text-align: left;
+    font: inherit; font-size: .9rem; font-weight: 600; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+  }
+  .demo-file small { font-size: .72rem; font-weight: 500; color: var(--ink-soft); }
+  .demo-file[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--paper)); }
+  .demo-file:hover { border-color: var(--accent); }
+  .demo-file:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .demo-stage { padding: 0; }
+  .demo-stage-head {
+    display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between;
+    padding: 10px 14px 0; font-size: .8rem; color: var(--ink-soft);
+  }
+  .demo-stage-head code { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); }
+  .demo-pre {
+    /* no max-height: a clipped block with no scroll affordance reads as a broken layout */
+    margin: 8px 0 0; padding: 0 14px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; line-height: 1.55;
+    white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink);
+  }
+  .demo-note { padding: 0 14px 14px; margin: 0; font-size: .76rem; color: var(--ink-soft); }
+  .demo-status {
+    display: block; min-height: 1.2em; padding: 9px 14px; border-top: 1px solid var(--line);
+    font-size: .78rem; color: var(--ink-soft); background: color-mix(in srgb, var(--ink) 3%, var(--card));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .demo-pre, .demo-stage-head { transition: opacity .18s ease; }
+    .demo-stage[data-state="working"] .demo-pre { opacity: .35; }
+  }
+
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -193,6 +242,54 @@
         <a id="free-link" href="#licence">read the licence</a>.
       </p>
     </aside>
+
+      <figure class="hero-demo" id="demo" aria-labelledby="demo-title">
+        <div class="demo-shell">
+          <div class="demo-topline">
+            <span><strong id="demo-title">Interactive demo</strong></span>
+            <span class="demo-cue">
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 1v8M2.5 6 6 9.5 9.5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Pick a file to see what your agent gets
+            </span>
+            <span class="demo-provenance">Real output · captured from a live session</span>
+          </div>
+
+          <div class="demo-files" role="group" aria-label="Choose a file to analyse">
+            <button type="button" class="demo-file" data-demo="image" aria-pressed="true">
+              hello.png <small>image · media_image</small>
+            </button>
+            <button type="button" class="demo-file" data-demo="audio" aria-pressed="false">
+              jfk.wav <small>audio · media_audio</small>
+            </button>
+            <button type="button" class="demo-file" data-demo="video" aria-pressed="false">
+              error-demo.mp4 <small>video · media_video</small>
+            </button>
+          </div>
+
+          <div class="demo-stage" data-demo-stage data-state="idle">
+            <div class="demo-stage-head">
+              <span><code data-demo-tool>media_image</code> <span data-demo-timing>· 2.0 s</span></span>
+              <span>inserted into the draft as text</span>
+            </div>
+            <pre class="demo-pre" data-demo-body id="demo-body">[media: hello.png]
+&lt;path&gt;hello.png&lt;/path&gt;
+&lt;type&gt;image-description&lt;/type&gt;
+&lt;source&gt;deepseek-official/deepseek-v4-flash-vision-exp&lt;/source&gt;
+&lt;latencyMs&gt;2049&lt;/latencyMs&gt;
+&lt;image&gt;image/png 640x360 px, 8979 bytes&lt;/image&gt;
+&lt;content&gt;
+A solid dark blue image displays the white uppercase words “HELLO MEDIA” centered horizontally.
+
+On-screen text: HELLO MEDIA
+
+Details: The background is a uniform dark blue with no visible objects or patterns. The text is white, sans-serif, uppercase, and positioned near the vertical center of the frame. No other legible text or visual elements are present.
+&lt;/content&gt;</pre>
+            <p class="demo-note" data-demo-note>Trimmed for display; long file paths shown as names. Nothing here is typed by hand — the text is the output the plugin produced on this machine.</p>
+            <span class="demo-status" data-demo-status role="status" aria-live="polite">Showing the image result. A model on a text-only route can now read this.</span>
+          </div>
+        </div>
+      </figure>
+
   </section>
 
   <section id="what" class="wrap" aria-labelledby="what-h">
@@ -384,6 +481,121 @@
     n.textContent = m.note;
     area.appendChild(n);
   });
+})();
+</script>
+<script>
+// Interactive demo for the storefront. The text below is the plugin's OWN output, captured from a
+// live session on this machine; long absolute paths are shown as bare file names and the blocks are
+// trimmed for display. Nothing here is re-typed prose.
+(function () {
+  var LABEL = { image: 'image', audio: 'audio', video: 'video' };
+
+  var DEMOS = {
+    image: {
+      tool: 'media_image', seconds: '2.0 s',
+      note: 'Trimmed for display. This is what a PNG drop puts in the draft — including the on-screen text, which a caption model is not normally asked for.',
+      status: 'Showing the image result. A model on a text-only route can now read this.',
+      body: [
+        '[media: hello.png]',
+        '<path>hello.png</path>',
+        '<type>image-description</type>',
+        '<source>deepseek-official/deepseek-v4-flash-vision-exp</source>',
+        '<latencyMs>2049</latencyMs>',
+        '<image>image/png 640x360 px, 8979 bytes</image>',
+        '<content>',
+        'A solid dark blue image displays the white uppercase words \u201CHELLO MEDIA\u201D centered horizontally.',
+        '',
+        'On-screen text: HELLO MEDIA',
+        '',
+        'Details: The background is a uniform dark blue with no visible objects or patterns. The text is white, sans-serif, uppercase, and positioned near the vertical center of the frame. No other legible text or visual elements are present.',
+        '</content>'
+      ].join('\n')
+    },
+    audio: {
+      tool: 'media_audio', seconds: '12.6 s',
+      note: 'Trimmed for display; transcript file paths shown as names. Transcription ran locally — no audio bytes were sent to a model.',
+      status: 'Showing the audio result: a local transcript, with timestamps, inserted as text.',
+      body: [
+        '[media: jfk.wav]',
+        '<path>jfk.wav</path>',
+        '<type>audio-transcript</type>',
+        '<processor>faster-whisper base int8 (local)</processor>',
+        '<language>en (p=0.94)</language>',
+        '<durationSeconds>11.00</durationSeconds>',
+        '<realTimeFactor>1.08</realTimeFactor>',
+        '<artifacts>{"transcriptTxt":"jfk.wav/transcript.txt","transcriptSrt":"jfk.wav/transcript.srt"}</artifacts>',
+        '<content>',
+        '[0.00-7.58] And so my fellow Americans ask not what your country can do for you,',
+        '[7.58-10.58] ask what you can do for your country.',
+        '</content>'
+      ].join('\n')
+    },
+    video: {
+      tool: 'media_video', seconds: '17.5 s',
+      note: 'Trimmed for display; artifact paths shown as names. Shots, frames, the contact sheet and the transcript timeline are all produced from the file itself.',
+      status: 'Showing the video result: detected shots, the spoken transcript fused to the shot timeline, and a described contact sheet.',
+      body: [
+        '[media: error-demo.mp4]',
+        '<path>error-demo.mp4</path>',
+        '<type>video-digest</type>',
+        '<durationSeconds>11.00</durationSeconds>',
+        '<shots>2</shots>',
+        '<artifacts>{"digest":"error-demo.mp4/digest.md","contactSheet":"error-demo.mp4/contact-sheet.png","frames":["error-demo.mp4/frames/shot-01.png","error-demo.mp4/frames/shot-02.png"]}</artifacts>',
+        '<timeline>',
+        '[00:00:00.000-00:00:05.500] shot-01.png',
+        '  on screen: not described; call media_image on the frame path for detail',
+        '  said: And so my fellow Americans ask not what your country can do for you,',
+        '[00:00:05.500-00:00:11.000] shot-02.png',
+        '  said: ask what you can do for your country.',
+        '</timeline>',
+        '<transcript>local faster-whisper base int8; language en; realTimeFactor 1.07</transcript>',
+        '<visual>contact sheet \u2014 A black rectangular image displays the red text "ERROR 42" near the left side. On-screen text: ERROR 42</visual>'
+      ].join('\n')
+    }
+  };
+
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
+  var stage = document.querySelector('[data-demo-stage]');
+  var toolEl = document.querySelector('[data-demo-tool]');
+  var timeEl = document.querySelector('[data-demo-timing]');
+  var bodyEl = document.querySelector('[data-demo-body]');
+  var noteEl = document.querySelector('[data-demo-note]');
+  var statusEl = document.querySelector('[data-demo-status]');
+  if (buttons.length === 0 || !stage || !bodyEl) return;
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timer = null;
+
+  function render(key, { announce } = { announce: true }) {
+    var d = DEMOS[key];
+    if (!d) return;
+
+    buttons.forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-demo') === key ? 'true' : 'false');
+    });
+    toolEl.textContent = d.tool;
+    timeEl.textContent = '\u00b7 ' + d.seconds;
+    stage.setAttribute('data-state', 'working');
+    if (announce) statusEl.textContent = 'Analysing the ' + LABEL[key] + ' file with ' + d.tool + '\u2026';
+
+    var paint = function () {
+      bodyEl.textContent = d.body;
+      noteEl.textContent = d.note;
+      stage.setAttribute('data-state', 'done');
+      statusEl.textContent = d.status;
+    };
+
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (reduced) { paint(); return; }
+    timer = setTimeout(paint, 700);
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { render(b.getAttribute('data-demo')); });
+  });
+
+  // the markup already shows the image result, so a reader with scripting off still sees a real one
+  render('image', { announce: false });
 })();
 </script>
 </body>

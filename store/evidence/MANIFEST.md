@@ -6,10 +6,10 @@ was committed with. Full-page captures, lazy images forced to load first.
 
 | file | viewport | page height | horizontal overflow | images |
 |---|---|---|---|---|
-| `page-320.png` | 320 × 900 | 5985 px | none | 2/2 loaded |
-| `page-390.png` | 390 × 900 | 5186 px | none | 2/2 loaded |
-| `page-768.png` | 768 × 900 | 4044 px | none | 2/2 loaded |
-| `page-1440.png` | 1440 × 900 | 2910 px | none | 2/2 loaded |
+| `page-320.png` | 320 × 900 | 7106 px | none | 2/2 loaded |
+| `page-390.png` | 390 × 900 | 6114 px | none | 2/2 loaded |
+| `page-768.png` | 768 × 900 | 4693 px | none | 2/2 loaded |
+| `page-1440.png` | 1440 × 900 | 3500 px | none | 2/2 loaded |
 
 The PNG's own pixel height equals the page height in this table — checked with `ffprobe`, because an
 earlier capture pass wrote 900 px strips while its console cheerfully printed "done". The cause was a
@@ -65,3 +65,28 @@ checkout works: no rail has taken a payment yet.
 Before the fix, the whole buy area was script-rendered, so with JavaScript off the only calls to action on
 a sales page disappeared. The markup now carries the fallback and the script clears the area before
 repainting.
+
+## The interactive demo in the hero (added after the images above)
+
+`#demo` is a `<figure>` inside the hero section, following the pattern approved on the Itikia site: a
+visible cue ("Pick a file to see what your agent gets"), a provenance line ("Real output · captured from
+a live session"), real `<button>`s with `aria-pressed`, and a `role="status"` region that announces the
+result. Three files, three tools, each showing the block the plugin actually inserted into the composer
+draft on this machine.
+
+Driven with **real mouse events** (`Input.dispatchMouseEvent`) at each button's centre, then the DOM was
+read back — a click is not evidence, the changed result is:
+
+| click | tool line | first line of the panel | characters | `aria-pressed` |
+|---|---|---|---|---|
+| hello.png | `media_image` | `[media: hello.png]` | 593 | exactly one pressed |
+| jfk.wav | `media_audio` | `[media: jfk.wav]` | 495 | exactly one pressed |
+| error-demo.mp4 | `media_video` | `[media: error-demo.mp4]` | 856 | exactly one pressed |
+
+Button sizes at 1440 and 390 px: 61 px tall (the minimum is 44). No horizontal overflow at either width.
+With scripting off the markup already shows the image result, so the demo degrades to a real example
+rather than an empty panel.
+
+**What the demo does not prove:** that a dropped file behaves identically on your harness — the text is a
+captured record, not a live analysis on the visitor's machine. Paths in the audio and video blocks are
+shown as bare file names, and each block is trimmed; the note under the panel says both.
