@@ -1,3 +1,44 @@
+# Acceptance record
+
+## Re-verification — 2026-11-03 (current build, 97 tests)
+
+Re-ran the live capability harness against the scratch instance (`http://127.0.0.1:3096`, plugin
+installed in `.dsh-test-home/profiles/web`, scratch profile default model switched by the harness to the
+**text-only** route `deepseek-v4-flash`):
+
+```
+18/18 checks passed against http://127.0.0.1:3096
+  PASS  media_probe reads duration and audio tracks
+  PASS  media_probe reports video dimensions
+  PASS  vision route receives a real image block
+  PASS  vision route can read the image text
+  PASS  text-only route returns an image description
+  PASS  text-only description contains the image text
+  PASS  text-only route did not receive an image block
+  PASS  read_image is redirected to media_image
+  PASS  audio is transcribed locally
+  PASS  audio result names the local processor
+  PASS  video digest answers the visual question
+  PASS  video digest fuses the spoken transcript
+  PASS  text-only video returns no image blocks
+  PASS  silence is reported as no speech
+  PASS  missing file fails explicitly
+  PASS  drop upload describes an image
+  PASS  drop upload transcribes audio
+  PASS  drop upload digests video
+```
+
+Also on 2026-11-03: the **installed** copy's `media_evidence` tool (not the working tree) was run against a
+real delivered film — `/home/samora/Music/essence of the Maasai.mp4`, 149.221 s, 1920x1080, 24 fps — and
+returned a text pack reporting the source facts, **31 detected shots with a median 4.5 s shot**, the key
+(C major, MEASURED), loudness (-12.8 LUFS), 537 onsets, an 8-segment chord map (INFERRED), three pilot
+intervals, and an explicit list of what did not run (stems, MIDI, OCR, semantic pass) rather than
+silently omitting it. Wall time 245 s, no generation call, no network.
+
+Unit suite on this build: `npm test` → **97/97 pass**.
+
+---
+
 # Acceptance record — 2026-10-30
 
 **Object:** `dsh-media-reader` at the working tree on branch `feat/media-reader`
