@@ -286,7 +286,20 @@ node bin/media-evidence.mjs "like.mp4" --mode transform --profile local        #
 
 ## Next step
 
-The Kie adapter (stage 2 of `PRODUCTION-PIPELINE.md`): resolve `KIE_AI_API_KEY` from
-`~/projects/Website_Builder/.env` (the variable is **not** `KIE_API_KEY`), upload the reference audio or
-frames, create/poll tasks, and write `kie-jobs.jsonl` with cost and output archived locally. No batch
-run until one music pilot and one video pilot are reviewed against this pack.
+The Kie generation adapter is built in `lib/kie/generation.js` with the CLI in
+`bin/kie-generate.mjs`. It is **disabled by default**, requires both explicit enablement and a
+positive per-task cap plus a cumulative pilot budget, and has no batch mode.
+
+One paid test-asset run now exists: a requested 60 s V6 music generation and a 15 s 9:16 Kling
+prompt-only video, recorded under `generation/maasai-audio-test/` and `generation/maasai-video-test/`.
+These are test assets, not an accepted replica or transformation; motion and cultural detail still
+need operator review.
+
+The next step is to review those assets, choose a non-catalogued source for the music replica pilot,
+and then approve a video-reference or animate-replace pilot. No batch run until the assets and pilots
+are reviewed against this pack.
+
+**Observed provider limit:** Kie refuses Upload And Cover for a catalog-matched recording even when
+the source is labelled copyright-free. The first paid NEFFEX pilot was refused in 20.7 s at **0
+credits**; the failure is recorded in `generation/neffex-cover-pilot-1/kie-jobs.jsonl`. The adapter
+does not retry catalog refusals or modify the source to bypass them.

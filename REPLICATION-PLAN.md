@@ -141,7 +141,7 @@ recorded before any fix.
 **Acceptance:** full shot inventory exists; assisted fields are filled and tagged INFERRED; stems are
 archived locally with their own measurements; no field silently becomes MEASURED because a model said it.
 
-### Phase 2 — Kie adapter skeleton
+### Phase 2 — Kie adapter skeleton — **BUILT 2026-10-31 (offline tests only)**
 
 Implement the smallest useful adapter, using the existing Website Builder Kie client as reference code
 (not a package install):
@@ -154,12 +154,17 @@ Implement the smallest useful adapter, using the existing Website Builder Kie cl
 - `kie-jobs.jsonl`: task ID, model, inputs, status transitions, credits/cost if returned, output URLs,
   local artifact paths, and errors;
 - download and archive every output immediately — provider URLs expire;
-- credit check before the first paid call, and a fixed per-pilot budget.
+- credit check before the first paid call, a per-task cap, and a cumulative pilot budget read from prior
+  `generation-result.json` files (unknown prior spend fails closed);
 
 **Acceptance:** missing key and insufficient credits fail loudly; every submitted task is in the ledger;
 no provider URL is the only copy of an artifact.
 
 ### Phase 3 — one music pilot
+
+> **Provider constraint observed 2026-11-01:** Upload And Cover also refuses catalog-matched released
+> audio, not just stem separation. The NEFFEX pilot failed in 20.7 s at 0 credits. Do not bypass the
+> catalog gate; use an unreleased/self-owned source or a different workflow.
 
 Use a **60–90 second excerpt** from the main body (not the full 368 s track), uploaded as MP3.
 

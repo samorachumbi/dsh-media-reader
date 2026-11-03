@@ -28,6 +28,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "evidence": "node bin/media-evidence.mjs",
+    "generate": "node bin/kie-generate.mjs",
     "dsp-self-test": ".venv-stt/bin/python python/dsp_worker.py --self-test"
   },
   "peerDependencies": {
@@ -47,6 +48,7 @@
     }
   },
   "bin": {
-    "media-evidence": "./bin/media-evidence.mjs"
+    "media-evidence": "./bin/media-evidence.mjs",
+    "kie-generate": "./bin/kie-generate.mjs"
   }
 }

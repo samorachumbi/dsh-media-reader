@@ -133,6 +133,69 @@ could answer them. It runs without a DSH server, which is what makes it testable
 
 Full contract, artifact layout and the synthetic ground-truth results: `EVIDENCE-PACK.md`.
 
+## Generation adapter (stage 2)
+
+`lib/kie/generation.js` and `bin/kie-generate.mjs` wrap four current Kie workflows:
+
+| Workflow | Kie model | Purpose |
+|---|---|---|
+| `music-generate` | `ai-music-api/generate` | Generate original music from text |
+| `cover` | `ai-music-api/upload-and-cover-audio` | Re-style a 10–360 s source while retaining its melody |
+| `reference-video` | `kling-4.0/reference-to-video` | Generate from reference materials, or prompt-only text-to-video |
+| `animate-replace` | `wan/2-2-animate-replace` | Replace a source performance using a character image |
+
+Quality is explicit per workflow and stays parameterized for the later assembly step:
+
+- Music Generate and Cover: `--suno-model V6 | V6_MINI | V6_WILD` (default `V6`)
+- Reference To Video: `--resolution 720p | 1080p` (default `720p`)
+- Animate Replace: `--resolution 480p | 580p | 720p` (default `720p`)
+
+Planning is the default and makes **no network call**:
+
+```bash
+node bin/kie-generate.mjs music-generate \
+  --title 'Original Test Cue' --duration 60 --style 'cinematic percussion' \
+  --lyrics-file lyrics.txt --max-credits 15 --pilot-budget 500
+node bin/kie-generate.mjs cover \
+  --audio cue.mp3 --duration 60 --source-seconds 75 \
+  --max-credits 15 --pilot-budget 500
+node bin/kie-generate.mjs reference-video \
+  --video clip.mp4 --image reference.png \
+  --prompt 'Keep the composition of @video_1 and the character in @image_1.' \
+  --duration 6 --resolution 720p --max-credits 160 --pilot-budget 500
+node bin/kie-generate.mjs animate-replace \
+  --video clip.mp4 --image character.png --resolution 720p \
+  --max-credits 160 --pilot-budget 500
+```
+
+A paid task requires **both** `--execute` and `--enable-generation`, plus an approved positive
+`--max-credits` and cumulative `--pilot-budget`. There is no batch mode. The adapter:
+
+- checks the account balance against the task cap before uploading or creating a task;
+- sums prior `generation-result.json` files under the output root and refuses to start when the
+  remaining pilot budget cannot cover the task cap;
+- writes `generation-plan.json` before the first network call, without the credential;
+- records every submitted task in `kie-jobs.jsonl`, including failed tasks;
+- downloads provider outputs immediately into `outputs/` and writes `generation-result.json`;
+- compares actual task and cumulative consumption with both caps and fails loudly after archiving
+  if either is exceeded;
+- validates Kling `@image_N` / `@video_N` mentions against the materials actually supplied.
+
+The provider has no pre-submission price quote, so a charge cannot be cancelled retroactively. The
+caps are a balance floor before the call and hard post-call checks, not provider-side spending limits.
+The cumulative budget is scoped to one output root and is not concurrency-safe; run one task at a time.
+
+**Provider catalog gate:** Kie refuses Upload And Cover for audio that matches an existing recording
+in its catalog, even when the source is labelled copyright-free. The paid NEFFEX pilot hit this refusal;
+the failed task cost **0 credits**, and the ledger recorded it with no output. The adapter does not
+attempt to alter a track to evade that gate. Use an original/unreleased recording or a different
+workflow.
+
+The adapter was built with offline mocks. The first paid test-asset run used it successfully:
+a requested 60 s V6 music generation (12 credits) and a 15 s 9:16 Kling prompt-only video
+(427.5 credits). Outputs and ledgers live under `generation/`; the delivered test copies are named
+`Maasai_Test_*` in `~/Music`.
+
 ## Privacy and limits
 
 - Audio is transcribed locally. No audio bytes are sent to a model.

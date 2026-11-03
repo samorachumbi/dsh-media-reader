@@ -14,3 +14,6 @@ __pycache__/
 
 # replication evidence packs (large local artifacts, rebuilt on demand)
 replication/
+
+# generation pilots and paid outputs (local, archival data)
+generation/
