@@ -166,8 +166,12 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server"
  },
  "missing_required": [],
+ "manifest_self": {
+  "path": "MANIFEST.json",
+  "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
+ },
  "file_count": 75,
- "total_bytes": 1790162,
+ "total_bytes": 1791428,
  "files": [
   {
    "path": "README.md",
@@ -176,8 +180,8 @@ unverified. Model ids and prices in `docs/` are dated observations, not guarante
   },
   {
    "path": "docs/ACCEPTANCE.md",
-   "bytes": 12125,
-   "sha256": "67a11fe0b4b625a440ad2c3eaca007e134db867356c84092ff5e4f35561d7de2"
+   "bytes": 13391,
+   "sha256": "8b63024f139675d6f61e96f5437ec368415693ea572d1bb7dda1fc5bcd35c97e"
   },
   {
    "path": "docs/AUDIT.md",
@@ -806,6 +810,30 @@ intervals, and an explicit list of what did not run (stems, MIDI, OCR, semantic 
 silently omitting it. Wall time 245 s, no generation call, no network.
 
 Unit suite on this build: `npm test` → **97/97 pass**.
+
+## Bundle verification — 2026-11-03
+
+The distributable bundle (`dist/dsh-media-reader-0.1.0.tar.gz`, 92 entries, 1.1 MB) was built, extracted
+into a directory that is not the development tree, installed with its own `install.sh` (copy-restore, patch
+row, duplicate guard), the scratch instance restarted against that installed copy, and its own `smoke.sh`
+run:
+
+```
+18/18 checks passed against http://127.0.0.1:3096
+```
+
+Payload identity was checked before the run: `diff -r plugin/lib` and `diff -r plugin/python` against the
+installed copy both report no differences, so the verification is about the shipped code.
+
+Installer behaviour verified on a clean throwaway home:
+
+| Case | Result |
+|---|---|
+| clean home, harness packages not yet reachable | copies + registers, prints a WARN naming the missing prerequisite and what to do |
+| clean home, harness packages reachable | copies + registers + `plugin imports cleanly` |
+| re-run over an existing install | idempotent: patch row detected, no duplicate block |
+| `uninstall.sh` | removes the copy and the patch row (backup kept), leaves the profile otherwise untouched |
+| private-path scan of the extracted bundle | clean (all machine paths generalised to `$HOME`, `$VAULT`, `$WORKSPACE`, `$REVIEW_DIR`) |
 
 ---
 

@@ -37,6 +37,30 @@ silently omitting it. Wall time 245 s, no generation call, no network.
 
 Unit suite on this build: `npm test` → **97/97 pass**.
 
+## Bundle verification — 2026-11-03
+
+The distributable bundle (`dist/dsh-media-reader-0.1.0.tar.gz`, 92 entries, 1.1 MB) was built, extracted
+into a directory that is not the development tree, installed with its own `install.sh` (copy-restore, patch
+row, duplicate guard), the scratch instance restarted against that installed copy, and its own `smoke.sh`
+run:
+
+```
+18/18 checks passed against http://127.0.0.1:3096
+```
+
+Payload identity was checked before the run: `diff -r plugin/lib` and `diff -r plugin/python` against the
+installed copy both report no differences, so the verification is about the shipped code.
+
+Installer behaviour verified on a clean throwaway home:
+
+| Case | Result |
+|---|---|
+| clean home, harness packages not yet reachable | copies + registers, prints a WARN naming the missing prerequisite and what to do |
+| clean home, harness packages reachable | copies + registers + `plugin imports cleanly` |
+| re-run over an existing install | idempotent: patch row detected, no duplicate block |
+| `uninstall.sh` | removes the copy and the patch row (backup kept), leaves the profile otherwise untouched |
+| private-path scan of the extracted bundle | clean (all machine paths generalised to `$HOME`, `$VAULT`, `$WORKSPACE`, `$REVIEW_DIR`) |
+
 ---
 
 # Acceptance record — 2026-10-30

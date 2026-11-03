@@ -45,6 +45,10 @@ manifest = {
     },
     "roles": required,
     "missing_required": missing,
+    "manifest_self": {
+        "path": "MANIFEST.json",
+        "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it.",
+    },
     "file_count": len(files),
     "total_bytes": sum(f["bytes"] for f in files),
     "files": files,

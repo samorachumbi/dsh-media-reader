@@ -33,8 +33,12 @@
   "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server"
  },
  "missing_required": [],
+ "manifest_self": {
+  "path": "MANIFEST.json",
+  "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
+ },
  "file_count": 75,
- "total_bytes": 1790162,
+ "total_bytes": 1791428,
  "files": [
   {
    "path": "README.md",
@@ -43,8 +47,8 @@
   },
   {
    "path": "docs/ACCEPTANCE.md",
-   "bytes": 12125,
-   "sha256": "67a11fe0b4b625a440ad2c3eaca007e134db867356c84092ff5e4f35561d7de2"
+   "bytes": 13391,
+   "sha256": "8b63024f139675d6f61e96f5437ec368415693ea572d1bb7dda1fc5bcd35c97e"
   },
   {
    "path": "docs/AUDIT.md",
