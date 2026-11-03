@@ -17,3 +17,6 @@ replication/
 
 # generation pilots and paid outputs (local, archival data)
 generation/
+
+# per-machine private paths for build-bundle.sh (the example file is the tracked one)
+.bundle-paths

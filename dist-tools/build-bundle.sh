@@ -2,7 +2,12 @@
 # Build the distributable bundle: plugin + skills + docs + fixtures + installers + manifest.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAULT="${VAULT:-$HOME/projects/deepseek-test/second-brain}"
+# Private locations (the notes vault) are NOT part of this public repository. Declare them in
+# .bundle-paths, which is gitignored:
+#     VAULT_DIR=$HOME/somewhere/private-vault
+# Without it the plugin still bundles; the four skills are simply left out with a loud warning.
+[ -f "$REPO/.bundle-paths" ] && . "$REPO/.bundle-paths"
+VAULT="${VAULT_DIR:-}"
 NAME="${NAME:-dsh-media-reader}"
 VERSION="$(python3 -c "import json;print(json.load(open('$REPO/package.json'))['version'])")"
 STAGE="$REPO/dist-tools/bundle/$NAME-$VERSION"
@@ -21,6 +26,10 @@ rm -rf "$STAGE/plugin/lib/__pycache__" 2>/dev/null || true
 copy_skill() {
   local name="$1" file="$2"
   mkdir -p "$STAGE/skills/$name"
+  if [ -z "$VAULT" ]; then
+    echo "  SKIP skill: $name — VAULT_DIR is not set (see .bundle-paths); the plugin payload is unaffected" >&2
+    return 0
+  fi
   if [ -f "$VAULT/skills/$file" ]; then
     cp "$VAULT/skills/$file" "$STAGE/skills/$name/SKILL.md"
     echo "  skill: $name"
@@ -39,9 +48,11 @@ for doc in RESEARCH.md PRODUCTION-PIPELINE.md REPLICATION-RESEARCH.md EVIDENCE-P
            directing-workflow.md dance-direction.md; do
   [ -f "$REPO/$doc" ] && cp "$REPO/$doc" "$STAGE/docs/"
 done
-cp "$VAULT/concepts/generated-film-pipeline.md" "$STAGE/docs/" 2>/dev/null || true
-cp "$VAULT/concepts/plugin-distribution-bundle.md" "$STAGE/docs/" 2>/dev/null || true
-cp "$VAULT/concepts/image-read-failure-handoff.md" "$STAGE/docs/" 2>/dev/null || true
+if [ -n "$VAULT" ]; then
+  cp "$VAULT/concepts/generated-film-pipeline.md" "$STAGE/docs/" 2>/dev/null || true
+  cp "$VAULT/concepts/plugin-distribution-bundle.md" "$STAGE/docs/" 2>/dev/null || true
+  cp "$VAULT/concepts/image-read-failure-handoff.md" "$STAGE/docs/" 2>/dev/null || true
+fi
 
 python3 "$REPO/dist-tools/scrub-paths.py" "$STAGE"
 

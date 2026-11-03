@@ -292,3 +292,14 @@ npm test
 bash probe/rtf.sh          # once the venv is installed; records base vs small
 ```
 
+
+## Licence
+
+**Proprietary — all rights reserved.** Reading, studying and running this for personal,
+non-commercial use is permitted; copying, redistributing, selling or using it in a commercial
+product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
+open an issue if you want to discuss commercial use.
+
+The prebuilt bundle in `dist/` was produced before this notice was added; the repository and
+its source are governed by it, and the bundle will be rebuilt with the licence file included
+before it is distributed separately.

@@ -1,0 +1,5 @@
+# Copy to .bundle-paths (gitignored) to declare this build machine's private locations.
+# Leave a line out and that placeholder is simply not used; the plugin payload is unaffected.
+VAULT_DIR=$HOME/wherever/your/private-vault
+WORKSPACE_DIR=$HOME/where/this/checkout/lives
+REVIEW_DIR=$HOME/where/generated/media/is/reviewed
