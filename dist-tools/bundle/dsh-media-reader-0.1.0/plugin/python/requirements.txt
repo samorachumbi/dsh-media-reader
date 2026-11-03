@@ -1,0 +1,5 @@
+# PyAV 19 removed the metadata_errors kwarg faster-whisper 1.2.1 passes to
+# av.open; pinning below 19 is required or every transcription fails with
+# "open() got an unexpected keyword argument 'metadata_errors'".
+faster-whisper==1.2.1
+av==18.1.0

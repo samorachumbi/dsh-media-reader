@@ -1,0 +1,7 @@
+# dsh-media-reader bundle patch.
+#
+# The row loads the bare package name from the profile's node_modules. Install by
+# copy-restore (never `dsh plugin add`, which forwards to pnpm inside the profile).
+- insert:
+    - id: media-reader
+      name: 'dsh-media-reader'

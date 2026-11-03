@@ -17,10 +17,24 @@
 import { spawn } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
 
-const DEST = process.argv[2] ??
-  '/home/samora/projects/Video_Image_Voice/.dsh-test-home/profiles/web/node_modules/dsh-media-reader/lib/index.js'
-const FIXTURE = process.argv[3] ??
-  '/home/samora/projects/Video_Image_Voice/fixtures/error-demo.mp4'
+import { existsSync } from 'node:fs'
+
+// No machine path is baked in: the installed copy is discovered from DSH_HOME, or passed explicitly.
+const HOME = process.env.HOME ?? ''
+const DSH_HOME = process.env.DSH_HOME ?? `${HOME}/.dsh`
+const PROFILE = process.env.DSH_PROFILE ?? 'web'
+const pick = (candidates) => candidates.find((candidate) => candidate && existsSync(candidate))
+const DEST = process.argv[2] ?? pick([
+  `${DSH_HOME}/profiles/${PROFILE}/node_modules/dsh-media-reader/lib/index.js`
+])
+const FIXTURE = process.argv[3] ?? pick([
+  new URL('../fixtures/error-demo.mp4', import.meta.url).pathname
+])
+if (!DEST) {
+  console.error('usage: verify-installed-tool.mjs <installed lib/index.js> [media-file]')
+  console.error('       no default found under $DSH_HOME/profiles/<profile>/node_modules/dsh-media-reader')
+  process.exit(2)
+}
 
 function subprocessService() {
   return {

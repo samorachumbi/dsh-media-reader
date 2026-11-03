@@ -11,18 +11,25 @@
  * The scratch home must have working model credentials; the script does not
  * read, copy or print any credential.
  */
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+// Fixtures live beside the plugin in the repo (fixtures/) and inside the plugin in a distributed bundle
+// (plugin/fixtures/). Resolve both, and let FIXTURES_DIR override for an unusual layout.
+const FIXTURE_DIR = process.env.FIXTURES_DIR
+  ? process.env.FIXTURES_DIR
+  : [join(ROOT, 'fixtures'), join(ROOT, 'plugin', 'fixtures')].find((dir) => existsSync(join(dir, 'hello.png'))) ??
+    join(ROOT, 'fixtures')
 const BASE = process.env.DSH_TEST_URL ?? 'http://127.0.0.1:3096'
 const VISION_MODEL = 'deepseek-v4-flash-vision-exp'
 const TEXT_MODEL = 'deepseek-v4-flash'
 let rpc = 0
 
 function fixture(name) {
-  return join(ROOT, 'fixtures', name)
+  return join(FIXTURE_DIR, name)
 }
 
 async function api(method, payload) {

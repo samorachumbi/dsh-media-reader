@@ -1,0 +1,54 @@
+{
+  "name": "dsh-media-reader",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read local images, audio and video from DeepSeek Harness, including on text-only routes; includes a composer drag-and-drop target.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./client": {
+      "default": "./lib/client.js"
+    }
+  },
+  "files": [
+    "lib",
+    "python",
+    "bin",
+    "cordis.patch.yml",
+    "README.md",
+    "EVIDENCE-PACK.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "evidence": "node bin/media-evidence.mjs",
+    "generate": "node bin/kie-generate.mjs",
+    "dsp-self-test": ".venv-stt/bin/python python/dsp_worker.py --self-test"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.7"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "bin": {
+    "media-evidence": "./bin/media-evidence.mjs",
+    "kie-generate": "./bin/kie-generate.mjs"
+  }
+}

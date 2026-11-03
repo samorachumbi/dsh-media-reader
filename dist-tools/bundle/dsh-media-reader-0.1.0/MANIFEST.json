@@ -1,0 +1,415 @@
+{
+ "name": "dsh-media-reader",
+ "version": "0.1.0",
+ "summary": "Read images, audio and video from DeepSeek Harness, including on a model route that cannot accept media.",
+ "install": {
+  "steps": [
+   "./install.sh",
+   "./install-skills.sh",
+   "restart the DSH server",
+   "DSH_TEST_URL=http://127.0.0.1:3096 ./smoke.sh"
+  ],
+  "rollback": "./uninstall.sh",
+  "package_manager": "none \u2014 copy-restore by design; see skills/dsh-plugin-install-safety",
+  "requires": [
+   "node",
+   "ffmpeg",
+   "python3"
+  ]
+ },
+ "roles": {
+  "plugin/lib/index.js": "plugin entry \u2014 registers the five tools",
+  "plugin/package.json": "package metadata; dsh.client.platform mounts the drag-and-drop half",
+  "plugin/cordis.patch.yml": "the profile patch row that loads the plugin",
+  "plugin/python/dsp_worker.py": "local DSP worker (tempo, chroma, onsets, chords, loudness)",
+  "plugin/probe/smoke.mjs": "live capability harness \u2014 drives real sessions on both routes",
+  "install.sh": "copy-restore installer; refuses package managers; runs the duplicate guard",
+  "install-skills.sh": "links the bundled skills into $DSH_HOME/skills",
+  "uninstall.sh": "reverses install.sh and nothing else",
+  "smoke.sh": "one-command live verification",
+  "skills/product-motion-studio/SKILL.md": "the production method this bundle is built around",
+  "skills/dsh-plugin-install-safety/SKILL.md": "why `dsh plugin add` is banned here; the copy-restore method",
+  "skills/dsh-skill-install/SKILL.md": "how to make the skills loadable and slash-invocable",
+  "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server"
+ },
+ "missing_required": [],
+ "file_count": 75,
+ "total_bytes": 1790162,
+ "files": [
+  {
+   "path": "README.md",
+   "bytes": 6080,
+   "sha256": "3fb5c4fbc6718b20770d7746281755d52fcc5ee1b67f3801fcef47b44b03ef5a"
+  },
+  {
+   "path": "docs/ACCEPTANCE.md",
+   "bytes": 12125,
+   "sha256": "67a11fe0b4b625a440ad2c3eaca007e134db867356c84092ff5e4f35561d7de2"
+  },
+  {
+   "path": "docs/AUDIT.md",
+   "bytes": 12053,
+   "sha256": "c271ad02662b932dd3b3f6865ada4cd1e79134c0fa61c0d4b1afd4a2c27eff8f"
+  },
+  {
+   "path": "docs/CONTRACT.md",
+   "bytes": 6200,
+   "sha256": "87210db8046ffb69c267243708bca296e8cd0d02884f7b5ab3804ec617ac5557"
+  },
+  {
+   "path": "docs/EVIDENCE-PACK.md",
+   "bytes": 17348,
+   "sha256": "6af21827ffbe584e2bca8aa657a504a15ba2c9ccb64136581f1f8dd0e466f474"
+  },
+  {
+   "path": "docs/PATH-PLACEHOLDERS.md",
+   "bytes": 665,
+   "sha256": "8848176efe1b39a679fff6a5580894102eaf9215fa5286074407e7ce57c9cc32"
+  },
+  {
+   "path": "docs/PLAN.md",
+   "bytes": 15652,
+   "sha256": "7a22b69998bfc056f72e8e56976c82f6c61515578ad40924cc9a71340c99bc16"
+  },
+  {
+   "path": "docs/PRODUCTION-PIPELINE.md",
+   "bytes": 10636,
+   "sha256": "3e12bfd7b6d02b0d5192990229e29390df65363621cfe78dae2f6f2e0b5b014c"
+  },
+  {
+   "path": "docs/README.md",
+   "bytes": 14777,
+   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+  },
+  {
+   "path": "docs/REPLICATION-RESEARCH.md",
+   "bytes": 12731,
+   "sha256": "b0d1fcdb824ed56f37f9bf90668b8c2ca716104c94e5e033a585f0a3e3f786b4"
+  },
+  {
+   "path": "docs/RESEARCH.md",
+   "bytes": 18147,
+   "sha256": "047d6ee291bb10680b76d67cc20849cbab68fc6c1e56180d6e71ab5df4b3e469"
+  },
+  {
+   "path": "docs/dance-direction.md",
+   "bytes": 9146,
+   "sha256": "7f057ff9662cda10256304fcb3330ceb5c954eb3c7efdf9b0e3f72716ed69e19"
+  },
+  {
+   "path": "docs/directing-workflow.md",
+   "bytes": 6797,
+   "sha256": "2ac6051977cf120073b6cfdbbd1b3061aea01d11f4f2db143da1047fd33614aa"
+  },
+  {
+   "path": "docs/generated-film-pipeline.md",
+   "bytes": 4000,
+   "sha256": "db065c8fde05f6385da2593cee86e26c64916573fb13afb6446cdbacb5271711"
+  },
+  {
+   "path": "docs/image-read-failure-handoff.md",
+   "bytes": 7353,
+   "sha256": "fe4695de7cc7bcc4907123ff2b9a07731624dba64616b9d37b3b4e91c784fc32"
+  },
+  {
+   "path": "docs/plugin-distribution-bundle.md",
+   "bytes": 2993,
+   "sha256": "67d2bc1e9ca7c82b537a5015b18af998498e12e8873d3a2ea43b11e9353faba6"
+  },
+  {
+   "path": "fixtures/error-demo.mp4",
+   "bytes": 110304,
+   "sha256": "127b4246adf02a8d93a6eef391dfb409c7af66cdd1f8f404514f7b9304b0c37a"
+  },
+  {
+   "path": "fixtures/hello.png",
+   "bytes": 8979,
+   "sha256": "45dc2c2101c968bbabd12a656ec5f4ceeb2bb39ac149ed556116a6bafc91777e"
+  },
+  {
+   "path": "fixtures/jfk.wav",
+   "bytes": 352078,
+   "sha256": "59dfb9a4acb36fe2a2affc14bacbee2920ff435cb13cc314a08c13f66ba7860e"
+  },
+  {
+   "path": "fixtures/silence.wav",
+   "bytes": 96078,
+   "sha256": "4109ef42f110d7e2994e60bdb21bc9a01a259b72487a2fd80b3e93d5d6d0e639"
+  },
+  {
+   "path": "install-skills.sh",
+   "bytes": 924,
+   "sha256": "320d04efbd368ff3819b13fea5de08db3c6cad00a430c76c583584542ae7172c"
+  },
+  {
+   "path": "install.sh",
+   "bytes": 4601,
+   "sha256": "6fe84c5e282297f5c3e2cb0f198594d459a401cf5ba88f9f9eabeb176c758a9a"
+  },
+  {
+   "path": "plugin/README.md",
+   "bytes": 14777,
+   "sha256": "6aaa719f68e3ae79d3a841096a0eafc07fc17826c11394bcb62881d93853a421"
+  },
+  {
+   "path": "plugin/cordis.patch.yml",
+   "bytes": 265,
+   "sha256": "007529fbfcf9d7411ccb97b3406797ddbdf691e01a93cb5401c95910acbeb3e1"
+  },
+  {
+   "path": "plugin/fixtures/error-demo.mp4",
+   "bytes": 110304,
+   "sha256": "127b4246adf02a8d93a6eef391dfb409c7af66cdd1f8f404514f7b9304b0c37a"
+  },
+  {
+   "path": "plugin/fixtures/hello.png",
+   "bytes": 8979,
+   "sha256": "45dc2c2101c968bbabd12a656ec5f4ceeb2bb39ac149ed556116a6bafc91777e"
+  },
+  {
+   "path": "plugin/fixtures/jfk.wav",
+   "bytes": 352078,
+   "sha256": "59dfb9a4acb36fe2a2affc14bacbee2920ff435cb13cc314a08c13f66ba7860e"
+  },
+  {
+   "path": "plugin/fixtures/silence.wav",
+   "bytes": 96078,
+   "sha256": "4109ef42f110d7e2994e60bdb21bc9a01a259b72487a2fd80b3e93d5d6d0e639"
+  },
+  {
+   "path": "plugin/lib/artifacts.js",
+   "bytes": 3026,
+   "sha256": "46789a534505f83796180f20708fc5e8d1ceab085bfd78d243eda236423700b8"
+  },
+  {
+   "path": "plugin/lib/audio.js",
+   "bytes": 5749,
+   "sha256": "b121c9d8f4de57223e99430e1b3c4a27392a6d67d9286ab73b04dd1fd6daf081"
+  },
+  {
+   "path": "plugin/lib/client.js",
+   "bytes": 10894,
+   "sha256": "f29081acbcf7c6a9c99061f613071c916d1302dec402b1e5eb3e4938e58e133e"
+  },
+  {
+   "path": "plugin/lib/describe.js",
+   "bytes": 3638,
+   "sha256": "aa97bd2f20048e21cbb5329e321a36b6fe935193408d39896bbdcd67a03a1475"
+  },
+  {
+   "path": "plugin/lib/errors.js",
+   "bytes": 553,
+   "sha256": "0ea8b0f1c9e76dadc801193a621b93dd1ddb4d28e8b82e303bb80f7648c9793e"
+  },
+  {
+   "path": "plugin/lib/evidence/audio.js",
+   "bytes": 4280,
+   "sha256": "038229f48d73471b8aa59d6ff446b97b962b9ff4b823241e036d6bdff7bb2e4c"
+  },
+  {
+   "path": "plugin/lib/evidence/chords.js",
+   "bytes": 6291,
+   "sha256": "75f294ea8935caddc6ea3f85830dd906ec3ec4eb08645cd9370e92714a6c1518"
+  },
+  {
+   "path": "plugin/lib/evidence/index.js",
+   "bytes": 16860,
+   "sha256": "b8564c7fdf5432be341636a3651ca27b72c196d2d785283fb4b416de6b8d16e8"
+  },
+  {
+   "path": "plugin/lib/evidence/lyrics.js",
+   "bytes": 4497,
+   "sha256": "846040e8704bdaa0b7559dcd928e6a60e8f81c9edc6fac994a4adb3793b92a8a"
+  },
+  {
+   "path": "plugin/lib/evidence/pack.js",
+   "bytes": 26574,
+   "sha256": "fcd54e1d1990058ee834f27742f8ff2ddbcdb4090c5f6edc77e3de29b6b444c5"
+  },
+  {
+   "path": "plugin/lib/evidence/render.js",
+   "bytes": 18140,
+   "sha256": "32a171f404cce8d3a2c8e3a18af200a19e6e576d08c08daa94909007117b16b0"
+  },
+  {
+   "path": "plugin/lib/evidence/runner.js",
+   "bytes": 3697,
+   "sha256": "5167c69e03ab87e9909d7f2e60068ed56af4dcb983f4254076aaa4e311d88fe7"
+  },
+  {
+   "path": "plugin/lib/evidence/semantic.js",
+   "bytes": 14243,
+   "sha256": "77efd5671aafc69ff71a5fd07f6a1aadcea42416def5de048f976dcd5894b474"
+  },
+  {
+   "path": "plugin/lib/evidence/shots.js",
+   "bytes": 12606,
+   "sha256": "eae2a6e2fe93a6204a72fafc1d083b51c0b27df41c821697468575f772f0b3c7"
+  },
+  {
+   "path": "plugin/lib/evidence/source.js",
+   "bytes": 6022,
+   "sha256": "e983a960b1b2231b92370c7bb07104289589a6074975fd0f538a5dc8e9adc2c0"
+  },
+  {
+   "path": "plugin/lib/evidence/stems.js",
+   "bytes": 10076,
+   "sha256": "76df2dcefcc6cc11f207c3a559409cabbd6bfc53b9d09526266a6083df9e336d"
+  },
+  {
+   "path": "plugin/lib/evidence/summary.js",
+   "bytes": 8964,
+   "sha256": "007a6f3ba3a0dff410d16e1184ce97dc9e4a7983d257950afa5c584831cf9f1e"
+  },
+  {
+   "path": "plugin/lib/exec.js",
+   "bytes": 3664,
+   "sha256": "8e641dc84c2293faa899f891731f5840efffbb2bae8dd28db671d769257e66fb"
+  },
+  {
+   "path": "plugin/lib/fsutil.js",
+   "bytes": 1476,
+   "sha256": "6beafecfc10a149b7bc02da6cb95c08f6a1d982d61a80e4fe9920a45c665e1d3"
+  },
+  {
+   "path": "plugin/lib/image.js",
+   "bytes": 6201,
+   "sha256": "2255fe1bb3c3ae78c3e4cb7e258632289b7c748d1b792b70b781d04d32baddb5"
+  },
+  {
+   "path": "plugin/lib/index.js",
+   "bytes": 13141,
+   "sha256": "451b1f8da494255cbfd6e086ed4fd7373aa59e9b4e4bc188a33a429a8b7876ba"
+  },
+  {
+   "path": "plugin/lib/kie/client.js",
+   "bytes": 12207,
+   "sha256": "a5a23de37a50a3b7ac310047928fda82decd5da193bb6b7d65a6bdb71f7056b2"
+  },
+  {
+   "path": "plugin/lib/kie/generation.js",
+   "bytes": 42261,
+   "sha256": "cad3abe2df5dcde18ce5dac9a9f02bb49be26cf7deaf0b35fa64fef00a2ef207"
+  },
+  {
+   "path": "plugin/lib/probe.js",
+   "bytes": 6390,
+   "sha256": "f7ba8e1d43de4ea0aff988f459504f7c1d08c4c18ac1b4b4e70059d9e752bb30"
+  },
+  {
+   "path": "plugin/lib/route.js",
+   "bytes": 3494,
+   "sha256": "71e560444ef0c544c7da3872ea695886d04ed240de992555020733c3781c0490"
+  },
+  {
+   "path": "plugin/lib/stt.js",
+   "bytes": 7899,
+   "sha256": "5bd0571101b8efc57167c23abc95ee7faa2bdab3536d114e0f5276e25a0070ab"
+  },
+  {
+   "path": "plugin/lib/upload-route.js",
+   "bytes": 4421,
+   "sha256": "98b9907bbe286c3376c47eef4cda44f752d02e7e4c562963ee8482d8e23f29b7"
+  },
+  {
+   "path": "plugin/lib/upload.js",
+   "bytes": 2582,
+   "sha256": "e9ea77de98e8b9b87368f9c3ce1702f3c8cd2313a75f43cbd9d37c0e096d9f96"
+  },
+  {
+   "path": "plugin/lib/video.js",
+   "bytes": 19950,
+   "sha256": "0b22f0a62942e06ad7a810e05dca4b2566da923a2c60caaa1dbe63e8d030236f"
+  },
+  {
+   "path": "plugin/package.json",
+   "bytes": 1232,
+   "sha256": "9d6ccef61543379d16b9206a79790e33ceae9e03e5a2d4acbc86b264b6b16852"
+  },
+  {
+   "path": "plugin/probe/err-base.txt",
+   "bytes": 198,
+   "sha256": "542d38451d87300e75d68a7049fc5b42e665db78e37ecfcf777e2da565ef948c"
+  },
+  {
+   "path": "plugin/probe/err-small.txt",
+   "bytes": 199,
+   "sha256": "5a0620ebae6ecae6b8ee373b6b66414b6417dc90f3ab9efe7f3bb1a8c1100c5c"
+  },
+  {
+   "path": "plugin/probe/out-base.json",
+   "bytes": 535,
+   "sha256": "e0af573aa70fe2acb324ae3119c7c77dfd2d7e8dc26f434fe5743b73ca78d9bc"
+  },
+  {
+   "path": "plugin/probe/out-small.json",
+   "bytes": 535,
+   "sha256": "64e8ce3b35ed8f17ad7c8d592b4b40faf81d8090f92a9fcbb4a9784d8d5670fa"
+  },
+  {
+   "path": "plugin/probe/rtf.sh",
+   "bytes": 1780,
+   "sha256": "98785d2e552f185ead2575d18165614dc440c3f39651efc034cb5fdda85a1d09"
+  },
+  {
+   "path": "plugin/probe/smoke.mjs",
+   "bytes": 10132,
+   "sha256": "651f9eb3998cdb5d7088ebd60014dc96709ff64be1b69b040e9901808bdeeb3a"
+  },
+  {
+   "path": "plugin/probe/verify-installed-tool.mjs",
+   "bytes": 3879,
+   "sha256": "13b4efbb6cae3fc324500d3eb8773ba2a5f631838894c474bbd97a97c743b82b"
+  },
+  {
+   "path": "plugin/python/__pycache__/dsp_worker.cpython-312.pyc",
+   "bytes": 51907,
+   "sha256": "5d61d3edd89d02925eb1014191571b76b9278bbf1c723347b3e553859efc9f71"
+  },
+  {
+   "path": "plugin/python/dsp_worker.py",
+   "bytes": 41928,
+   "sha256": "e09c60a4543c082c945f7e9a08fe7692be282262d4d0bbe300fea80a68b04ec9"
+  },
+  {
+   "path": "plugin/python/requirements.txt",
+   "bytes": 247,
+   "sha256": "dce801402dc572e724de50f41bc8bce8c01033b6fc0027768e26c08c8a97df78"
+  },
+  {
+   "path": "plugin/python/stt_worker.py",
+   "bytes": 3654,
+   "sha256": "9e30e06e342bbe43bd86c5374ff6e7af3fa477a298f8098dc1492ec456917d0a"
+  },
+  {
+   "path": "skills/dsh-plugin-install-safety/SKILL.md",
+   "bytes": 7770,
+   "sha256": "00ab2962ed4efb761677a6860c64839c4808f826bf7a8f371b929c6ab81e9445"
+  },
+  {
+   "path": "skills/dsh-skill-install/SKILL.md",
+   "bytes": 9631,
+   "sha256": "0845180931e6756d31773f6048ad06d2f5617f6615e2540525eb8e3b2a0c0237"
+  },
+  {
+   "path": "skills/dsh-test-boot/SKILL.md",
+   "bytes": 8074,
+   "sha256": "0cf404fa1dd95338c10345c6d70c750617c48eca55d79544bb304504474d93a8"
+  },
+  {
+   "path": "skills/product-motion-studio/SKILL.md",
+   "bytes": 54379,
+   "sha256": "6f84b42c87a0adb1bf0e61cac75bae8a79907edd3e03ceafb336129dda7ec466"
+  },
+  {
+   "path": "smoke.sh",
+   "bytes": 862,
+   "sha256": "996847f0adef38dfb4ebd7ca36c0810df41abb716da5323dde11634924669634"
+  },
+  {
+   "path": "uninstall.sh",
+   "bytes": 1276,
+   "sha256": "8ad4503585f26f7b1cec5f85a11476afca487a6c0e9197880f2be209db661f16"
+  }
+ ]
+}
