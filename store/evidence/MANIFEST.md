@@ -6,10 +6,10 @@ was committed with. Full-page captures, lazy images forced to load first.
 
 | file | viewport | page height | horizontal overflow | images |
 |---|---|---|---|---|
-| `page-320.png` | 320 × 900 | 7194 px | none | 2/2 loaded |
-| `page-390.png` | 390 × 900 | 6184 px | none | 2/2 loaded |
-| `page-768.png` | 768 × 900 | 4762 px | none | 2/2 loaded |
-| `page-1440.png` | 1440 × 900 | 3500 px | none | 2/2 loaded |
+| `page-320.png` | 320 × 900 | 8357 px | none | 2/2 loaded |
+| `page-390.png` | 390 × 900 | 7321 px | none | 2/2 loaded |
+| `page-768.png` | 768 × 900 | 5457 px | none | 2/2 loaded |
+| `page-1440.png` | 1440 × 900 | 4098 px | none | 2/2 loaded |
 
 The PNG's own pixel height equals the page height in this table — checked with `ffprobe`, because an
 earlier capture pass wrote 900 px strips while its console cheerfully printed "done". The cause was a
