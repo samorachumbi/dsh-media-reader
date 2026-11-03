@@ -166,6 +166,9 @@
   .demo-file:hover { border-color: var(--accent); }
   .demo-file:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
+  .demo-file--own { border-style: dashed; border-color: var(--accent); }
+  .demo-shell[data-dropping] { outline: 3px dashed var(--accent); outline-offset: 3px; }
+  .demo-shell[data-dropping] .demo-stage { opacity: .6; }
   .demo-stage { padding: 0; }
   .demo-stage-head {
     display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between;
@@ -264,6 +267,10 @@
             <button type="button" class="demo-file" data-demo="video" aria-pressed="false">
               error-demo.mp4 <small>video · media_video</small>
             </button>
+            <label class="demo-file demo-file--own" for="demo-file">
+              <input type="file" id="demo-file" accept="image/*,audio/*,video/*" hidden>
+              Try your own file <small>measured on your device · never uploaded</small>
+            </label>
           </div>
 
           <div class="demo-stage" data-demo-stage data-state="idle">
@@ -566,7 +573,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var timer = null;
 
-  function render(key, { announce } = { announce: true }) {
+  function render(key, { announce = true, immediate = false } = {}) {
     var d = DEMOS[key];
     if (!d) return;
 
@@ -586,7 +593,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     };
 
     if (timer) { clearTimeout(timer); timer = null; }
-    if (reduced) { paint(); return; }
+    if (reduced || immediate) { paint(); return; }
     timer = setTimeout(paint, 700);
   }
 
@@ -594,8 +601,168 @@ Details: The background is a uniform dark blue with no visible objects or patter
     b.addEventListener('click', function () { render(b.getAttribute('data-demo')); });
   });
 
-  // the markup already shows the image result, so a reader with scripting off still sees a real one
-  render('image', { announce: false });
+  // Expose a cancel seam: a pending paint must never overwrite a result the visitor triggered later.
+  window.__dshDemoCancelPaint = function () { if (timer) { clearTimeout(timer); timer = null; } };
+
+  // The markup already holds the image result, so the initial render is synchronous — with a timer, a
+  // visitor who picks their own file within 700 ms had it silently replaced by the example.
+  render('image', { announce: false, immediate: true });
+})();
+</script>
+<script>
+// "Try your own file": measure the visitor's file IN THE BROWSER, with no upload.
+//
+// Why it is built this way: the plugin's reading (description, transcript, shots, tempo) needs ffprobe,
+// faster-whisper, a DSP worker and the vision route — all on the harness host. A static page cannot run
+// any of that, and uploading a stranger's media to a server would mean hosting, cost, abuse control and
+// a data-retention policy. So this measures exactly the part a browser can measure, says plainly what it
+// cannot, and makes that gap the point: the plugin adds the READING, not the metadata.
+(function () {
+  var input = document.getElementById('demo-file');
+  var shell = document.querySelector('.demo-shell');
+  var stage = document.querySelector('[data-demo-stage]');
+  if (!input || !shell || !stage) return;
+
+  var toolEl = document.querySelector('[data-demo-tool]');
+  var timeEl = document.querySelector('[data-demo-timing]');
+  var headRight = stage.querySelector('.demo-stage-head > span:last-child');
+  var bodyEl = document.querySelector('[data-demo-body]');
+  var noteEl = document.querySelector('[data-demo-note]');
+  var statusEl = document.querySelector('[data-demo-status]');
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
+  var defaultHeadRight = headRight ? headRight.textContent : '';
+
+  var bytes = function (n) {
+    if (n < 1024) return n + ' bytes';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB (' + n.toLocaleString() + ' bytes)';
+    return (n / 1048576).toFixed(1) + ' MB (' + n.toLocaleString() + ' bytes)';
+  };
+  var secs = function (d) { return isFinite(d) ? d.toFixed(2) + ' s' : 'not reported'; };
+
+  function mediaMeta(url, tag) {
+    return new Promise(function (resolve, reject) {
+      var el = document.createElement(tag);
+      el.preload = 'metadata';
+      el.muted = true;
+      var done = function () { URL.revokeObjectURL(url); resolve(el); };
+      el.onloadedmetadata = done;
+      el.onerror = function () { URL.revokeObjectURL(url); reject(new Error('this browser cannot decode that file')); };
+      el.src = url;
+    });
+  }
+
+  function measureImage(file) {
+    if (typeof createImageBitmap !== 'function') return Promise.reject(new Error('createImageBitmap unavailable'));
+    return createImageBitmap(file).then(function (bmp) {
+      var d = { width: bmp.width, height: bmp.height };
+      bmp.close && bmp.close();
+      return d;
+    });
+  }
+
+  function measure(file) {
+    var t = file.type || '';
+    var url = URL.createObjectURL(file);
+    if (t.indexOf('image/') === 0) {
+      return measureImage(file).then(function (d) {
+        return { kind: 'image', dims: d.width + 'x' + d.height + ' px' };
+      });
+    }
+    if (t.indexOf('video/') === 0) {
+      return mediaMeta(url, 'video').then(function (el) {
+        return { kind: 'video',
+          dims: el.videoWidth ? el.videoWidth + 'x' + el.videoHeight + ' px' : 'not reported',
+          duration: secs(el.duration) };
+      });
+    }
+    if (t.indexOf('audio/') === 0) {
+      return mediaMeta(url, 'audio').then(function (el) {
+        return { kind: 'audio', duration: secs(el.duration) };
+      });
+    }
+    URL.revokeObjectURL(url);
+    return Promise.reject(new Error('not an image, audio or video file'));
+  }
+
+  function show(file, meta, elapsed) {
+    var lines = [
+      '[your file: ' + file.name + ']',
+      '<path>' + file.name + '</path>',
+      '<type>' + meta.kind + (file.type ? ' (' + file.type + ')' : '') + '</type>',
+      '<size>' + bytes(file.size) + '</size>'
+    ];
+    if (meta.dims) lines.push('<dimensions>' + meta.dims + '</dimensions>');
+    if (meta.duration) lines.push('<duration>' + meta.duration + '</duration>');
+    lines.push(
+      '<measuredBy>your browser, on this device — the file was never uploaded</measuredBy>',
+      '<notMeasuredHere>the description, the on-screen text, the transcript, the shots, tempo and key. ' +
+      'Those need ffprobe, faster-whisper and the vision route running on your own harness — that is what the ' +
+      'plugin adds. This page can only show you the container.</notMeasuredHere>'
+    );
+
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+    toolEl.textContent = 'your browser';
+    timeEl.textContent = '\u00b7 ' + elapsed.toFixed(2) + ' s';
+    if (headRight) headRight.textContent = 'measured on this device, not by the plugin';
+    bodyEl.textContent = lines.join('\n');
+    noteEl.textContent = 'Nothing was sent anywhere: no upload, no request, no log. Compare the two halves — ' +
+      'the metadata is free, the reading is the product.';
+    statusEl.textContent = 'Measured ' + file.name + ' on your device. Nothing was uploaded.';
+    stage.setAttribute('data-state', 'done');
+  }
+
+  function fail(file, err) {
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+    toolEl.textContent = 'your browser';
+    timeEl.textContent = '\u00b7 failed';
+    if (headRight) headRight.textContent = 'measured on this device, not by the plugin';
+    bodyEl.textContent = '[your file: ' + (file ? file.name : 'unknown') + ']\n<error>' + err.message + '</error>';
+    noteEl.textContent = 'A browser can only read containers it can decode. The plugin does not have that limit: ' +
+      'ffprobe and faster-whisper run locally on your harness and accept far more formats.';
+    statusEl.textContent = 'Could not measure that file in this browser.';
+    stage.setAttribute('data-state', 'done');
+  }
+
+  function take(file) {
+    if (!file) return;
+    // a pending example paint would clobber this a moment later
+    if (typeof window.__dshDemoCancelPaint === 'function') window.__dshDemoCancelPaint();
+    var started = Date.now();
+    statusEl.textContent = 'Measuring ' + file.name + ' on your device\u2026';
+    measure(file).then(function (meta) {
+      show(file, meta, (Date.now() - started) / 1000);
+    }).catch(function (err) { fail(file, err); });
+  }
+
+  input.addEventListener('change', function () {
+    take(input.files && input.files[0]);
+    input.value = '';   // so the same file can be chosen twice
+  });
+
+  // the whole panel is a drop target, and the browser's own default (navigate to the file) is cancelled
+  ['dragenter', 'dragover'].forEach(function (evt) {
+    shell.addEventListener(evt, function (e) {
+      if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) {
+        e.preventDefault();
+        shell.setAttribute('data-dropping', 'true');
+      }
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    shell.addEventListener(evt, function () { shell.removeAttribute('data-dropping'); });
+  });
+  shell.addEventListener('drop', function (e) {
+    if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    e.preventDefault();
+    take(e.dataTransfer.files[0]);
+  });
+
+  // clicking one of the captured examples restores the plugin's own output header
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (headRight) headRight.textContent = defaultHeadRight;
+    });
+  });
 })();
 </script>
 </body>

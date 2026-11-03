@@ -6,9 +6,9 @@ was committed with. Full-page captures, lazy images forced to load first.
 
 | file | viewport | page height | horizontal overflow | images |
 |---|---|---|---|---|
-| `page-320.png` | 320 × 900 | 7106 px | none | 2/2 loaded |
-| `page-390.png` | 390 × 900 | 6114 px | none | 2/2 loaded |
-| `page-768.png` | 768 × 900 | 4693 px | none | 2/2 loaded |
+| `page-320.png` | 320 × 900 | 7194 px | none | 2/2 loaded |
+| `page-390.png` | 390 × 900 | 6184 px | none | 2/2 loaded |
+| `page-768.png` | 768 × 900 | 4762 px | none | 2/2 loaded |
 | `page-1440.png` | 1440 × 900 | 3500 px | none | 2/2 loaded |
 
 The PNG's own pixel height equals the page height in this table — checked with `ffprobe`, because an
@@ -90,3 +90,42 @@ rather than an empty panel.
 **What the demo does not prove:** that a dropped file behaves identically on your harness — the text is a
 captured record, not a live analysis on the visitor's machine. Paths in the audio and video blocks are
 shown as bare file names, and each block is trimmed; the note under the panel says both.
+
+## "Try your own file" — measured on the device, nothing uploaded
+
+The four chips above show captured plugin output. The fifth control lets a visitor measure **their own**
+file, in the browser, with no upload and no server.
+
+That split is deliberate. The plugin's reading needs `ffprobe`, `faster-whisper`, a numpy/scipy DSP worker
+and the vision route — all on the harness host. A static page cannot run any of it, and uploading a
+stranger's media would mean hosting, cost, abuse control and a retention policy. So the browser measures
+what a browser can measure, the panel says plainly what it cannot, and that gap is the sales argument: the
+plugin adds the *reading*, not the metadata.
+
+Verified against **ffprobe** on the same files, so the browser's numbers are not taken on trust:
+
+| input | path | browser said | ffprobe says |
+|---|---|---|---|
+| `hello.png` | file picker | `640x360 px`, `8.8 KB (8,979 bytes)` | 640×360, 8979 bytes |
+| `jfk.wav` | file picker | `11.00 s` | 11.00 s |
+| `error-demo.mp4` | **real drag-drop** | `640x360 px`, `11.00 s` | 640×360, 11.00 s |
+| `package.json` | file picker | refused: `not an image, audio or video file` | n/a |
+
+### The race this caught, and the test that now pins it
+
+A capture showed the header reading *"your browser · 0.02 s"* while the panel body still held the plugin's
+`hello.png` block. Cause: the demo's initial render used a 700 ms timer, so a visitor who picked their own
+file inside that window had the result silently overwritten.
+
+The initial paint is now synchronous and a pending paint is cancelled when a file is picked. The harness
+gained a race case (click an example, pick a file 100 ms later, wait 1.2 s, assert the visitor's file is
+still shown), and **it was shown to fail on the defect**: with the race reintroduced in a throwaway copy,
+the harness died naming the stale content — `drop never showed error-demo.mp4; panel says "[media:
+hello.png]"`. All 8 checks pass on the fixed page.
+
+### What this still does not prove
+
+- Nothing is claimed about formats the browser cannot decode (e.g. HEIC, MKV): those take the failure path
+  with an honest message, which is *not* the same as the plugin accepting them.
+- The client-side measurement is a convenience, not the product: it does not read, describe, transcribe or
+  detect anything.

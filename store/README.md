@@ -103,3 +103,36 @@ The rest of the workbench this store sits on:
 - [dsh-cost-bubble](https://github.com/samorachumbi/dsh-cost-bubble) — live cost of the current chat
 - [dsh-app-launcher](https://github.com/samorachumbi/dsh-app-launcher) — plugin pages in their own OS window
 - [dsh-daily-progress-tab](https://github.com/samorachumbi/dsh-daily-progress-tab) — the planner tab
+
+## "Try your own file" — and why it stops where it does
+
+The demo's fifth control measures the visitor's own file **in the browser**, with no upload and no server:
+name, type, byte size, image dimensions, audio/video duration and video dimensions. Verified against
+`ffprobe` on the same fixtures, so the browser's numbers are not taken on trust.
+
+It deliberately stops there, and the panel says so in its own output:
+
+```
+<notMeasuredHere>the description, the on-screen text, the transcript, the shots, tempo and key.
+Those need ffprobe, faster-whisper and the vision route running on your own harness — that is what the
+plugin adds. This page can only show you the container.</notMeasuredHere>
+```
+
+### Could a visitor's own file be interpreted live on the page?
+
+Not from a static site, and the reason is the product itself: the reading is done by `ffprobe`,
+`faster-whisper`, a numpy/scipy DSP worker and the vision route, all on the harness host. Three options,
+honestly costed:
+
+| option | what the visitor gets | what it costs | verdict |
+|---|---|---|---|
+| **A. browser-local measurement** (built) | their file's real container facts, instantly | nothing — no server, no upload, no data handling | shipped |
+| **B. our server runs the real tools** | the actual description / transcript / shots for their file | a container with ffmpeg + faster-whisper (~500 MB image plus a base model), one job at a time, an API key for the vision route, per-IP rate limits, hard caps (≈10 MB image, ≈30 s audio/video), a queue timeout, and a retention policy because someone else's media is now on your disk. Roughly 1–2 build-days plus $5–15/month, and each demo spends a few cents of vision tokens | do it only after the first sales justify it |
+| **C. "request a 15-minute live demo"** | a real person analysing their real file | your time only | the cheapest way to serve the visitor who wants B |
+
+The honest recommendation for launch is **A + C**: A is already live and costs nothing, and C converts the
+high-intent visitor without a public upload endpoint. B becomes worth building when there is evidence that
+visitors abandon because the demo is not *their* file.
+
+**Nothing about A implies B.** The page never suggests the visitor's file is being analysed; the panel
+states what was measured, by what, and what was not.
