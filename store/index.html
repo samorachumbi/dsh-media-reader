@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-media-reader — give a DeepSeek Harness agent eyes and ears</title>
+<meta name="description" content="A plugin that lets a DeepSeek Harness agent read local images, audio and video — including on a model route that cannot accept media. Commercial licence, $79 / KSh 10,000 per team.">
+<meta name="color-scheme" content="light dark">
+
+<!--
+  PAYMENT CONFIG — the single place a rail is switched on.
+  Every configured entry renders a real button that goes straight to a hosted checkout.
+  An entry with an empty url is NOT rendered: this page must never show a button that
+  cannot take money. `verified` is the date a real payment was seen through that rail
+  in test mode; a blank verified keeps the button off.
+-->
+<script type="application/json" id="pay-config">
+{
+  "price": { "usd": 79, "kes": 10000, "unit": "per team, one-time" },
+  "methods": [
+    { "id": "flutterwave", "label": "Pay by card, M-Pesa or PayPal", "note": "Flutterwave hosted checkout — Visa, Mastercard, M-Pesa and PayPal",
+      "url": "", "verified": "" },
+    { "id": "pesapal", "label": "Pay by card or M-Pesa (Pesapal)", "note": "Pesapal hosted checkout",
+      "url": "", "verified": "" },
+    { "id": "intasend", "label": "Pay by card or M-Pesa (IntaSend)", "note": "IntaSend hosted checkout — no classic PayPal",
+      "url": "", "verified": "" }
+  ],
+  "freeDownload": "https://github.com/samorachumbi/dsh-media-reader",
+  "support": "https://github.com/samorachumbi/dsh-media-reader/issues"
+}
+</script>
+
+<style>
+  :root {
+    --ink: #12161c; --ink-soft: #4a5462; --paper: #fbfaf7; --card: #ffffff;
+    --line: #dfdbd2; --accent: #1f5fd0; --accent-ink: #ffffff;
+    --good: #1a7f4b; --shadow: 0 1px 2px rgba(18,22,28,.06), 0 8px 28px rgba(18,22,28,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #eef1f5; --ink-soft: #a7b0bd; --paper: #0d1117; --card: #151b23;
+      --line: #26303c; --accent: #6ea8ff; --accent-ink: #0b1220;
+      --good: #6fd39b; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  h1, h2, h3 { line-height: 1.18; margin: 0 0 .5em; letter-spacing: -0.015em; }
+  h1 { font-size: clamp(1.75rem, 6vw, 3.1rem); }
+  h2 { font-size: clamp(1.25rem, 3.4vw, 1.9rem); }
+  h3 { font-size: 1.05rem; }
+  p { margin: 0 0 1em; }
+  .lede { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-soft); max-width: 46ch; }
+
+  header.site { border-bottom: 1px solid var(--line); background: var(--card); }
+  .site-inner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; padding-block: 14px; }
+  .wordmark { font-weight: 700; letter-spacing: .02em; font-size: .95rem; text-transform: uppercase; }
+  .wordmark span { color: var(--ink-soft); font-weight: 500; text-transform: none; letter-spacing: 0; }
+  nav.site { display: flex; flex-wrap: wrap; gap: 0 14px; font-size: .875rem; }
+  /* 44px minimum target, measured not assumed: these were 22px */
+  nav.site a { color: var(--ink-soft); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+  nav.site a:hover, nav.site a:focus-visible { color: var(--ink); text-decoration: underline; }
+
+  section { padding: clamp(28px, 6vw, 64px) 0; border-bottom: 1px solid var(--line); }
+  .hero { display: grid; gap: 28px; }
+  .eyebrow { font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; }
+  .hero-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+  .hero-facts li { font-size: .82rem; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; color: var(--ink-soft); background: var(--card); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .buy { padding: 20px; }
+  .price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .price strong { font-size: clamp(1.9rem, 7vw, 2.5rem); letter-spacing: -0.03em; }
+  .price .alt { color: var(--ink-soft); font-size: 1rem; }
+  .price-unit { color: var(--ink-soft); font-size: .875rem; margin-bottom: 16px; }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 52px; padding: 14px 18px; width: 100%;
+    font: inherit; font-weight: 650; border-radius: 10px; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--accent-ink); text-decoration: none; cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .btn.secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn + .btn { margin-top: 10px; }
+  .btn small { font-weight: 500; opacity: .8; }
+
+  .method-note { font-size: .8rem; color: var(--ink-soft); margin: 10px 0 0; }
+  .pay-status { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 12px 14px; font-size: .875rem; color: var(--ink-soft); margin: 0 0 14px; background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
+  .pay-status strong { color: var(--ink); }
+
+  ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  ul.checks li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: .95rem; }
+  ul.checks li::before { content: "✓"; color: var(--good); font-weight: 700; }
+  ul.plain { margin: 0 0 1em; padding-left: 1.1em; }
+  ul.plain li { margin-bottom: .45em; }
+
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  figcaption { font-size: .82rem; color: var(--ink-soft); margin-top: 8px; }
+
+  .grid { display: grid; gap: 24px; }
+  .proof-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0; padding: 0; list-style: none; }
+  .proof-grid li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .proof-grid b { display: block; font-size: 1.35rem; letter-spacing: -0.02em; }
+  .proof-grid span { font-size: .8rem; color: var(--ink-soft); }
+
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+  td yes { color: var(--good); font-weight: 600; }
+
+  details { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--card); margin-bottom: 10px; }
+  details summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+  details p:last-child { margin-bottom: 0; }
+  details[open] summary { margin-bottom: 10px; }
+
+  .limits { border-left: 3px solid #c2410c; }
+  .limits h3 { color: #c2410c; }
+  @media (prefers-color-scheme: dark) { .limits h3 { color: #ff9f6e; } .limits { border-left-color: #ff9f6e; } }
+
+  footer.site { padding-block: 32px 56px; font-size: .875rem; color: var(--ink-soft); }
+  footer.site p { margin: 0 0 6px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875em; background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 1px 5px; border-radius: 5px;
+         /* a long path in a <code> is 356px wide: it pushed a 320px viewport to 412px */
+         overflow-wrap: anywhere; }
+  p, li, td, th, figcaption { overflow-wrap: break-word; }
+  .nowrap { white-space: nowrap; }
+
+  @media (min-width: 900px) {
+    .hero { grid-template-columns: 1.55fr 1fr; align-items: start; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap site-inner">
+    <div class="wordmark">Itikia Digital Solutions <span>· Nairobi</span></div>
+    <nav class="site" aria-label="Sections">
+      <a href="#what">What it does</a>
+      <a href="#proof">Proof</a>
+      <a href="#licence">Licence</a>
+      <a href="#limits">Limits</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap hero" aria-labelledby="hero-h">
+    <div>
+      <p class="eyebrow">Plugin for the DeepSeek Harness</p>
+      <h1 id="hero-h">Your agent can’t see the file you hand it. This fixes that in ten minutes.</h1>
+      <p class="lede"><strong>dsh-media-reader</strong> gives a DeepSeek Harness agent five tools to read local
+        images, audio and video — including on a model route that cannot accept media at all, where a picture
+        is otherwise a dead end.</p>
+      <ul class="hero-facts">
+        <li>5 tools + a composer drop target</li>
+        <li>Works on text-only routes</li>
+        <li>Nothing installed with a package manager</li>
+        <li>18/18 live checks, 97/97 unit tests</li>
+      </ul>
+    </div>
+
+    <aside class="card buy" aria-labelledby="buy-h">
+      <h2 id="buy-h" style="font-size:1.05rem;margin-bottom:12px">Commercial licence</h2>
+      <div class="price"><strong>$79</strong><span class="alt">/ KSh 10,000</span></div>
+      <p class="price-unit">Per team, one time. 12 months of updates included.</p>
+
+      <div id="pay-area">
+        <!-- Rendered by script; never a button that cannot take money. -->
+      </div>
+
+      <p class="method-note" id="free-line">
+        Personal, non-commercial use is free —
+        <a id="free-link" href="#licence">read the licence</a>.
+      </p>
+    </aside>
+  </section>
+
+  <section id="what" class="wrap" aria-labelledby="what-h">
+    <h2 id="what-h">What it does</h2>
+    <div class="two-col">
+      <div>
+        <ul class="checks">
+          <li><span><code>media_probe</code> — real metadata from ffprobe: kind, duration, dimensions, frame rate, codecs, audio and subtitle tracks.</span></li>
+          <li><span><code>media_image</code> — on a vision route the actual image; on a text-only route a factual description from your configured vision provider.</span></li>
+          <li><span><code>media_audio</code> — local Whisper transcript with timestamps, written as <code>.txt</code>, <code>.json</code> and <code>.srt</code>.</span></li>
+          <li><span><code>media_video</code> — shot detection, bounded key frames, a contact sheet, and the spoken transcript fused onto the shot timeline.</span></li>
+          <li><span><code>media_evidence</code> — an evidence pack: tempo, key, loudness, onsets, chords, shot boundaries, lyrics confidence, every field tagged <code>MEASURED</code>, <code>INFERRED</code> or <code>UNVERIFIED</code>.</span></li>
+        </ul>
+      </div>
+      <div>
+        <figure>
+          <img src="assets/drop-analysis.png" width="1600" height="836" alt="The DeepSeek Harness composer after a PNG was dropped on it, showing a structured block of text describing the image and the words HELLO MEDIA found in it." loading="lazy" decoding="async">
+          <figcaption>One drop of a 640×360 PNG, captured from a live session. The analysis lands in the draft as
+            ordinary text, so a text-only model can work from it.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof" class="wrap" aria-labelledby="proof-h">
+    <h2 id="proof-h">What was actually verified</h2>
+    <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
+    <ul class="proof-grid">
+      <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
+      <li><b>97/97</b><span>unit tests in the shipped suite</span></li>
+      <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
+      <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
+    </ul>
+    <div class="two-col" style="margin-top:32px">
+      <figure>
+        <img src="assets/drag-over.png" width="1600" height="268" alt="The composer while a file is dragged over it: the Drop media chip is outlined in blue." loading="lazy" decoding="async">
+        <figcaption>The drop target highlights while a file is over it. Captured by driving a real browser with a
+          real drag event.</figcaption>
+      </figure>
+      <div>
+        <h3>How to check it yourself, before paying</h3>
+        <p>The plugin crate is public. Download it, verify its hash, and run the smoke test on your own harness
+          before you buy anything:</p>
+        <ul class="plain">
+          <li><code>sha256sum -c dsh-media-reader-0.1.0.tar.gz.sha256</code></li>
+          <li><code>./install.sh --dry-run</code> — reads out every action first</li>
+          <li><code>DSH_TEST_URL=… ./smoke.sh</code> — 18 checks on your machine</li>
+        </ul>
+        <p class="method-note">That is the point of publishing it: you should not have to take my word for any of
+          this.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="licence" class="wrap" aria-labelledby="licence-h">
+    <h2 id="licence-h">Free, or paid — the line is commercial use</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Use</th><th scope="col">Free</th><th scope="col">Commercial licence — $79 / KSh 10,000</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Read, study, run it for yourself</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Use in a commercial product or a paid service</td><td>No</td><td>Yes</td></tr>
+          <tr><td>Use inside a company’s internal, revenue-earning workflow</td><td>No</td><td>Yes</td></tr>
+          <tr><td>Updates for 12 months</td><td>—</td><td>Yes</td></tr>
+          <tr><td>Redistribute or resell it</td><td>No</td><td>No — not granted at any price</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:20px">The full terms ship in the bundle as <code>LICENSE</code>, at the top level and
+      beside the payload. If your use is not obviously on one side of that line, ask before you pay: one email
+      now is cheaper than a disagreement later.</p>
+  </section>
+
+  <section id="limits" class="wrap" aria-labelledby="limits-h">
+    <h2 id="limits-h">What it does not do</h2>
+    <div class="card" style="padding:20px">
+      <div class="limits" style="border-left:3px solid #c2410c;padding-left:16px">
+        <h3>Known defect, disclosed</h3>
+        <p>Dropping an <strong>audio or video</strong> file inserts an <code>&lt;artifacts&gt;</code> element
+          containing absolute local paths, e.g. <code>/home/&lt;user&gt;/artifacts/videos/…/digest.md</code>. If you
+          then paste that draft into a chat or a ticket, you publish your own directory layout. Image drops carry
+          only the file name. A fix is queued; until then, drop images for drafts you intend to share.</p>
+      </div>
+      <ul class="plain" style="margin-top:16px">
+        <li>It does not judge whether a picture or a film is any <em>good</em>. It extracts evidence; taste is yours.</li>
+        <li>It makes no generation calls and spends no provider credits.</li>
+        <li>Non-speech audio is out of scope — it says so rather than inventing words.</li>
+        <li>Install is by copy-restore, deliberately. <code>dsh plugin add</code> can leave a profile unable to run
+          any tool call; this bundle never uses it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="faq" class="wrap" aria-labelledby="faq-h">
+    <h2 id="faq-h">Questions</h2>
+    <details>
+      <summary>What do I need on the machine?</summary>
+      <p>Node, <code>ffmpeg</code> and <code>python3</code>. Local transcription needs a small virtual environment
+        with <code>faster-whisper</code>; the docs walk through it. No package manager is used or required.</p>
+    </details>
+    <details>
+      <summary>Does it work if my model cannot accept images?</summary>
+      <p>That is the case it was built for. On a text-only route, an image is returned as a factual description
+        from your configured vision provider, and the built-in <code>read_image</code> is redirected to
+        <code>media_image</code> rather than failing silently.</p>
+    </details>
+    <details>
+      <summary>Is a licence per machine or per team?</summary>
+      <p>Per team, one time. Install it on as many machines as your team uses; do not hand the crate to another
+        company.</p>
+    </details>
+    <details>
+      <summary>How is it delivered?</summary>
+      <p>Immediately: the checkout completes and you get the download plus your licence reference. The crate is
+        the same public artifact you can already inspect, verified by the same hash.</p>
+    </details>
+    <details>
+      <summary>What if it does not work on my harness?</summary>
+      <p>Tell me what happened — <a href="https://github.com/samorachumbi/dsh-media-reader/issues">open an
+        issue</a> — and I will either fix it or refund you. I would rather lose a sale than keep one for
+        something that does not run.</p>
+    </details>
+  </section>
+</main>
+
+<footer class="site wrap">
+  <p><strong>Itikia Digital Solutions</strong>, Nairobi, Kenya. USD prices; M-Pesa and cards accepted.</p>
+  <p>Plugin: <a href="https://github.com/samorachumbi/dsh-media-reader">github.com/samorachumbi/dsh-media-reader</a>
+     · Support: <a id="support-link" href="#">open an issue</a></p>
+  <p>Not affiliated with DeepSeek. Model ids and prices in the docs are dated observations, not guarantees.</p>
+</footer>
+
+<script>
+(function () {
+  var cfg = JSON.parse(document.getElementById('pay-config').textContent);
+
+  // The free path is always a real link.
+  document.getElementById('free-link').href = cfg.freeDownload;
+  document.getElementById('support-link').href = cfg.support;
+
+  var area = document.getElementById('pay-area');
+  var live = cfg.methods.filter(function (m) { return m.url && m.verified; });
+
+  if (live.length === 0) {
+    // No rail has taken a real payment yet. Say so plainly, and give the free path —
+    // never a button that looks like checkout and cannot take money.
+    var note = document.createElement('p');
+    note.className = 'pay-status';
+    note.innerHTML = '<strong>Checkout is not open yet.</strong> The payment rail is being verified with a ' +
+      'live test transaction, because a checkout that has never taken a payment is a promise, not a feature. ' +
+      'The plugin itself is available now for personal use.';
+    area.appendChild(note);
+
+    var free = document.createElement('a');
+    free.className = 'btn secondary';
+    free.href = cfg.freeDownload;
+    free.innerHTML = 'Get it free for personal use';
+    area.appendChild(free);
+
+    var ask = document.createElement('a');
+    ask.className = 'btn';
+    ask.href = cfg.support + '/new/choose?title=Commercial%20licence%20enquiry';
+    ask.textContent = 'Ask about a commercial licence';
+    area.appendChild(ask);
+
+    var unit = document.querySelector('.price-unit');
+    if (unit) unit.insertAdjacentHTML('afterend',
+      '<p class="method-note" style="margin-top:0">Buying opens as soon as the first live payment clears.</p>');
+    return;
+  }
+
+  live.forEach(function (m, i) {
+    var a = document.createElement('a');
+    a.className = i === 0 ? 'btn' : 'btn secondary';
+    a.href = m.url;
+    a.rel = 'noopener';
+    a.innerHTML = m.label + ' <small>· $' + cfg.price.usd + '</small>';
+    area.appendChild(a);
+    var n = document.createElement('p');
+    n.className = 'method-note';
+    n.textContent = m.note;
+    area.appendChild(n);
+  });
+})();
+</script>
+</body>
+</html>
