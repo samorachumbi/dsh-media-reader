@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make the shipped skills safe for a customer, and fail the build if they are not.
 
-The skills in `second-brain/skills/` are written for this machine: they name `~/dsh-planner`, instance
+The skills in the vault's `skills/` directory are written for this machine: they name `~/dsh-planner`, instance
 numbers, `scripts/deploy.sh`, and vault notes that are not in the bundle. A customer's agent that follows
 those references chases files it does not have — the exact failure recorded in census E17, where a skill
 documented a path that did not resolve from where the skill was installed.
@@ -20,7 +20,9 @@ if not stage.is_dir():
 FORBIDDEN = [
     (r"~/dsh-planner", "a home only this machine has"),
     (r"scripts/deploy\.sh", "a script that is not in the bundle"),
-    (r"/home/samora", "an absolute path from the author's machine"),
+    # Any home, not the author's own: naming that path here would publish it in this
+    # very file, which is the defect the pattern exists to catch.
+    (r"/home/[A-Za-z0-9._-]+", "an absolute home path"),
     (r"\[\[[^\]]+\]\]", "an Obsidian wiki-link the reader cannot open"),
     (r"\brepo-vetting\b", "a skill we did not ship"),
     (r"\blearnings/", "a vault path"),
