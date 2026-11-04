@@ -204,6 +204,14 @@ confirmation names **ITIKIA DIGITAL SOLUTIONS** and not a person, and you can fi
 cd ~/projects/Video_Image_Voice/store && npx wrangler pages deploy . --project-name itikia-store
 ```
 
+### The day you deploy — two things, both mandatory
+
+1. **Turn checkout on**: put the live link and its verified date into `#pay-config`.
+2. **Link the repo to the storefront.** Write the live URL into `store/DEPLOYED-URL` (one line, nothing else),
+   then add it to `README.md` (a client reads that first), this file and `package.json`. The pre-compact audit
+   runs `tools/check-storefront-linked.sh` as **stage 9** and **fails the whole audit** until all three mention
+   it — so this cannot be quietly left out.
+
 ### Fulfilling an order when it lands
 
 ```bash
