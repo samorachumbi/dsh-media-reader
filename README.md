@@ -35,6 +35,16 @@ drag a file over it and it highlights before you let go:
 The inserted block is ordinary text, so the model on a **text-only** route can now act on an image it cannot
 receive — including the on-screen text, which is not something a caption model is asked for by accident.
 
+**Both paths run.** A drop is not swallowed: DSH still attaches the file natively (so a vision route keeps its
+real image), and the reading is inserted as well. The screenshot below is a live composer after one drop —
+the thumbnail *and* the description, together:
+
+![The composer after dropping a PNG: a thumbnail of the image is attached at the top left, and the structured description is inserted below it](docs/images/dual-drop.png)
+
+Earlier builds called `stopPropagation` in the capture-phase drop handler, which meant DSH's own drop logic
+never saw the event — installing the plugin silently stopped the composer accepting attachments. Fixed
+2026-11-04; verified on a live server, not in a harness.
+
 ## Drag and drop (the client half)
 
 The composer gets a **📎 Drop media** target. Drop an image, audio or video file
