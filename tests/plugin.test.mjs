@@ -157,3 +157,30 @@ test('media_image refuses a non-image path with a named error', async () => {
     /UNSUPPORTED_IMAGE/u
   )
 })
+
+test('every tool that resolves a path can actually reach its resolver', async () => {
+  // The defect this pins: a patch added `{ artifactsDir: config.artifactsDir }` to three
+  // `resolveMediaTarget` calls, but one of them was inside `registerProbeTool(ctx)` — a function
+  // that never received `config`. The suite stayed green (105/105) and the LIVE smoke failed with
+  // `ReferenceError: config is not defined`, on the first tool a buyer would call. A tool body that
+  // references a name it cannot see is only caught by executing that tool.
+  const { ctx, tools } = fakePluginContext()
+  apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision', artifactsDir: '/tmp/mr-artifacts' })
+
+  let executed = 0
+  for (const name of ['media_probe', 'media_image', 'media_audio', 'media_video', 'media_evidence']) {
+    executed += 1
+    try {
+      await tools.get(name).execute({ path: '/fixtures/photo.png' }, execFor('vision'))
+    } catch (error) {
+      // A missing seam or a refused input is the expected failure in this fake context. A
+      // ReferenceError or a `config is not defined` means the tool is wired to something it cannot see.
+      assert.doesNotMatch(
+        String(error?.message ?? error),
+        /is not defined|is not a function|Cannot read propert/u,
+        `${name} threw a wiring error instead of a dependency error: ${error?.message ?? error}`
+      )
+    }
+  }
+  assert.equal(executed, 5, 'all five tools must have been executed')
+})

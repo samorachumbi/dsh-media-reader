@@ -1,6 +1,6 @@
 {
  "name": "dsh-media-reader",
- "version": "0.1.1",
+ "version": "0.1.2",
  "summary": "Read images, audio and video from DeepSeek Harness, including on a model route that cannot accept media.",
  "install": {
   "steps": [
@@ -41,7 +41,7 @@
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 78,
- "total_bytes": 1774317,
+ "total_bytes": 1774335,
  "files": [
   {
    "path": "LICENSE",
@@ -295,8 +295,8 @@
   },
   {
    "path": "plugin/lib/index.js",
-   "bytes": 13431,
-   "sha256": "8ac790f45889ee4895f5e8e701adcf0d1ebeef370d850edbbc357089e5262c10"
+   "bytes": 13449,
+   "sha256": "707ea87c201a74a35c68ed9a5ed04b588b57c002f2e6b74263455e9e50669dcd"
   },
   {
    "path": "plugin/lib/kie/client.js",
@@ -341,7 +341,7 @@
   {
    "path": "plugin/package.json",
    "bytes": 1803,
-   "sha256": "2287098cfbf827226adefc08c80ca213f79170f40ef6b07b432b601306ff7ced"
+   "sha256": "a52d0889433322212003e1c01e027e2f74ab4271cc16fe54cc4fb91f26bc8914"
   },
   {
    "path": "plugin/probe/err-base.txt",
