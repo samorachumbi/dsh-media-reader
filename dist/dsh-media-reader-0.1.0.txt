@@ -184,7 +184,7 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 76,
- "total_bytes": 1747516,
+ "total_bytes": 1756882,
  "files": [
   {
    "path": "LICENSE",
@@ -198,8 +198,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "docs/ACCEPTANCE.md",
-   "bytes": 13391,
-   "sha256": "8b63024f139675d6f61e96f5437ec368415693ea572d1bb7dda1fc5bcd35c97e"
+   "bytes": 16154,
+   "sha256": "81f5f69cd8cb8219a84ba1e31474cd7a1f1533967066cea4b3c3c36150ae3e6d"
   },
   {
    "path": "docs/AUDIT.md",
@@ -233,8 +233,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "docs/README.md",
-   "bytes": 16162,
-   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
+   "bytes": 17944,
+   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -293,13 +293,13 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "install-skills.sh",
-   "bytes": 924,
-   "sha256": "320d04efbd368ff3819b13fea5de08db3c6cad00a430c76c583584542ae7172c"
+   "bytes": 2171,
+   "sha256": "613c34f1307a1935f7c158b99b192e122d8ac06e26d5441e463cc9b69cd4db08"
   },
   {
    "path": "install.sh",
-   "bytes": 4601,
-   "sha256": "6fe84c5e282297f5c3e2cb0f198594d459a401cf5ba88f9f9eabeb176c758a9a"
+   "bytes": 4854,
+   "sha256": "b58f81386e772de14228a62e3303da75dc6f3d8186ff8ce7f07eb9cf231ab3de"
   },
   {
    "path": "plugin/LICENSE",
@@ -308,8 +308,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/README.md",
-   "bytes": 16162,
-   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
+   "bytes": 17944,
+   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -513,8 +513,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/probe/smoke.mjs",
-   "bytes": 10132,
-   "sha256": "651f9eb3998cdb5d7088ebd60014dc96709ff64be1b69b040e9901808bdeeb3a"
+   "bytes": 10194,
+   "sha256": "6c263fde0861909938b2cded665b48deba87b18e12ca29a34f1ce6bb705e5f0b"
   },
   {
    "path": "plugin/probe/verify-installed-tool.mjs",
@@ -558,13 +558,13 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "smoke.sh",
-   "bytes": 862,
-   "sha256": "996847f0adef38dfb4ebd7ca36c0810df41abb716da5323dde11634924669634"
+   "bytes": 1337,
+   "sha256": "f7167d5863028a40592f62d6de731b0cde9af7aa166fe2ff2f2acd93f15769f9"
   },
   {
    "path": "uninstall.sh",
-   "bytes": 1276,
-   "sha256": "8ad4503585f26f7b1cec5f85a11476afca487a6c0e9197880f2be209db661f16"
+   "bytes": 2278,
+   "sha256": "920a66ae1c1b89300a588f4d2d4ad2fc88fa9bb3b1d7041c1e99c6406422faf0"
   }
  ]
 }
@@ -601,7 +601,7 @@ while [ "$#" -gt 0 ]; do
     --home) DSH_HOME_DIR="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) echo "install.sh: unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -663,11 +663,13 @@ fi
 #    import works here. On a machine where DSH has not been started with this home yet, that tree does
 #    not exist — that is a missing prerequisite, not a broken bundle, so warn instead of failing and say
 #    what to do.
+VERIFIED=1
 if [ "$DRY_RUN" -eq 0 ]; then
   IMPORT_ERR="$(node --input-type=module -e "await import('$DEST/lib/index.js')" 2>&1 || true)"
   if [ -z "$IMPORT_ERR" ]; then
     echo "  plugin imports cleanly"
   elif printf '%s' "$IMPORT_ERR" | grep -q "Cannot find package '@deepseek-ai/"; then
+    VERIFIED=0
     echo "  WARN: the plugin cannot be imported from here because the harness packages are not reachable"
     echo "        from $DSH_HOME_DIR/profiles/node_modules. That tree is created by DSH itself: start the"
     echo "        server once with this home, then re-run this check. The copy and the patch row are in place."
@@ -679,9 +681,9 @@ fi
 
 cat <<NEXT
 
-installed. Next steps:
-  1. skills:  ./install-skills.sh          (links the bundled skills into \$DSH_HOME/skills)
-  2. verify:  ./smoke.sh                   (needs a scratch instance; see INSTALL.md)
+$([ "$VERIFIED" -eq 1 ] && echo "installed, and the import check passed." || echo "COPIED, BUT NOT VERIFIED — the import check above failed. Do not treat this as working until it passes and the smoke test runs.") Next steps:
+  1. skills:  ./install-skills.sh --home $DSH_HOME_DIR   (links the bundled skills into $DSH_HOME_DIR/skills)
+  2. verify:  ./smoke.sh                   (needs a RUNNING scratch harness; see README.md)
   3. restart the DSH server so the tools register, then run: dsh web --port <port>
   4. rollback: ./uninstall.sh --home $DSH_HOME_DIR --profile $PROFILE
 NEXT
@@ -695,16 +697,46 @@ NEXT
 
 ```
 #!/usr/bin/env bash
-# Link the bundled skills into $DSH_HOME/skills so they are loadable and slash-invocable.
+# Link the bundled skills into <home>/skills so they are loadable and slash-invocable.
 # DSH reads $DSH_HOME/skills (NOT ~/.claude/skills) and hot-reloads changes.
+#
+#   ./install-skills.sh                      # $DSH_HOME, else ~/.dsh
+#   ./install-skills.sh --home /tmp/scratch  # same home you passed to install.sh
+#
+# --home exists because `DSH_HOME` is ALREADY SET in every process a harness spawns. An installer
+# that reads only the environment therefore installs the plugin into the home you named and the
+# skills into the operator's real one. If the two disagree this script says so and refuses.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DSH_HOME_DIR="${DSH_HOME:-$HOME/.dsh}"
-TARGET="$DSH_HOME_DIR/skills"
+HOME_DIR="${DSH_HOME:-$HOME/.dsh}"
+EXPLICIT=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --home) HOME_DIR="$2"; EXPLICIT=1; shift 2 ;;
+    --dry-run) DRY=1; shift ;;
+    *) echo "install-skills.sh: unknown option $1" >&2; exit 2 ;;
+  esac
+done
+DRY="${DRY:-0}"
+TARGET="$HOME_DIR/skills"
+
+echo "install-skills"
+echo "  home   $HOME_DIR"
+echo "  target $TARGET"
+
+# The trap that makes this flag necessary: an inherited DSH_HOME that differs from the home the
+# caller just installed into. Refuse rather than scatter links into two homes.
+if [ "$EXPLICIT" -eq 0 ] && [ -n "${DSH_HOME:-}" ]; then
+  echo "  NOTE: no --home given, so this follows the inherited DSH_HOME ($DSH_HOME)." >&2
+  echo "        If you installed the plugin into a different home, pass --home with the same value." >&2
+fi
 
 [ -d "$HERE/skills" ] || { echo "FATAL: skills/ missing from this bundle" >&2; exit 1; }
+if [ "$DRY" -eq 1 ]; then
+  echo "  would: link $(ls -1d "$HERE"/skills/*/ 2>/dev/null | wc -l) skills into $TARGET"
+  exit 0
+fi
 mkdir -p "$TARGET"
-echo "linking bundled skills into $TARGET"
 for dir in "$HERE"/skills/*/; do
   name="$(basename "$dir")"
   [ -f "$dir/SKILL.md" ] || { echo "  skip $name (no SKILL.md)"; continue; }
@@ -746,14 +778,34 @@ if [ -f "$PATCH" ] && grep -q "dsh-media-reader" "$PATCH"; then
     echo "  would: strip the media-reader block from $PATCH"
   else
     cp "$PATCH" "$PATCH.bak.$(date +%s)"
-    python3 - "$PATCH" <<'PY'
+    # The previous pattern required a `# dsh-media-reader` comment line immediately above the block,
+    # so a row written by hand (or by an older installer) was never matched — while this script still
+    # printed "patch row removed". That is a rollback claim the code did not keep, and it leaves a
+    # harness loading a plugin whose files are gone. Match the block by the plugin name instead, and
+    # say only what actually happened.
+    REMOVED="$(python3 - "$PATCH" <<'PY'
 import re, sys
 path = sys.argv[1]
 text = open(path).read()
-text = re.sub(r"\n# dsh-media-reader[^\n]*\n- insert:\n(?:    .*\n|\n)*?      name: 'dsh-media-reader'\n", "\n", text)
-open(path, "w").write(text)
+before = text
+text = re.sub(r"(?m)^[ \t]*#[^\n]*dsh-media-reader[^\n]*\n", "", text)
+text = re.sub(r"(?ms)^[ \t]*- insert:\n(?:(?!^[ \t]*- insert:)[\s\S])*?name: 'dsh-media-reader'\n", "", text)
+if text != before:
+    open(path, "w").write(text)
+    print("yes")
+else:
+    print("no")
 PY
-    echo "  patch row removed (backup kept beside it)"
+)"
+    if [ "$REMOVED" = "yes" ]; then
+      echo "  patch row removed (backup kept beside it)"
+    else
+      echo "  WARN: could not remove a media-reader block from $PATCH" >&2
+      echo "        The file is unchanged and still references the plugin — remove it by hand." >&2
+      echo "        A backup of the file is beside it: $(ls -1t "$PATCH".bak.* 2>/dev/null | head -1)" >&2
+      echo "restart the DSH server to drop the tools."
+      exit 3
+    fi
   fi
 fi
 echo "restart the DSH server to drop the tools."
@@ -780,7 +832,15 @@ DEFAULT_VISION="${DSH_VISION_MODEL:-deepseek-v4-flash-vision-exp}"
 echo "smoke: ${DSH_TEST_URL:-http://127.0.0.1:3096}"
 echo "  text-only route:  $DEFAULT_MODEL"
 echo "  vision route:     $DEFAULT_VISION"
-DSH_TEST_URL="${DSH_TEST_URL:-http://127.0.0.1:3096}" node "$HERE/plugin/probe/smoke.mjs"
+URL="${DSH_TEST_URL:-http://127.0.0.1:3096}"
+# a dead port produces 18 confusing failures; say it plainly instead
+if ! node -e "fetch('$URL/api/version').then(r=>process.exit(0)).catch(()=>process.exit(1))" 2>/dev/null; then
+  echo "FATAL: nothing is listening at $URL" >&2
+  echo "       Boot a harness there first, e.g.  DSH_HOME=<scratch-home> dsh web --port <port>" >&2
+  echo "       then:  DSH_TEST_URL=$URL ./smoke.sh" >&2
+  exit 1
+fi
+DSH_TEST_URL="$URL" DSH_TEXT_MODEL="$DEFAULT_MODEL" DSH_VISION_MODEL="$DEFAULT_VISION" node "$HERE/plugin/probe/smoke.mjs"
 
 ```
 
@@ -791,6 +851,54 @@ DSH_TEST_URL="${DSH_TEST_URL:-http://127.0.0.1:3096}" node "$HERE/plugin/probe/s
 
 ```
 # Acceptance record
+
+## Bundle re-verification after the licence rebuild — 2026-11-03 (18/18 against the live session)
+
+The published tarball **predated `LICENSE`**: it was built before the licence existed and the build never
+copied one, so a buyer's artifact granted nothing. Rebuilt with the licence inside (top level and beside the
+payload), and three further defects were found and fixed in the process — the licence is now a **build
+failure** if missing, the bundle no longer ships a stale `__pycache__/*.pyc` (which carried this machine's
+absolute path as bytes), and `build-bundle.sh` now **exports** the path placeholders that
+`scrub-paths.py` reads from the environment (sourcing `.bundle-paths` alone silently disabled them).
+
+Artifact: `dist/dsh-media-reader-0.1.0.tar.gz`,
+sha256 `32440c11751feb27456a4d6ff24c0d1372b83461d301efb09b269d52762f6889`, 76 manifest files, 1.1 MB.
+
+Verified **from the extracted tarball**, not from the development tree, and against the **live** web profile
+on `http://127.0.0.1:3080` where the plugin is installed (the scratch instance on 3096 is retired — see the
+vault's `verification-routes-scratch-vs-live`):
+
+```
+18/18 checks passed against http://127.0.0.1:3080
+  PASS  media_probe reads duration and audio tracks
+  PASS  media_probe reports video dimensions
+  PASS  vision route receives a real image block
+  PASS  vision route can read the image text
+  PASS  text-only route returns an image description
+  PASS  text-only description contains the image text
+  PASS  text-only route did not receive an image block
+  PASS  read_image is redirected to media_image
+  PASS  audio is transcribed locally
+  PASS  audio result names the local processor
+  PASS  video digest answers the visual question
+  PASS  video digest fuses the spoken transcript
+  PASS  text-only video returns no image blocks
+  PASS  silence is reported as no speech
+  PASS  missing file fails explicitly
+  PASS  drop upload describes an image
+  PASS  drop upload transcribes audio
+  PASS  drop upload digests video
+```
+
+**What changed in the artifact, and what did not.** `plugin/lib` and `plugin/probe` are **byte-identical**
+to the previously verified bundle (`diff -r`, no differences), so the 18/18 result is about the same code;
+the only differences are the two `LICENSE` files, the metadata in `plugin/package.json`, the licence
+sections in both READMEs, the generalised doc paths, the regenerated `PATH-PLACEHOLDERS.md`, the updated
+`MANIFEST.json`, and the **removal** of `plugin/python/__pycache__`.
+
+**What this run does not prove:** that a buyer's clean machine installs it (the installer's clean-home
+behaviour was verified separately, below), nor that the visual output is any good — acceptance of film
+quality is a separate, image-capable review.
 
 ## Re-verification — 2026-11-03 (current build, 97 tests)
 

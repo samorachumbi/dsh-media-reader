@@ -40,7 +40,7 @@
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 76,
- "total_bytes": 1747516,
+ "total_bytes": 1756882,
  "files": [
   {
    "path": "LICENSE",
@@ -54,8 +54,8 @@
   },
   {
    "path": "docs/ACCEPTANCE.md",
-   "bytes": 13391,
-   "sha256": "8b63024f139675d6f61e96f5437ec368415693ea572d1bb7dda1fc5bcd35c97e"
+   "bytes": 16154,
+   "sha256": "81f5f69cd8cb8219a84ba1e31474cd7a1f1533967066cea4b3c3c36150ae3e6d"
   },
   {
    "path": "docs/AUDIT.md",
@@ -89,8 +89,8 @@
   },
   {
    "path": "docs/README.md",
-   "bytes": 16162,
-   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
+   "bytes": 17944,
+   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -149,13 +149,13 @@
   },
   {
    "path": "install-skills.sh",
-   "bytes": 924,
-   "sha256": "320d04efbd368ff3819b13fea5de08db3c6cad00a430c76c583584542ae7172c"
+   "bytes": 2171,
+   "sha256": "613c34f1307a1935f7c158b99b192e122d8ac06e26d5441e463cc9b69cd4db08"
   },
   {
    "path": "install.sh",
-   "bytes": 4601,
-   "sha256": "6fe84c5e282297f5c3e2cb0f198594d459a401cf5ba88f9f9eabeb176c758a9a"
+   "bytes": 4854,
+   "sha256": "b58f81386e772de14228a62e3303da75dc6f3d8186ff8ce7f07eb9cf231ab3de"
   },
   {
    "path": "plugin/LICENSE",
@@ -164,8 +164,8 @@
   },
   {
    "path": "plugin/README.md",
-   "bytes": 16162,
-   "sha256": "7162185cdefd081612e88e2b249d9a8975faa8cd28badbaf3a73611372c05f4b"
+   "bytes": 17944,
+   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -369,8 +369,8 @@
   },
   {
    "path": "plugin/probe/smoke.mjs",
-   "bytes": 10132,
-   "sha256": "651f9eb3998cdb5d7088ebd60014dc96709ff64be1b69b040e9901808bdeeb3a"
+   "bytes": 10194,
+   "sha256": "6c263fde0861909938b2cded665b48deba87b18e12ca29a34f1ce6bb705e5f0b"
   },
   {
    "path": "plugin/probe/verify-installed-tool.mjs",
@@ -414,13 +414,13 @@
   },
   {
    "path": "smoke.sh",
-   "bytes": 862,
-   "sha256": "996847f0adef38dfb4ebd7ca36c0810df41abb716da5323dde11634924669634"
+   "bytes": 1337,
+   "sha256": "f7167d5863028a40592f62d6de731b0cde9af7aa166fe2ff2f2acd93f15769f9"
   },
   {
    "path": "uninstall.sh",
-   "bytes": 1276,
-   "sha256": "8ad4503585f26f7b1cec5f85a11476afca487a6c0e9197880f2be209db661f16"
+   "bytes": 2278,
+   "sha256": "920a66ae1c1b89300a588f4d2d4ad2fc88fa9bb3b1d7041c1e99c6406422faf0"
   }
  ]
 }

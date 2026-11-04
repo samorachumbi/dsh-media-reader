@@ -1,5 +1,53 @@
 # Acceptance record
 
+## Bundle re-verification after the licence rebuild — 2026-11-03 (18/18 against the live session)
+
+The published tarball **predated `LICENSE`**: it was built before the licence existed and the build never
+copied one, so a buyer's artifact granted nothing. Rebuilt with the licence inside (top level and beside the
+payload), and three further defects were found and fixed in the process — the licence is now a **build
+failure** if missing, the bundle no longer ships a stale `__pycache__/*.pyc` (which carried this machine's
+absolute path as bytes), and `build-bundle.sh` now **exports** the path placeholders that
+`scrub-paths.py` reads from the environment (sourcing `.bundle-paths` alone silently disabled them).
+
+Artifact: `dist/dsh-media-reader-0.1.0.tar.gz`,
+sha256 `32440c11751feb27456a4d6ff24c0d1372b83461d301efb09b269d52762f6889`, 76 manifest files, 1.1 MB.
+
+Verified **from the extracted tarball**, not from the development tree, and against the **live** web profile
+on `http://127.0.0.1:3080` where the plugin is installed (the scratch instance on 3096 is retired — see the
+vault's `verification-routes-scratch-vs-live`):
+
+```
+18/18 checks passed against http://127.0.0.1:3080
+  PASS  media_probe reads duration and audio tracks
+  PASS  media_probe reports video dimensions
+  PASS  vision route receives a real image block
+  PASS  vision route can read the image text
+  PASS  text-only route returns an image description
+  PASS  text-only description contains the image text
+  PASS  text-only route did not receive an image block
+  PASS  read_image is redirected to media_image
+  PASS  audio is transcribed locally
+  PASS  audio result names the local processor
+  PASS  video digest answers the visual question
+  PASS  video digest fuses the spoken transcript
+  PASS  text-only video returns no image blocks
+  PASS  silence is reported as no speech
+  PASS  missing file fails explicitly
+  PASS  drop upload describes an image
+  PASS  drop upload transcribes audio
+  PASS  drop upload digests video
+```
+
+**What changed in the artifact, and what did not.** `plugin/lib` and `plugin/probe` are **byte-identical**
+to the previously verified bundle (`diff -r`, no differences), so the 18/18 result is about the same code;
+the only differences are the two `LICENSE` files, the metadata in `plugin/package.json`, the licence
+sections in both READMEs, the generalised doc paths, the regenerated `PATH-PLACEHOLDERS.md`, the updated
+`MANIFEST.json`, and the **removal** of `plugin/python/__pycache__`.
+
+**What this run does not prove:** that a buyer's clean machine installs it (the installer's clean-home
+behaviour was verified separately, below), nor that the visual output is any good — acceptance of film
+quality is a separate, image-capable review.
+
 ## Re-verification — 2026-11-03 (current build, 97 tests)
 
 Re-ran the live capability harness against the scratch instance (`http://127.0.0.1:3096`, plugin

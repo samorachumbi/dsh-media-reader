@@ -18,6 +18,23 @@ On a text-only route, `read_image` is denied with a corrective message naming
 failed read into a successful result, so the plugin redirects instead of
 pretending.
 
+## See it working
+
+Both images below were captured from a **live** DSH web session on 2026-11-03 by driving a real browser over
+CDP — a real drag with `Input.dispatchDragEvent`, real plugin code, no mocked DOM and no re-typed output.
+
+Drop a file on the composer and the analysis lands in your draft as text:
+
+![Dropping a 640x360 PNG into the composer, which inserts a structured image description naming the on-screen text HELLO MEDIA](docs/images/drop-analysis.png)
+
+That is one drop of a 640×360 PNG. The `📎 Drop media` chip beside the attachments button is the affordance;
+drag a file over it and it highlights before you let go:
+
+![The same composer while a file is being dragged over it: the Drop media chip is outlined in blue](docs/images/drag-over.png)
+
+The inserted block is ordinary text, so the model on a **text-only** route can now act on an image it cannot
+receive — including the on-screen text, which is not something a caption model is asked for by accident.
+
 ## Drag and drop (the client half)
 
 The composer gets a **📎 Drop media** target. Drop an image, audio or video file
@@ -208,6 +225,12 @@ a requested 60 s V6 music generation (12 credits) and a 15 s 9:16 Kling prompt-o
 - `media_video` on a text-only route describes a contact sheet and, when a
   question is supplied, up to two frames. Ask for a specific frame with
   `media_image` when more detail is needed.
+- **Known defect — the inserted draft text leaks absolute local paths.** For audio and video the
+  `<artifacts>` element carries the absolute paths of the transcript/contact-sheet/frame files, e.g.
+  `/home/<user>/artifacts/videos/…/digest.md`. If you drop an audio or video file and then paste the draft
+  into a chat, ticket or document, you publish your own directory layout. The image path inserts only the
+  file name and is unaffected. Until it is fixed, drop **images** for drafts you intend to share, or edit
+  the `<artifacts>` line out. The fix is a client-side change to relativise paths to the artifacts root.
 
 ## Artifacts
 
@@ -314,6 +337,7 @@ non-commercial use is permitted; copying, redistributing, selling or using it in
 product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
 open an issue if you want to discuss commercial use.
 
-The prebuilt bundle in `dist/` was produced before this notice was added; the repository and
-its source are governed by it, and the bundle will be rebuilt with the licence file included
-before it is distributed separately.
+The prebuilt bundle in `dist/` was rebuilt after this notice was added, so it carries the licence at both
+the top level and beside the payload (`plugin/LICENSE`) — a copy of the terms travels with the artifact, not
+just with the repository. Its sha256 is beside it in `dsh-media-reader-0.1.0.tar.gz.sha256`, and the build
+now **fails** if a required file, the licence included, is missing.

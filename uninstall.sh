@@ -19,14 +19,34 @@ if [ -f "$PATCH" ] && grep -q "dsh-media-reader" "$PATCH"; then
     echo "  would: strip the media-reader block from $PATCH"
   else
     cp "$PATCH" "$PATCH.bak.$(date +%s)"
-    python3 - "$PATCH" <<'PY'
+    # The previous pattern required a `# dsh-media-reader` comment line immediately above the block,
+    # so a row written by hand (or by an older installer) was never matched — while this script still
+    # printed "patch row removed". That is a rollback claim the code did not keep, and it leaves a
+    # harness loading a plugin whose files are gone. Match the block by the plugin name instead, and
+    # say only what actually happened.
+    REMOVED="$(python3 - "$PATCH" <<'PY'
 import re, sys
 path = sys.argv[1]
 text = open(path).read()
-text = re.sub(r"\n# dsh-media-reader[^\n]*\n- insert:\n(?:    .*\n|\n)*?      name: 'dsh-media-reader'\n", "\n", text)
-open(path, "w").write(text)
+before = text
+text = re.sub(r"(?m)^[ \t]*#[^\n]*dsh-media-reader[^\n]*\n", "", text)
+text = re.sub(r"(?ms)^[ \t]*- insert:\n(?:(?!^[ \t]*- insert:)[\s\S])*?name: 'dsh-media-reader'\n", "", text)
+if text != before:
+    open(path, "w").write(text)
+    print("yes")
+else:
+    print("no")
 PY
-    echo "  patch row removed (backup kept beside it)"
+)"
+    if [ "$REMOVED" = "yes" ]; then
+      echo "  patch row removed (backup kept beside it)"
+    else
+      echo "  WARN: could not remove a media-reader block from $PATCH" >&2
+      echo "        The file is unchanged and still references the plugin — remove it by hand." >&2
+      echo "        A backup of the file is beside it: $(ls -1t "$PATCH".bak.* 2>/dev/null | head -1)" >&2
+      echo "restart the DSH server to drop the tools."
+      exit 3
+    fi
   fi
 fi
 echo "restart the DSH server to drop the tools."

@@ -12,4 +12,12 @@ DEFAULT_VISION="${DSH_VISION_MODEL:-deepseek-v4-flash-vision-exp}"
 echo "smoke: ${DSH_TEST_URL:-http://127.0.0.1:3096}"
 echo "  text-only route:  $DEFAULT_MODEL"
 echo "  vision route:     $DEFAULT_VISION"
-DSH_TEST_URL="${DSH_TEST_URL:-http://127.0.0.1:3096}" node "$HERE/plugin/probe/smoke.mjs"
+URL="${DSH_TEST_URL:-http://127.0.0.1:3096}"
+# a dead port produces 18 confusing failures; say it plainly instead
+if ! node -e "fetch('$URL/api/version').then(r=>process.exit(0)).catch(()=>process.exit(1))" 2>/dev/null; then
+  echo "FATAL: nothing is listening at $URL" >&2
+  echo "       Boot a harness there first, e.g.  DSH_HOME=<scratch-home> dsh web --port <port>" >&2
+  echo "       then:  DSH_TEST_URL=$URL ./smoke.sh" >&2
+  exit 1
+fi
+DSH_TEST_URL="$URL" DSH_TEXT_MODEL="$DEFAULT_MODEL" DSH_VISION_MODEL="$DEFAULT_VISION" node "$HERE/plugin/probe/smoke.mjs"

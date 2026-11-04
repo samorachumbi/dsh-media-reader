@@ -22,7 +22,7 @@ while [ "$#" -gt 0 ]; do
     --home) DSH_HOME_DIR="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
     *) echo "install.sh: unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -84,11 +84,13 @@ fi
 #    import works here. On a machine where DSH has not been started with this home yet, that tree does
 #    not exist — that is a missing prerequisite, not a broken bundle, so warn instead of failing and say
 #    what to do.
+VERIFIED=1
 if [ "$DRY_RUN" -eq 0 ]; then
   IMPORT_ERR="$(node --input-type=module -e "await import('$DEST/lib/index.js')" 2>&1 || true)"
   if [ -z "$IMPORT_ERR" ]; then
     echo "  plugin imports cleanly"
   elif printf '%s' "$IMPORT_ERR" | grep -q "Cannot find package '@deepseek-ai/"; then
+    VERIFIED=0
     echo "  WARN: the plugin cannot be imported from here because the harness packages are not reachable"
     echo "        from $DSH_HOME_DIR/profiles/node_modules. That tree is created by DSH itself: start the"
     echo "        server once with this home, then re-run this check. The copy and the patch row are in place."
@@ -100,9 +102,9 @@ fi
 
 cat <<NEXT
 
-installed. Next steps:
-  1. skills:  ./install-skills.sh          (links the bundled skills into \$DSH_HOME/skills)
-  2. verify:  ./smoke.sh                   (needs a scratch instance; see INSTALL.md)
+$([ "$VERIFIED" -eq 1 ] && echo "installed, and the import check passed." || echo "COPIED, BUT NOT VERIFIED — the import check above failed. Do not treat this as working until it passes and the smoke test runs.") Next steps:
+  1. skills:  ./install-skills.sh --home $DSH_HOME_DIR   (links the bundled skills into $DSH_HOME_DIR/skills)
+  2. verify:  ./smoke.sh                   (needs a RUNNING scratch harness; see README.md)
   3. restart the DSH server so the tools register, then run: dsh web --port <port>
   4. rollback: ./uninstall.sh --home $DSH_HOME_DIR --profile $PROFILE
 NEXT

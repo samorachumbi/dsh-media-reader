@@ -24,8 +24,8 @@ const FIXTURE_DIR = process.env.FIXTURES_DIR
   : [join(ROOT, 'fixtures'), join(ROOT, 'plugin', 'fixtures')].find((dir) => existsSync(join(dir, 'hello.png'))) ??
     join(ROOT, 'fixtures')
 const BASE = process.env.DSH_TEST_URL ?? 'http://127.0.0.1:3096'
-const VISION_MODEL = 'deepseek-v4-flash-vision-exp'
-const TEXT_MODEL = 'deepseek-v4-flash'
+const VISION_MODEL = process.env.DSH_VISION_MODEL ?? 'deepseek-v4-flash-vision-exp'
+const TEXT_MODEL = process.env.DSH_TEXT_MODEL ?? 'deepseek-v4-flash'
 let rpc = 0
 
 function fixture(name) {
