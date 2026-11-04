@@ -2,11 +2,19 @@
 # Build the distributable bundle: plugin + skills + docs + fixtures + installers + manifest.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Private locations (the notes vault) are NOT part of this public repository. Declare them in
-# .bundle-paths, which is gitignored:
+# Private locations (the notes vault) are NOT part of this public repository, and neither is the file
+# that names them: a file holding private paths inside the checkout is a leak waiting for one wrong
+# `git add`. Declare them OUTSIDE the repo, in $BUNDLE_PATHS, else
+#   ${XDG_CONFIG_HOME:-$HOME/.config}/dsh-media-reader/bundle-paths
 #     VAULT_DIR=$HOME/somewhere/private-vault
 # Without it the plugin still bundles; the four skills are simply left out with a loud warning.
-[ -f "$REPO/.bundle-paths" ] && . "$REPO/.bundle-paths"
+PATHS_FILE="${BUNDLE_PATHS:-${XDG_CONFIG_HOME:-$HOME/.config}/dsh-media-reader/bundle-paths}"
+if [ ! -f "$PATHS_FILE" ] && [ -f "$REPO/.bundle-paths" ]; then
+  PATHS_FILE="$REPO/.bundle-paths"
+  echo "  NOTE: private paths read from $REPO/.bundle-paths, which is inside the checkout — move it to" >&2
+  echo "        ${XDG_CONFIG_HOME:-$HOME/.config}/dsh-media-reader/bundle-paths" >&2
+fi
+[ -f "$PATHS_FILE" ] && . "$PATHS_FILE"
 # scrub-paths.py reads these from its ENVIRONMENT, so they must be exported — sourcing .bundle-paths
 # alone only sets shell variables and the placeholders silently disappear. WORKSPACE_DIR defaults to
 # this checkout, which the build already knows, so it can never be forgotten.

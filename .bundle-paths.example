@@ -1,4 +1,6 @@
-# Copy to .bundle-paths (gitignored) to declare this build machine's private locations.
+# Copy to ${XDG_CONFIG_HOME:-$HOME/.config}/dsh-media-reader/bundle-paths (or $BUNDLE_PATHS) to
+# declare this build machine's private locations OUTSIDE the checkout. Not inside the repo:
+# a file naming private paths must not sit where one `git add` can publish it.
 # Leave a line out and that placeholder is simply not used; the plugin payload is unaffected.
 VAULT_DIR=$HOME/wherever/your/private-vault
 WORKSPACE_DIR=$HOME/where/this/checkout/lives
