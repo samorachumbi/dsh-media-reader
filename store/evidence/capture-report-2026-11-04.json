@@ -1,0 +1,62 @@
+[
+  {
+    "job": "1440-light",
+    "width": 1440,
+    "height": 4961,
+    "bytes": 669542,
+    "title": "dsh-media-reader — give a DeepSeek Harness agent eyes and ears",
+    "h1": "Your agent can’t see the file you hand it. This fixes that in ten minutes.",
+    "version": null,
+    "horizontalOverflow": false,
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "visibleControls": 20,
+    "smallestControl": 18,
+    "bodyText": 6582
+  },
+  {
+    "job": "320-light",
+    "width": 320,
+    "height": 8700,
+    "bytes": 613589,
+    "title": "dsh-media-reader — give a DeepSeek Harness agent eyes and ears",
+    "h1": "Your agent can’t see the file you hand it. This fixes that in ten minutes.",
+    "version": null,
+    "horizontalOverflow": false,
+    "scrollWidth": 320,
+    "innerWidth": 320,
+    "visibleControls": 20,
+    "smallestControl": 18,
+    "bodyText": 6582
+  },
+  {
+    "job": "1440-dark",
+    "width": 1440,
+    "height": 4961,
+    "bytes": 672911,
+    "title": "dsh-media-reader — give a DeepSeek Harness agent eyes and ears",
+    "h1": "Your agent can’t see the file you hand it. This fixes that in ten minutes.",
+    "version": null,
+    "horizontalOverflow": false,
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "visibleControls": 20,
+    "smallestControl": 18,
+    "bodyText": 6582
+  },
+  {
+    "job": "320-dark",
+    "width": 320,
+    "height": 8700,
+    "bytes": 615214,
+    "title": "dsh-media-reader — give a DeepSeek Harness agent eyes and ears",
+    "h1": "Your agent can’t see the file you hand it. This fixes that in ten minutes.",
+    "version": null,
+    "horizontalOverflow": false,
+    "scrollWidth": 320,
+    "innerWidth": 320,
+    "visibleControls": 20,
+    "smallestControl": 18,
+    "bodyText": 6582
+  }
+]

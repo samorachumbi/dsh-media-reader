@@ -177,3 +177,41 @@ it), and the last section no longer doubles its border against the footer.
 endpoints — port 8099 (a stopped server) and CDP port 9228 (a stopped browser) — because the scripts
 hardcoded them. All capture scripts now read `CDP_PORT` from the environment. Heights are re-read from
 each PNG with ffprobe on every update: 320: 8700, 390: 7664, 768: 6020, 1440: 4961 px.
+
+---
+
+## Re-captured 2026-11-04 — release 0.1.2, both themes
+
+The files above (`page-320/390/768/1440.png`) were re-shot at **0.1.2**; their 2026-11-03 versions remain
+in git history at commit `2b30efc`. The 390 and 768 captures are unchanged from the earlier pass (no layout
+affects them) and are kept as-is.
+
+| file | viewport | theme | page height | horizontal overflow | smallest control |
+|---|---|---|---|---|---|
+| `page-320.png` | 320 × 900 | light | 8700 px | **none** (`scrollWidth 320 == innerWidth`) | 18 px (inline link) |
+| `page-1440.png` | 1440 × 900 | light | 4961 px | none | 18 px (inline link) |
+| `page-320-dark.png` | 320 × 900 | **dark** | 8700 px | none | 18 px (inline link) |
+| `page-1440-dark.png` | 1440 × 900 | **dark** | 4961 px | none | 18 px (inline link) |
+
+Every height above is the PNG's **own IHDR**, read back after writing, and the capture *refuses to save* a
+PNG whose pixels differ from the measured page — so a clipped strip cannot pass as evidence.
+
+**Why the "smallest control" is 18 px and is not a defect:** the sweep measured every `a` and `button`,
+including links inside body copy, whose box is the text line. Buttons and chips are 48 px.
+
+**What else was measured, in the same pass:**
+
+- **Contrast, both themes:** every leaf text node with a rendered box was graded against the background it
+  actually composites onto, walking ancestors for the first opaque fill and compositing translucent ink.
+  **155 nodes in light, 155 in dark, 0 below the threshold** (4.5:1 normal, 3:1 large/bold). This is the
+  first time the dark theme was verified by measurement rather than by eye — the primary call to action
+  reads `rgb(11,18,32)` on `rgb(110,168,255)` = **7.65:1**, which a downscaled thumbnail made look like
+  white-on-light-blue.
+- **The claim on the page matches the suite:** the hero states `107/107 unit tests` and
+  `tests/storefront-artifact.test.mjs` asserts that number equals the `test(` declarations in `tests/`.
+
+`capture-report-2026-11-04.json` holds the machine-readable version of the four rows above.
+
+**What this evidence does NOT prove:** rendering on a real phone (these are headless Chrome at exact CSS
+pixels), the behaviour with JavaScript disabled beyond the static fallbacks already checked, the deployed
+page (it is not deployed — no `store/DEPLOYED-URL`), or that a payment can be taken (no rail is live).

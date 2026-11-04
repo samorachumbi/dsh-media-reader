@@ -20,7 +20,7 @@
  */
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 
@@ -119,7 +119,10 @@ test('a relative artifact reference the plugin prints resolves back to the real 
   const { resolveMediaTarget } = await import('../lib/fsutil.js')
 
   // A real artifacts root on disk, so the round trip is measured, not assumed.
+  // Removed in `finally`: a test that leaves a temp directory every run litters the machine it
+  // is proving itself on (twenty `mr-draft-paths-*` dirs were found at shutdown).
   const root = await mkdtemp(join(tmpdir(), 'mr-draft-paths-'))
+  try {
   const jobDir = join(root, 'videos', 'clip.mp4-1700000000000')
   await mkdir(join(jobDir, 'frames'), { recursive: true })
   const sheet = join(jobDir, 'contact-sheet.png')
@@ -161,6 +164,9 @@ test('a relative artifact reference the plugin prints resolves back to the real 
   const exec = { agent: { session: { header: { cwd: '/workspace' } } } }
   const resolved = await resolveMediaTarget(ctx, exec, reference, { artifactsDir: root })
   assert.equal(resolved.processPath, sheet)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })
 
 test('the artifacts fallback does not resolve a path that exists in neither place', async () => {
