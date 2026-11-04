@@ -45,3 +45,27 @@ test('the shipped artifact carries the release it claims', async () => {
   const sidecar = await readFile(new URL(`dist/${pkg.name}-${pkg.version}.tar.gz.sha256`, repo), 'utf8')
   assert.equal(sidecar.trim().split(/\s+/u)[0], digest)
 })
+
+test('the storefront claims the test count the suite actually has', async () => {
+  // The page said "97/97 unit tests" for two releases after the suite had grown: a marketing number
+  // nobody re-derives is a claim the code does not keep. The count is derivable, so it is asserted:
+  // one `test(` declaration per test, which is exactly what the runner reports (106 = 106).
+  const { readdir } = await import('node:fs/promises')
+  const page = await readFile(new URL('store/index.html', repo), 'utf8')
+  const files = (await readdir(new URL('tests/', repo))).filter((name) => name.endsWith('.test.mjs'))
+  let declared = 0
+  for (const name of files) {
+    const source = await readFile(new URL(`tests/${name}`, repo), 'utf8')
+    declared += source.split('\n').filter((line) => line.startsWith('test(')).length
+  }
+  const claimed = [...page.matchAll(/(\d+)\/(\d+) unit tests/gu)]
+  assert.ok(claimed.length > 0, 'the storefront must state the unit-test count')
+  for (const [, passing, total] of claimed) {
+    assert.equal(passing, total, 'a "N/N unit tests" claim must not describe a partial pass')
+    assert.equal(
+      Number(total),
+      declared,
+      `the storefront claims ${total} unit tests but tests/ declares ${declared}`
+    )
+  }
+})
