@@ -41,7 +41,7 @@
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 77,
- "total_bytes": 1762708,
+ "total_bytes": 1756610,
  "files": [
   {
    "path": "LICENSE",
@@ -90,8 +90,8 @@
   },
   {
    "path": "docs/README.md",
-   "bytes": 17944,
-   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
+   "bytes": 18655,
+   "sha256": "a9ad9064418b2d6bfa03c6773e9e42fb568f66e160163977bd853471176f0061"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -165,8 +165,8 @@
   },
   {
    "path": "plugin/README.md",
-   "bytes": 17944,
-   "sha256": "0b1b7b135bf13ed599329b3ca8e2cf5b42ef48a59a047e4c75b115f41408c59a"
+   "bytes": 18655,
+   "sha256": "a9ad9064418b2d6bfa03c6773e9e42fb568f66e160163977bd853471176f0061"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -395,18 +395,18 @@
   },
   {
    "path": "skills/dsh-plugin-install-safety/SKILL.md",
-   "bytes": 7770,
-   "sha256": "00ab2962ed4efb761677a6860c64839c4808f826bf7a8f371b929c6ab81e9445"
+   "bytes": 5036,
+   "sha256": "49eefb2236f67cba9a89521857d91923d65c5a2a4d6442f4b59326eb1230a0a2"
   },
   {
    "path": "skills/dsh-skill-install/SKILL.md",
-   "bytes": 9631,
-   "sha256": "0845180931e6756d31773f6048ad06d2f5617f6615e2540525eb8e3b2a0c0237"
+   "bytes": 9524,
+   "sha256": "43de230f2790907edb020dd63bbd785ac2f74101999bd03f7e1fa65c761d53f9"
   },
   {
    "path": "skills/dsh-test-boot/SKILL.md",
-   "bytes": 8074,
-   "sha256": "0cf404fa1dd95338c10345c6d70c750617c48eca55d79544bb304504474d93a8"
+   "bytes": 4900,
+   "sha256": "981f949015757935ef401e3ed4cb71df5ee7552d3b79ed005738dc518c0455b2"
   },
   {
    "path": "skills/media-reading-discipline/SKILL.md",
@@ -415,8 +415,8 @@
   },
   {
    "path": "skills/product-motion-studio/SKILL.md",
-   "bytes": 54379,
-   "sha256": "6f84b42c87a0adb1bf0e61cac75bae8a79907edd3e03ceafb336129dda7ec466"
+   "bytes": 52874,
+   "sha256": "760e09d85e3751d2d65846af094f7b805f702f112a58b2684722655b4c74a4fe"
   },
   {
    "path": "smoke.sh",

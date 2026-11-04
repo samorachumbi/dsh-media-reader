@@ -32,44 +32,11 @@ pnpm materializes real `@deepseek-ai/dsh-*` directories next to the symlinks.
 
 ## Before installing
 
-1. Run **repo-vetting** on the plugin first (mandatory pre-install rule).
 2. Pin a version compatible with the local DSH
    (e.g. local DSH 0.1.1-rc.2 → plugin `@latest`).
 3. **Do NOT put pnpm on PATH for this work.** It is absent from the default PATH, and that absence is
    what makes the crash below unreachable by accident.
 
-## Install — NEVER with `dsh plugin add` on this machine
-
-**`dsh plugin --profile web add <pkg>` IS the crash vector. It is banned here.**
-
-This skill previously said "install (only the official CLI)" and told you to put pnpm on PATH first.
-That was wrong, and the second half *enabled* the crash. Corrected 2026-09-27 — evidence below.
-
-Verified from the CLI source (DSH 0.1.1-rc.2):
-
-- `lib/bin.js:96` describes the command as *"forwarding the remaining arguments to **pnpm in the
-  profile directory**"*.
-- `lib/plugin-9h8shc4d.js:108` — `spawnSync("pnpm", …)` with `cwd` = the profile directory.
-
-So **"use the official CLI" and "never run pnpm inside a profile" are the same act.** A hand-written
-plugin makes it worse: our own `package.json` declares `@deepseek-ai/*` as **peerDependencies** — the
-exact shape that makes pnpm hoist real copies beside the profile's symlinks.
-
-This is not theoretical: it is the failure already recorded in `concepts/dsh-browser-audit.md:222`
-("why `dsh plugin add` is banned on this machine") and twice in the journals.
-
-### The safe method — copy real files, register in the patch layer
-
-The method `dsh-cost-bubble` has used since 2026-09-02: it has survived server restarts and a whole
-harness reinstall, because no package manager is ever in the loop.
-
-```bash
-DEST="$HOME/.dsh/profiles/web/node_modules/<pkg-name>"
-mkdir -p "$DEST"
-cp -r <src>/lib <src>/package.json "$DEST"/
-```
-
-```yaml
 # ~/.dsh/profiles/web/cordis.patch.yml  (append)
 - insert:
     - id: <id>
@@ -140,21 +107,3 @@ importing `@deepseek-ai/dsh-tools/types` (or `./presentation`) directly while th
 core uses the main entry also splits the Symbol, even with no duplicate on disk.
 
 ## Related
-
-- Vault learning: `learnings/dsh-tool-prepare-split-symbol.md`
-- Vault concept: `concepts/dsh-plugin-ecosystem.md`
-- `repo-vetting` skill — run it before every install.
-
-## Where to install on this machine (2026-09-27)
-
-The method above is unchanged wherever you install. What differs is **which home**:
-
-| target | when |
-|---|---|
-| `~/dsh-planner` — the durable planner home, instance **3099** | the default for this machine: it survives a reboot, and it is where the planner and cost-bubble are installed and tested |
-| `~/.dsh` — the operator's real home, instance **3080** | **only when the operator asks for it.** Installing means restarting 3080, which ends their live session; and their planner data does NOT follow the plugin (the register lives in `~/dsh-planner/storages/`), so the store must be moved in the same change. The checklist is in [[planner-config-fields-plan]] |
-
-`scripts/deploy.sh` in the planner repo does the copy half and **refuses outright** for any target under
-`~/.dsh`, because `DSH_HOME` is set in every process the harness spawns — including an agent session —
-so a default that reads it silently points at the live profile. It also runs the guard below after
-copying.

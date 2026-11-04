@@ -64,6 +64,7 @@ if [ -n "$VAULT" ]; then
 fi
 
 python3 "$REPO/dist-tools/scrub-paths.py" "$STAGE"
+python3 "$REPO/dist-tools/sanitise-skills.py" "$STAGE"
 
 # --- artifact hygiene gate -------------------------------------------------
 # The path scrubber rewrites TEXT. A .pyc embeds the absolute source path as bytes, so a stale

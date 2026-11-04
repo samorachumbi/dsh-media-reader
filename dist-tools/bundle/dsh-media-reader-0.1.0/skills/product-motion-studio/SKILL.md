@@ -17,7 +17,6 @@ paid-generation adapter; Higgsfield is an optional later adapter, never a depend
 - Not a licence to invent a SaaS dashboard for a service business.
 - Not a video-generator prompt collection. Story, evidence, assembly and verification come first.
 - Not a replacement for `ui-ux-pro-max` (design decisions), `scroll-craft` (scroll-page construction
-  and its browser harness), `outreach-planner` (acquisition strategy), or `repo-vetting` (required
   before installing packages or connectors).
 - Not an autopublisher. Nothing goes to prospects, social accounts or ad platforms without explicit
   operator approval.
@@ -246,7 +245,6 @@ Use this route when exact UI, copy, data or revisions matter.
   travel and subtle click presses; keep camera moves slow enough to read.
 - Stillness is allowed, especially for reading and CTA holds. Use subtle drift only when it improves
   depth and reduced-motion is not requested.
-- Run `repo-vetting` and obtain approval before installing Remotion or other new dependencies.
 
 ### Identity preservation and local repair (verified 2026-11-01)
 
@@ -592,22 +590,6 @@ Every row cost real money or real time. Keep them; they are cheaper to read than
 | Infinite loop in a padding script | three tool calls killed, machine out of memory | bounded loops with a hard iteration cap and a test that fails loudly |
 | Hard-coded private paths in a tracked doc | pre-publish scanner failure | keep literal machine paths in a git-ignored evidence file; ship placeholders |
 
-### Making the skill portable — it must not depend on this machine, this subject or this model
-
-- **Subject:** nothing in the pipeline names a subject. Plates, beats and the EDL are data; the invariant
-  is "one identity anchor per recurring subject, one scene per shot, motion in every shot".
-- **Provider:** prices, model ids and limits are *measured at run time* and written into the project's
-  `ADAPTERS.md`, never assumed from this file.
-- **Paths and endpoints:** review directory, ports, model route and provider key all come from
-  configuration; a script that hard-codes `/home/<user>/...` is a defect.
-- **Reviewer:** the acceptance route is "an image-capable route independent of the producing model". If
-  the local model *is* image-capable, read the frames yourself and say so; if it is not, hand off to a
-  vision route and wait for the verdict. Never infer picture content from metadata.
-- **What must be shipped with a bundle:** this skill, the install/verify skills (`dsh-plugin-install-safety`,
-  `dsh-skill-install`, `dsh-test-boot`), the direction workflows (`directing-workflow.md`,
-  `dance-direction.md`), the reproducible pipeline commands, the acceptance record and the research notes.
-  A bundle that ships only code fails on the first workstation without the harness knowledge.
-
 ## Step 5D: Optional Higgsfield upgrade path
 
 Keep `BRIEF.md`, `FACTS.md`, `STORYBOARD.md`, the look kit, copy list and shot IDs unchanged. Replace
@@ -722,7 +704,7 @@ review directory. Never store credentials in any of these files.
 
 ## Website build lessons — read before building
 
-Before planning or building a product/service website, read [[website-build-lessons-itikia]]. It is the
+Before planning or building a product/service website, read `website-build-lessons-itikia`. It is the
 consolidated Itikia Section 1 post-mortem: 320px-first layout, never hiding the affordance or its
 instruction, freezing the interaction contract and acceptance matrix, measuring the rendered DOM rather
 than declared CSS, committing screenshot evidence with a manifest, and keeping visual approval separate

@@ -78,55 +78,7 @@ cat /tmp/dsh-test-boot.pid
 `setsid nohup … &` keeps the instance alive after the launching command returns,
 so the user can keep looking while you continue working; the PID file replaces
 any temptation to use `pkill -f` (which matches the shell that runs it — three
-landings recorded in [[bug-census]]).
-
-### On this machine: the ports and homes that are already spoken for
-
-- **3080 — the operator's real instance, and since 2026-09-29 it also serves the planner and the
-  Apps pill.** Never a scratch target, never restarted without being asked: restarting it ends the
-  session the operator is talking through. The planner's own page, tools and store live here now.
-- **3099 — FREE since 2026-09-29.** The durable planner instance (`~/dsh-planner`) is **stopped and
-  disabled**, kept as the rollback. A scratch instance may use the port — but note that
-  `systemctl --user enable --now dsh-planner` would reclaim it, and running both would give you two
-  planner stores that drift.
-- **Never boot `~/.dsh` as a scratch home.** `prepareProfile` rewrites `profiles/<profile>/cordis.yml`
-  on every boot, so a "read-only" test boot writes into the live profile — and the live profile is now
-  where the planner itself is installed.
-- For the planner, the repo's own `scripts/deploy.sh` does the deploy half and refuses anything under
-  `~/.dsh` outright. That refusal is now a feature to work *around deliberately*, not a convenience.
-
-1. **Boot verdict** — `head /tmp/dsh-test-boot.log`:
-   - `dsh web: http://127.0.0.1:$PORT` = composition composed, every entry
-     imported and activated (the boot activation audit is fail-loud).
-   - `failed to import loader entry …` / a stack trace = crash — fix it now,
-     before touching the real server. Do NOT tell the user to restart.
-2. **Host endpoints** — curl every route the plugin registers; expect the
-   documented JSON/status. A route that answers proves its services resolved
-   (e.g. `{"ok":false,"error":"session-not-found"}` proves `sessions` +
-   `sessionProjections` injected fine).
-3. **Client bundle** — `curl -s -o /dev/null -w "%{http_code}\n" \
-   http://127.0.0.1:$PORT/plugins/<pkg>/client.js` → expect 200 (404 = missing
-   `"./package.json"` export or the row never qualified).
-4. **Live data** — for session-reading plugins, query the route with a real
-   session id when one exists; a scratch instance has no sessions, so
-   `session-not-found` proves the wiring and the real numbers come after the
-   user's restart.
-5. **User eye-check — while the instance is still up.** Ask the user to look at
-   the tab that opened (render + F12 console) and **wait for their answer**
-   before shutting anything down. That is why `--no-open` is banned and why a
-   fixed sleep-then-kill is not a test.
-6. **Clean shutdown — by PID, only after the user confirms**:
-   ```bash
-   PID=$(cat /tmp/dsh-test-boot.pid)
-   kill "$PID"; sleep 3
-   kill -0 "$PID" 2>/dev/null && kill -9 "$PID"
-   ss -tuln | grep "$PORT"   # must print nothing
-   ```
-7. **Restore any temporarily-edited files** — a test boot can re-serialize the
-   profile's `cordis.patch.yml` (the Loader writes entries back, dropping the
-   comment header). `diff` against the `.bak` and restore the canonical form.
-   A clean shutdown also removes the risk of a stale scratch server holding the
-   profile while the user restarts the real one.
+landings recorded in `bug-census`).
 
 ## Only after a clean test
 
@@ -137,9 +89,8 @@ instruct a restart without a green test boot first.
 
 ## Related
 
-- [[dsh-plugin-install-safety-SKILL]] — split-Symbol crash guard; run its
+- `dsh-plugin-install-safety-SKILL` — split-Symbol crash guard; run its
   duplicate-package check on any plugin install.
-- [[repo-vetting-SKILL]] — mandatory vetting before installing anything.
-- [[dsh-token-cost-bubble]] — the worked example: two crashes shipped to the
+- `dsh-token-cost-bubble` — the worked example: two crashes shipped to the
   real server (missing `./package.json` export → silent 404; missing factory
   prologue → boot-screen crash) that this test-boot + curl workflow catches.

@@ -67,7 +67,7 @@ ROOT="${DSH_HOME:-$HOME/.dsh}/skills"
 mkdir -p "$ROOT"
 for f in "$SRC"/*-SKILL.md; do
   [ -e "$f" ] || continue
-  name=$(sed -n 's/^name:[[:space:]]*//p' "$f" | head -1 | tr -d '\r')
+  name=$(sed -n 's/^name:`:space:`*//p' "$f" | head -1 | tr -d '\r')
   [ -n "$name" ] || { echo "no name in $f" >&2; continue; }
   mkdir -p "$ROOT/$name"
   ln -sfn "$f" "$ROOT/$name/SKILL.md"
@@ -76,7 +76,7 @@ done
 ```
 
 Always **link, never copy** — the canonical file stays the single source of truth, and editing it
-propagates to every target (see [[mistake-guardrails-SKILL]]).
+propagates to every target (see `mistake-guardrails-SKILL`).
 
 ## Verify — two independent checks
 
@@ -108,7 +108,7 @@ that is a tab refresh, not a failure.
 
 `watch` and `watchFollowSymlinks` both default to **true**, so added/edited skills are picked up
 live (observed directly). **Skill installs therefore do not need a server restart**, which means
-[[dsh-test-boot-SKILL]] does **not** apply here — that rule is for plugin and
+`dsh-test-boot-SKILL` does **not** apply here — that rule is for plugin and
 `cordis.patch.yml` changes that only take effect on restart. Only the browser tab may need a
 refresh for the slash menu.
 
@@ -137,7 +137,7 @@ install_to my-skill \
 ```
 
 Note the quoting: `Marketing` is fine, but **`Quick Cash` has a space** and must be quoted — the
-exact mistake logged in [[mistake-guardrails-SKILL]].
+exact mistake logged in `mistake-guardrails-SKILL`.
 
 ## The trap that cost a skill its whole life: PRESENT IS NOT PARSEABLE
 
@@ -171,8 +171,8 @@ Two rules follow, and they are the same rule twice:
 
 - **Resolve a helper from the script's own directory** (`SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"`), never from a variable that means something else.
 - **A checker that cannot RUN must report UNVERIFIED, not clean.** The installer now counts
-  `unverified:` separately, so silence is never mistaken for a pass. See [[a-guard-that-cannot-fail]]
-  and [[the-check-must-prove-it-ran]].
+  `unverified:` separately, so silence is never mistaken for a pass. See `a-guard-that-cannot-fail`
+  and `the-check-must-prove-it-ran`.
 
 ## Traps
 
@@ -189,6 +189,5 @@ Two rules follow, and they are the same rule twice:
 
 ## Related
 
-- [[dsh-global-skill-root]] — the verified facts behind every claim here
-- [[repo-vetting-SKILL]] · [[dsh-plugin-install-safety-SKILL]] · [[dsh-test-boot-SKILL]]
-- [[mistake-guardrails-SKILL]] — symlink-to-canonical and quoting rules
+- `dsh-global-skill-root` — the verified facts behind every claim here
+- `mistake-guardrails-SKILL` — symlink-to-canonical and quoting rules
