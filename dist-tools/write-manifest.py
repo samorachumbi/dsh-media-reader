@@ -31,6 +31,7 @@ required = {
     "skills/dsh-plugin-install-safety/SKILL.md": "why `dsh plugin add` is banned here; the copy-restore method",
     "skills/dsh-skill-install/SKILL.md": "how to make the skills loadable and slash-invocable",
     "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server",
+    "skills/media-reading-discipline/SKILL.md": "makes a model that cannot receive media read it with the tools instead of guessing",
 }
 present = {f["path"] for f in files}
 missing = [p for p in required if p not in present]

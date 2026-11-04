@@ -32,15 +32,16 @@
   "skills/product-motion-studio/SKILL.md": "the production method this bundle is built around",
   "skills/dsh-plugin-install-safety/SKILL.md": "why `dsh plugin add` is banned here; the copy-restore method",
   "skills/dsh-skill-install/SKILL.md": "how to make the skills loadable and slash-invocable",
-  "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server"
+  "skills/dsh-test-boot/SKILL.md": "boot a scratch instance before restarting the real server",
+  "skills/media-reading-discipline/SKILL.md": "makes a model that cannot receive media read it with the tools instead of guessing"
  },
  "missing_required": [],
  "manifest_self": {
   "path": "MANIFEST.json",
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
- "file_count": 76,
- "total_bytes": 1756882,
+ "file_count": 77,
+ "total_bytes": 1762708,
  "files": [
   {
    "path": "LICENSE",
@@ -149,13 +150,13 @@
   },
   {
    "path": "install-skills.sh",
-   "bytes": 2171,
-   "sha256": "613c34f1307a1935f7c158b99b192e122d8ac06e26d5441e463cc9b69cd4db08"
+   "bytes": 2236,
+   "sha256": "8d9108ff5cadf6180513e41890d434aa7164d7f4aca03d984e21cd61355857e3"
   },
   {
    "path": "install.sh",
-   "bytes": 4854,
-   "sha256": "b58f81386e772de14228a62e3303da75dc6f3d8186ff8ce7f07eb9cf231ab3de"
+   "bytes": 5165,
+   "sha256": "1f002822a860e11a729e89d84441ef678bad6199d455e4606e67e9304ef24abb"
   },
   {
    "path": "plugin/LICENSE",
@@ -204,8 +205,8 @@
   },
   {
    "path": "plugin/lib/client.js",
-   "bytes": 10894,
-   "sha256": "f29081acbcf7c6a9c99061f613071c916d1302dec402b1e5eb3e4938e58e133e"
+   "bytes": 10922,
+   "sha256": "3b40a45990c93a9be8e42b6a4476c062728b85b877ff20979f40140dd9dda965"
   },
   {
    "path": "plugin/lib/describe.js",
@@ -369,8 +370,8 @@
   },
   {
    "path": "plugin/probe/smoke.mjs",
-   "bytes": 10194,
-   "sha256": "6c263fde0861909938b2cded665b48deba87b18e12ca29a34f1ce6bb705e5f0b"
+   "bytes": 12390,
+   "sha256": "3773bddb5cfb2e5c3706d9556581de998f2b01f7f64df4a8326c3fae020a5ee9"
   },
   {
    "path": "plugin/probe/verify-installed-tool.mjs",
@@ -406,6 +407,11 @@
    "path": "skills/dsh-test-boot/SKILL.md",
    "bytes": 8074,
    "sha256": "0cf404fa1dd95338c10345c6d70c750617c48eca55d79544bb304504474d93a8"
+  },
+  {
+   "path": "skills/media-reading-discipline/SKILL.md",
+   "bytes": 3226,
+   "sha256": "1addaf62dc184a8c0cc9c7f80f684e97b58906cc7281be0a133d2ae695fb9439"
   },
   {
    "path": "skills/product-motion-studio/SKILL.md",

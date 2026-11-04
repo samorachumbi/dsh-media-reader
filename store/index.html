@@ -883,7 +883,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
   var V = 'dsh-media-reader-0.1.0';
   var REPO = 'https://github.com/samorachumbi/dsh-media-reader';
   var RAW = 'https://raw.githubusercontent.com/samorachumbi/dsh-media-reader/main/dist/' + V + '.tar.gz';
-  var HASH = '13c4b47629253f3072120d093bda877e703c044e62ca9f8c30a6c2e5a6cfd6c1';
+  var HASH = '3475becc15cf42cb9004a294096369ac33b88b88694c4bc527b192b6bb689bd2';
 
   function val(name) {
     var el = form.querySelector('[name="' + name + '"]');
@@ -997,6 +997,11 @@ Details: The background is a uniform dark blue with no visible objects or patter
     lines.push('      (with dsh.profile.bundles), <home>/profiles/<profile>/cordis.yml, and');
     lines.push('      <home>/profiles/node_modules. Either let DSH create it by starting once with that');
     lines.push('      home, or copy them from a working home. A bare mkdir is NOT enough.');
+    lines.push('      MODEL CREDENTIALS: the scratch home must also have working model credentials, or the');
+    lines.push('      smoke test fails on check 1 of 18. The cheapest honest way is a symlink to the home');
+    lines.push('      that already works: ln -sfn <working-home>/.credentials.yaml <home>/.credentials.yaml');
+    lines.push('      (the bundle\'s docs/README.md shows the same step). Do not copy a credential anywhere');
+    lines.push('      you would not want it left behind, and delete the link when you are done.');
     lines.push('   b. `install.sh` needs the profile DIRECTORY to exist: it refuses with "profile');
     lines.push('      directory not found" otherwise, and `--profile` does not create it.');
     lines.push('   c. `DSH_HOME` is already set in every process a harness spawns. Pass the home');
@@ -1005,6 +1010,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     lines.push('1. Download the bundle and verify its sha256 before trusting it:');
     lines.push('   ' + RAW);
     lines.push('   expected sha256: ' + HASH);
+    lines.push('   If it does NOT match, stop right here and paste both values back to me. Do not install.');
     lines.push('2. Extract it, then run the dry-run and read every action it lists:');
     lines.push('   ./install.sh --home <home> --profile <profile> --dry-run');
     lines.push('3. Install, then link the skills — BOTH with the same home:');
@@ -1015,7 +1021,6 @@ Details: The background is a uniform dark blue with no visible objects or patter
     lines.push('   and only proceed when it prints "installed, and the import check passed."');
     lines.push('4. Restart the harness so the tools register. If this is a machine I work in, follow');
     lines.push('   `skills/dsh-test-boot/SKILL.md` first: boot a scratch instance on a spare port and check it there.');
-    lines.push('   If the sha256 does NOT match, stop immediately and paste both values back to me.');
     lines.push('5. VERIFY, do not assume. Boot the instance the smoke test will talk to — it must be');
     lines.push('   RUNNING, and it may be a scratch instance on a free port (3096 is only an example):');
     lines.push('   DSH_HOME=<home> dsh web --port <port>');
@@ -1045,6 +1050,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
     lines.push('- skills/dsh-skill-install          (how skills become slash commands)');
     lines.push('- skills/dsh-test-boot              (how to verify before restarting a real server)');
     lines.push('- skills/product-motion-studio      (the production method if I go beyond reading files)');
+    lines.push('- skills/media-reading-discipline   (REQUIRED on a text-only route: it makes you read media');
+    lines.push('  with the tools instead of saying you cannot see it, asking me to describe it, or guessing');
+    lines.push('  from the file name. Load it before your first media task, and re-read it whenever a user');
+    lines.push('  points at a file.)');
     lines.push('');
     lines.push('SUPPORT');
     lines.push('If the smoke test fails or the first task misbehaves, paste the exact output and I will');

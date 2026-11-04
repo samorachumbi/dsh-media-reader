@@ -7,7 +7,8 @@
 #
 # --home exists because `DSH_HOME` is ALREADY SET in every process a harness spawns. An installer
 # that reads only the environment therefore installs the plugin into the home you named and the
-# skills into the operator's real one. If the two disagree this script says so and refuses.
+# skills into the operator's real one. This script cannot see the other home, so it WARNS loudly
+# with the resolved target instead of pretending to refuse.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOME_DIR="${DSH_HOME:-$HOME/.dsh}"

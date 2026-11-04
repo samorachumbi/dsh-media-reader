@@ -49,6 +49,7 @@ copy_skill product-motion-studio        product-motion-studio-SKILL.md
 copy_skill dsh-plugin-install-safety    dsh-plugin-install-safety-SKILL.md
 copy_skill dsh-skill-install            dsh-skill-install-SKILL.md
 copy_skill dsh-test-boot                dsh-test-boot-SKILL.md
+copy_skill media-reading-discipline      media-reading-discipline-SKILL.md
 
 # --- docs ----------------------------------------------------------------
 for doc in RESEARCH.md PRODUCTION-PIPELINE.md REPLICATION-RESEARCH.md EVIDENCE-PACK.md \

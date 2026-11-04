@@ -122,10 +122,57 @@ function assistantText(events) {
 }
 
 const checks = []
+
+// When a check fails because NO TOOL EVER RAN — a missing credential, a model the provider rejects, a
+// route that cannot take the prompt — the tool text is empty and the reason lives in the turn's own
+// error. Printing that blank line cost the operator a support round trip: the instruction says "paste
+// the output", and the output was empty. Extract the cause from the event stream instead.
+function turnFailure(events) {
+  // Prefer the things that actually name a cause, deduplicate, and keep it to a few short lines.
+  const preferred = []
+  const other = []
+  const seen = new Set()
+  const push = (bucket, line) => {
+    const clean = String(line).replace(/\s+/g, ' ').trim()
+    if (clean.length < 4 || clean.length > 220) return
+    const key = clean.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    bucket.push(clean)
+  }
+  const dig = (value, depth = 0) => {
+    if (value === null || typeof value !== 'object' || depth > 6) return
+    for (const [key, inner] of Object.entries(value)) {
+      if (typeof inner === 'string') {
+        if (/^(message|code|reason|detail|error)$/i.test(key) || /error|credential|api key|missing|unsupported|forbidden|unauthor|not found/i.test(inner)) {
+          push(/^(message|code|reason|detail|error)$/i.test(key) ? preferred : other, key + ': ' + inner)
+        }
+      } else if (typeof inner === 'object') {
+        dig(inner, depth + 1)
+      }
+    }
+  }
+  for (const entry of events ?? []) dig(entry.event)
+  const assistant = assistantText(events ?? []).trim()
+  if (assistant.length > 0) push(other, 'assistant said: ' + assistant.slice(0, 220))
+  const lines = [...preferred, ...other].slice(0, 4)
+  return lines.length > 0
+    ? lines.join('\n      ')
+    : 'no tool result and no error event: nothing ran. Check that the model route accepts this prompt and that the home has model credentials.'
+}
+
+let lastEvents = []
 function check(name, condition, detail) {
   checks.push({ name, ok: condition === true, detail })
-  console.log(`${condition === true ? 'PASS' : 'FAIL'}  ${name}${condition === true ? '' : `\n      ${detail ?? ''}`}`)
-  if (condition !== true) throw new Error(name)
+  if (condition === true) {
+    console.log(`PASS  ${name}`)
+    return
+  }
+  const explanation = (detail && String(detail).trim().length > 0)
+    ? String(detail)
+    : (turnFailure(lastEvents) || 'no tool result and no error event: nothing ran. Check that the model route accepts this prompt and that the home has model credentials.')
+  console.log(`FAIL  ${name}\n      ${explanation}`)
+  throw new Error(`${name}\n      ${explanation}`)
 }
 
 async function main() {
@@ -139,6 +186,7 @@ async function main() {
     sessionId,
     `Call media_probe once on ${fixture('error-demo.mp4')}. Report the duration and audio-track count.`
   )
+  lastEvents = events
   let text = results(events).map((result) => result.text).join('\n')
   check('media_probe reads duration and audio tracks', /"durationSeconds": 11/u.test(text) && /"audioTracks": 1/u.test(text), text.slice(0, 600))
   check('media_probe reports video dimensions', /"width": 640/u.test(text) && /"height": 360/u.test(text), text.slice(0, 600))

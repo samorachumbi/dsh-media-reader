@@ -84,8 +84,11 @@ fi
 #    import works here. On a machine where DSH has not been started with this home yet, that tree does
 #    not exist — that is a missing prerequisite, not a broken bundle, so warn instead of failing and say
 #    what to do.
-VERIFIED=1
+# 2 = not checked at all (dry run). Never claim a verification that did not run: the generated
+# prompt gates on this sentence, so a dry run printing it would satisfy the file's only pass condition.
+VERIFIED=2
 if [ "$DRY_RUN" -eq 0 ]; then
+  VERIFIED=1
   IMPORT_ERR="$(node --input-type=module -e "await import('$DEST/lib/index.js')" 2>&1 || true)"
   if [ -z "$IMPORT_ERR" ]; then
     echo "  plugin imports cleanly"
@@ -102,7 +105,7 @@ fi
 
 cat <<NEXT
 
-$([ "$VERIFIED" -eq 1 ] && echo "installed, and the import check passed." || echo "COPIED, BUT NOT VERIFIED — the import check above failed. Do not treat this as working until it passes and the smoke test runs.") Next steps:
+$([ "$VERIFIED" -eq 2 ] && echo "dry run — nothing was changed, and nothing was verified." || { [ "$VERIFIED" -eq 1 ] && echo "installed, and the import check passed." || echo "COPIED, BUT NOT VERIFIED — the import check above failed. Do not treat this as working until it passes and the smoke test runs."; }) Next steps:
   1. skills:  ./install-skills.sh --home $DSH_HOME_DIR   (links the bundled skills into $DSH_HOME_DIR/skills)
   2. verify:  ./smoke.sh                   (needs a RUNNING scratch harness; see README.md)
   3. restart the DSH server so the tools register, then run: dsh web --port <port>
