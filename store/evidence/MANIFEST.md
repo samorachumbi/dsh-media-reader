@@ -6,10 +6,10 @@ was committed with. Full-page captures, lazy images forced to load first.
 
 | file | viewport | page height | horizontal overflow | images |
 |---|---|---|---|---|
-| `page-320.png` | 320 × 900 | 8357 px | none | 2/2 loaded |
-| `page-390.png` | 390 × 900 | 7321 px | none | 2/2 loaded |
-| `page-768.png` | 768 × 900 | 5457 px | none | 2/2 loaded |
-| `page-1440.png` | 1440 × 900 | 4098 px | none | 2/2 loaded |
+| `page-320.png` | 320 × 900 | 8700 px | none | 2/2 loaded |
+| `page-390.png` | 390 × 900 | 7664 px | none | 2/2 loaded |
+| `page-768.png` | 768 × 900 | 6020 px | none | 2/2 loaded |
+| `page-1440.png` | 1440 × 900 | 4961 px | none | 2/2 loaded |
 
 The PNG's own pixel height equals the page height in this table — checked with `ffprobe`, because an
 earlier capture pass wrote 900 px strips while its console cheerfully printed "done". The cause was a
@@ -152,3 +152,28 @@ wizard sits below the fold (the harness now scrolls first); the width sweep cras
 because it was navigating to port 8099, a server that had been stopped; and a "wizard" screenshot was
 actually the hero because the clip used viewport-relative coordinates after a scroll (now absolute page
 coordinates plus `window.scrollY`).
+
+## Uniformity audit — 2026-11-04
+
+Measured from the live DOM after the operator reported "the harness version box is not uniform to the rest".
+
+**Three root causes, all of them mine:**
+
+1. **Every section had `padding-block: 0`.** `.wrap` used the `padding: 0 16px` shorthand, and a class
+   beats an element selector, so it silently overrode `section { padding-block: … }` on all eight
+   sections — the page had no vertical rhythm at all. `.wrap` now sets only `padding-inline`, and each
+   section measures a uniform **68 px** above and below.
+2. **Text inputs were 50 px against 48 px selects.** Not a style mismatch: an `<input>`'s content box is a
+   text line (24.32 px) while a select's is not. Both now set `height: 48px; padding: 0 10px; box-sizing:
+   border-box`.
+3. **The `(optional)` hint was a third flex child**, so it took its own row and pushed the *Harness version*
+   and *A file to start with* inputs ~29 px below their neighbours. Both hints now share the label line, and
+   the eight controls sit on exactly **two aligned rows of four**.
+
+Also fixed: the empty `#agent-status` bar rendered 20 px of dead space under the wizard (`:empty` now hides
+it), and the last section no longer doubles its border against the footer.
+
+**Harness defects found while auditing, and fixed:** the width sweep crashed twice for two different dead
+endpoints — port 8099 (a stopped server) and CDP port 9228 (a stopped browser) — because the scripts
+hardcoded them. All capture scripts now read `CDP_PORT` from the environment. Heights are re-read from
+each PNG with ffprobe on every update: 320: 8700, 390: 7664, 768: 6020, 1440: 4961 px.
