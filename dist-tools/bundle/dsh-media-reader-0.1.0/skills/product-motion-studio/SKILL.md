@@ -590,6 +590,22 @@ Every row cost real money or real time. Keep them; they are cheaper to read than
 | Infinite loop in a padding script | three tool calls killed, machine out of memory | bounded loops with a hard iteration cap and a test that fails loudly |
 | Hard-coded private paths in a tracked doc | pre-publish scanner failure | keep literal machine paths in a git-ignored evidence file; ship placeholders |
 
+### Making the skill portable — it must not depend on this machine, this subject or this model
+
+- **Subject:** nothing in the pipeline names a subject. Plates, beats and the EDL are data; the invariant
+  is "one identity anchor per recurring subject, one scene per shot, motion in every shot".
+- **Provider:** prices, model ids and limits are *measured at run time* and written into the project's
+  `ADAPTERS.md`, never assumed from this file.
+- **Paths and endpoints:** review directory, ports, model route and provider key all come from
+  configuration; a script that hard-codes `/home/<user>/...` is a defect.
+- **Reviewer:** the acceptance route is "an image-capable route independent of the producing model". If
+  the local model *is* image-capable, read the frames yourself and say so; if it is not, hand off to a
+  vision route and wait for the verdict. Never infer picture content from metadata.
+- **What must be shipped with a bundle:** this skill, the install/verify skills (`dsh-plugin-install-safety`,
+  `dsh-skill-install`, `dsh-test-boot`), the direction workflows (`directing-workflow.md`,
+  `dance-direction.md`), the reproducible pipeline commands, the acceptance record and the research notes.
+  A bundle that ships only code fails on the first workstation without the harness knowledge.
+
 ## Step 5D: Optional Higgsfield upgrade path
 
 Keep `BRIEF.md`, `FACTS.md`, `STORYBOARD.md`, the look kit, copy list and shot IDs unchanged. Replace

@@ -37,6 +37,37 @@ pnpm materializes real `@deepseek-ai/dsh-*` directories next to the symlinks.
 3. **Do NOT put pnpm on PATH for this work.** It is absent from the default PATH, and that absence is
    what makes the crash below unreachable by accident.
 
+## Install — NEVER with `dsh plugin add` on this machine
+
+**`dsh plugin --profile web add <pkg>` IS the crash vector. It is banned here.**
+
+This skill previously said "install (only the official CLI)" and told you to put pnpm on PATH first.
+That was wrong, and the second half *enabled* the crash. Corrected 2026-09-27 — evidence below.
+
+Verified from the CLI source (DSH 0.1.1-rc.2):
+
+- `lib/bin.js:96` describes the command as *"forwarding the remaining arguments to **pnpm in the
+  profile directory**"*.
+- `lib/plugin-9h8shc4d.js:108` — `spawnSync("pnpm", …)` with `cwd` = the profile directory.
+
+So **"use the official CLI" and "never run pnpm inside a profile" are the same act.** A hand-written
+plugin makes it worse: our own `package.json` declares `@deepseek-ai/*` as **peerDependencies** — the
+exact shape that makes pnpm hoist real copies beside the profile's symlinks.
+
+("why `dsh plugin add` is banned on this machine") and twice in the journals.
+
+### The safe method — copy real files, register in the patch layer
+
+The method `dsh-cost-bubble` has used since 2026-09-02: it has survived server restarts and a whole
+harness reinstall, because no package manager is ever in the loop.
+
+```bash
+DEST="$HOME/.dsh/profiles/web/node_modules/<pkg-name>"
+mkdir -p "$DEST"
+cp -r <src>/lib <src>/package.json "$DEST"/
+```
+
+```yaml
 # ~/.dsh/profiles/web/cordis.patch.yml  (append)
 - insert:
     - id: <id>

@@ -41,7 +41,7 @@
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 77,
- "total_bytes": 1756610,
+ "total_bytes": 1762154,
  "files": [
   {
    "path": "LICENSE",
@@ -395,8 +395,8 @@
   },
   {
    "path": "skills/dsh-plugin-install-safety/SKILL.md",
-   "bytes": 5036,
-   "sha256": "49eefb2236f67cba9a89521857d91923d65c5a2a4d6442f4b59326eb1230a0a2"
+   "bytes": 6382,
+   "sha256": "1fe214fb715d45cc8e6fc45efaf8dcfd45331b8ead886174ac8a9a675cf81dcc"
   },
   {
    "path": "skills/dsh-skill-install/SKILL.md",
@@ -405,8 +405,8 @@
   },
   {
    "path": "skills/dsh-test-boot/SKILL.md",
-   "bytes": 4900,
-   "sha256": "981f949015757935ef401e3ed4cb71df5ee7552d3b79ed005738dc518c0455b2"
+   "bytes": 7789,
+   "sha256": "a2e42154a932302ee8a9d4f8e6e8da40f2f6e8a19397405179783078c8e425c5"
   },
   {
    "path": "skills/media-reading-discipline/SKILL.md",
@@ -415,8 +415,8 @@
   },
   {
    "path": "skills/product-motion-studio/SKILL.md",
-   "bytes": 52874,
-   "sha256": "760e09d85e3751d2d65846af094f7b805f702f112a58b2684722655b4c74a4fe"
+   "bytes": 54183,
+   "sha256": "d03bf5714457541d8192a644a7a6923d73ddb356e1a048082f48ee51ba26151c"
   },
   {
    "path": "smoke.sh",

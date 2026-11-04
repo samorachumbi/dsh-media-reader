@@ -185,7 +185,7 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 77,
- "total_bytes": 1756610,
+ "total_bytes": 1762154,
  "files": [
   {
    "path": "LICENSE",
@@ -539,8 +539,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "skills/dsh-plugin-install-safety/SKILL.md",
-   "bytes": 5036,
-   "sha256": "49eefb2236f67cba9a89521857d91923d65c5a2a4d6442f4b59326eb1230a0a2"
+   "bytes": 6382,
+   "sha256": "1fe214fb715d45cc8e6fc45efaf8dcfd45331b8ead886174ac8a9a675cf81dcc"
   },
   {
    "path": "skills/dsh-skill-install/SKILL.md",
@@ -549,8 +549,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "skills/dsh-test-boot/SKILL.md",
-   "bytes": 4900,
-   "sha256": "981f949015757935ef401e3ed4cb71df5ee7552d3b79ed005738dc518c0455b2"
+   "bytes": 7789,
+   "sha256": "a2e42154a932302ee8a9d4f8e6e8da40f2f6e8a19397405179783078c8e425c5"
   },
   {
    "path": "skills/media-reading-discipline/SKILL.md",
@@ -559,8 +559,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "skills/product-motion-studio/SKILL.md",
-   "bytes": 52874,
-   "sha256": "760e09d85e3751d2d65846af094f7b805f702f112a58b2684722655b4c74a4fe"
+   "bytes": 54183,
+   "sha256": "d03bf5714457541d8192a644a7a6923d73ddb356e1a048082f48ee51ba26151c"
   },
   {
    "path": "smoke.sh",
@@ -3261,6 +3261,37 @@ pnpm materializes real `@deepseek-ai/dsh-*` directories next to the symlinks.
 3. **Do NOT put pnpm on PATH for this work.** It is absent from the default PATH, and that absence is
    what makes the crash below unreachable by accident.
 
+## Install — NEVER with `dsh plugin add` on this machine
+
+**`dsh plugin --profile web add <pkg>` IS the crash vector. It is banned here.**
+
+This skill previously said "install (only the official CLI)" and told you to put pnpm on PATH first.
+That was wrong, and the second half *enabled* the crash. Corrected 2026-09-27 — evidence below.
+
+Verified from the CLI source (DSH 0.1.1-rc.2):
+
+- `lib/bin.js:96` describes the command as *"forwarding the remaining arguments to **pnpm in the
+  profile directory**"*.
+- `lib/plugin-9h8shc4d.js:108` — `spawnSync("pnpm", …)` with `cwd` = the profile directory.
+
+So **"use the official CLI" and "never run pnpm inside a profile" are the same act.** A hand-written
+plugin makes it worse: our own `package.json` declares `@deepseek-ai/*` as **peerDependencies** — the
+exact shape that makes pnpm hoist real copies beside the profile's symlinks.
+
+("why `dsh plugin add` is banned on this machine") and twice in the journals.
+
+### The safe method — copy real files, register in the patch layer
+
+The method `dsh-cost-bubble` has used since 2026-09-02: it has survived server restarts and a whole
+harness reinstall, because no package manager is ever in the loop.
+
+```bash
+DEST="$HOME/.dsh/profiles/web/node_modules/<pkg-name>"
+mkdir -p "$DEST"
+cp -r <src>/lib <src>/package.json "$DEST"/
+```
+
+```yaml
 # ~/.dsh/profiles/web/cordis.patch.yml  (append)
 - insert:
     - id: <id>
@@ -3623,6 +3654,52 @@ cat /tmp/dsh-test-boot.pid
 so the user can keep looking while you continue working; the PID file replaces
 any temptation to use `pkill -f` (which matches the shell that runs it — three
 landings recorded in `bug-census`).
+
+### On this machine: the ports and homes that are already spoken for
+
+- **3080 — the operator's real instance, and since 2026-09-29 it also serves the planner and the
+  Apps pill.** Never a scratch target, never restarted without being asked: restarting it ends the
+  session the operator is talking through. The planner's own page, tools and store live here now.
+  disabled**, kept as the rollback. A scratch instance may use the port — but note that
+  `systemctl --user enable --now dsh-planner` would reclaim it, and running both would give you two
+  planner stores that drift.
+- **Never boot `~/.dsh` as a scratch home.** `prepareProfile` rewrites `profiles/<profile>/cordis.yml`
+  on every boot, so a "read-only" test boot writes into the live profile — and the live profile is now
+  where the planner itself is installed.
+  `~/.dsh` outright. That refusal is now a feature to work *around deliberately*, not a convenience.
+
+1. **Boot verdict** — `head /tmp/dsh-test-boot.log`:
+   - `dsh web: http://127.0.0.1:$PORT` = composition composed, every entry
+     imported and activated (the boot activation audit is fail-loud).
+   - `failed to import loader entry …` / a stack trace = crash — fix it now,
+     before touching the real server. Do NOT tell the user to restart.
+2. **Host endpoints** — curl every route the plugin registers; expect the
+   documented JSON/status. A route that answers proves its services resolved
+   (e.g. `{"ok":false,"error":"session-not-found"}` proves `sessions` +
+   `sessionProjections` injected fine).
+3. **Client bundle** — `curl -s -o /dev/null -w "%{http_code}\n" \
+   http://127.0.0.1:$PORT/plugins/<pkg>/client.js` → expect 200 (404 = missing
+   `"./package.json"` export or the row never qualified).
+4. **Live data** — for session-reading plugins, query the route with a real
+   session id when one exists; a scratch instance has no sessions, so
+   `session-not-found` proves the wiring and the real numbers come after the
+   user's restart.
+5. **User eye-check — while the instance is still up.** Ask the user to look at
+   the tab that opened (render + F12 console) and **wait for their answer**
+   before shutting anything down. That is why `--no-open` is banned and why a
+   fixed sleep-then-kill is not a test.
+6. **Clean shutdown — by PID, only after the user confirms**:
+   ```bash
+   PID=$(cat /tmp/dsh-test-boot.pid)
+   kill "$PID"; sleep 3
+   kill -0 "$PID" 2>/dev/null && kill -9 "$PID"
+   ss -tuln | grep "$PORT"   # must print nothing
+   ```
+7. **Restore any temporarily-edited files** — a test boot can re-serialize the
+   profile's `cordis.patch.yml` (the Loader writes entries back, dropping the
+   comment header). `diff` against the `.bak` and restore the canonical form.
+   A clean shutdown also removes the risk of a stale scratch server holding the
+   profile while the user restarts the real one.
 
 ## Only after a clean test
 
@@ -4298,6 +4375,22 @@ Every row cost real money or real time. Keep them; they are cheaper to read than
 | Broken pool rotation → 10 identical shots | the same jump ten times | round-robin per section, plus the uniqueness check |
 | Infinite loop in a padding script | three tool calls killed, machine out of memory | bounded loops with a hard iteration cap and a test that fails loudly |
 | Hard-coded private paths in a tracked doc | pre-publish scanner failure | keep literal machine paths in a git-ignored evidence file; ship placeholders |
+
+### Making the skill portable — it must not depend on this machine, this subject or this model
+
+- **Subject:** nothing in the pipeline names a subject. Plates, beats and the EDL are data; the invariant
+  is "one identity anchor per recurring subject, one scene per shot, motion in every shot".
+- **Provider:** prices, model ids and limits are *measured at run time* and written into the project's
+  `ADAPTERS.md`, never assumed from this file.
+- **Paths and endpoints:** review directory, ports, model route and provider key all come from
+  configuration; a script that hard-codes `/home/<user>/...` is a defect.
+- **Reviewer:** the acceptance route is "an image-capable route independent of the producing model". If
+  the local model *is* image-capable, read the frames yourself and say so; if it is not, hand off to a
+  vision route and wait for the verdict. Never infer picture content from metadata.
+- **What must be shipped with a bundle:** this skill, the install/verify skills (`dsh-plugin-install-safety`,
+  `dsh-skill-install`, `dsh-test-boot`), the direction workflows (`directing-workflow.md`,
+  `dance-direction.md`), the reproducible pipeline commands, the acceptance record and the research notes.
+  A bundle that ships only code fails on the first workstation without the harness knowledge.
 
 ## Step 5D: Optional Higgsfield upgrade path
 
