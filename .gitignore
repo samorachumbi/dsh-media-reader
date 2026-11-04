@@ -20,3 +20,6 @@ generation/
 
 # per-machine private paths for build-bundle.sh (the example file is the tracked one)
 .bundle-paths
+
+# issued licence documents carry a buyer name and email: this repo is public
+licences/

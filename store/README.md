@@ -172,3 +172,48 @@ path personalising the first task).
 
 `llms.txt` sits beside this page for the same reason: it is the machine-readable index an agent can read
 before deciding anything.
+
+## Turning checkout on — the operator's runbook
+
+Everything on the product side is finished and verified; this is the only remaining step, and it needs an
+account only you can open.
+
+**1. Open a Flutterwave business account** and complete KYC. Have ready: the BRS certificate, KRA PIN,
+the M-Pesa till (`1830775`) and a bank account. Verification can take days — start it before you need it.
+
+**2. Create a payment link** for one licence: **KSh 10,000** (or **$79**) — use whichever currency you want
+the default to be. Flutterwave's dashboard calls this a payment link / payment page / store item depending on
+the version; use its own wording.
+
+**3. THE DECISIVE CHECK — do this before anything else.** Open the link in a private window and look at the
+methods the hosted page actually offers:
+
+- **M-Pesa present?** required for Kenya. Its absence means the account is not fully enabled for collections.
+- **PayPal present?** this is the whole reason Flutterwave was chosen over IntaSend, whose PayPal is PYUSD
+  only — a rail a buyer with a card linked to PayPal cannot use. If PayPal is **not** listed, say so and we
+  add a second, direct PayPal button instead of quietly shipping a page that claims it.
+- Cards present? expected, and needed for everyone outside Kenya.
+
+**4. Make one real payment to yourself** (a small amount is fine), then confirm: the money arrives, the
+confirmation names **ITIKIA DIGITAL SOLUTIONS** and not a person, and you can find the payer reference.
+
+**5. Send me two things:** the payment link, and the date you saw that live payment clear. I put them in
+`#pay-config`, the button appears, and we deploy:
+
+```bash
+cd ~/projects/Video_Image_Voice/store && npx wrangler pages deploy . --project-name itikia-store
+```
+
+### Fulfilling an order when it lands
+
+```bash
+python3 tools/issue-licence.py --buyer "Their Company" --email them@example.com --order <provider reference>
+```
+
+Writes `licences/<reference>-<name>.md` — a licence naming the licensee, the order, the date and **the exact
+artifact sha256**, and prints the line to paste into the reply. `licences/` is gitignored because those files
+carry a buyer's name and address and this repository is public. The script refuses to issue against an artifact
+whose `.sha256` does not match its bytes, so a licence can never cover a build that was not the one shipped.
+
+Until a real rail is live, `#pay-config` keeps every method off and the page shows the free path — no button
+that cannot take money.
