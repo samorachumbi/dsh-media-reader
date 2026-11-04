@@ -6,7 +6,7 @@
  * subprocess timeout.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, isAbsolute, join, sep } from 'node:path'
 import { MediaError } from './errors.js'
 
 let mediaLock = Promise.resolve()
@@ -28,6 +28,46 @@ export async function ensureArtifactDir(baseDir, category, name) {
   await mkdir(dir, { recursive: true, mode: 0o700 })
   return dir
 }
+
+/**
+ * Render one artifact path for model-facing text.
+ *
+ * The text a tool returns is also the text the drag-and-drop route inserts into
+ * the composer draft, and a draft is something a human sends, pastes into a
+ * ticket or photographs. An absolute path there publishes the user's directory
+ * layout, so artifact references are printed relative to the artifacts root; a
+ * path outside that root is reduced to its file name rather than leaked.
+ *
+ * `resolveMediaTarget` understands these relative references, so the advice the
+ * digest gives ("call media_image on the frame path") still works.
+ */
+export function artifactRef(artifactsRoot, target) {
+  if (typeof target !== 'string' || target.length === 0) return target
+  if (typeof artifactsRoot === 'string' && artifactsRoot.length > 0) {
+    const root = artifactsRoot.endsWith(sep) ? artifactsRoot : `${artifactsRoot}${sep}`
+    if (target.startsWith(root)) return target.slice(root.length)
+    if (target === artifactsRoot) return basename(target)
+  }
+  return isAbsolute(target) ? basename(target) : target
+}
+
+/** Apply `artifactRef` to one path, an array of paths, or a flat map of them. */
+export function artifactRefs(artifactsRoot, value) {
+  if (typeof value === 'string') return artifactRef(artifactsRoot, value)
+  if (Array.isArray(value)) return value.map((entry) => artifactRefs(artifactsRoot, entry))
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, artifactRefs(artifactsRoot, entry)]))
+  }
+  return value
+}
+
+/**
+ * The one line that makes a relative artifact reference actionable, printed
+ * beside the paths themselves. Without it a model resolves them against the
+ * session workspace and finds nothing.
+ */
+export const ARTIFACT_NOTE =
+  '<note>artifact paths are relative to the configured artifacts directory; pass them to the media tools exactly as written</note>'
 
 /** HH:MM:SS,mmm for SRT. */
 export function srtTimestamp(seconds) {

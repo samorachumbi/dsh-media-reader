@@ -21,7 +21,7 @@ import { describeVideoUpload } from './video.js'
  */
 export async function ingestUpload(ctx, config, input) {
   const exec = { signal: input.signal }
-  const resolved = await resolveMediaTarget(ctx, exec, input.path)
+  const resolved = await resolveMediaTarget(ctx, exec, input.path, { artifactsDir: config.artifactsDir })
   const probe = await probeTarget(ctx, resolved.target, {
     signal: input.signal,
     displayPath: input.name,
@@ -49,7 +49,7 @@ export async function ingestUpload(ctx, config, input) {
       kind: 'audio',
       // The upload route has the same duration defect as the tool: the file's
       // real duration must not be reported as the transcribed window.
-      text: transcriptEnvelope(input.name, transcript, probe.durationSeconds),
+      text: transcriptEnvelope(input.name, transcript, probe.durationSeconds, { artifactsRoot: config.artifactsDir }),
       artifacts: transcript.artifacts
     }
   }

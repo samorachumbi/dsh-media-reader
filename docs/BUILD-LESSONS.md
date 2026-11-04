@@ -151,6 +151,24 @@ that looked like a product bug.
 
 **Guard:** the environment supplies ports; the artifact supplies hashes.
 
+## 17. Model-facing text is user-facing text
+
+The `<artifacts>` element of an audio or video result printed absolute paths — `/home/<user>/artifacts/…`.
+Those results are also what the drag-and-drop route inserts into the composer draft, and a draft is text a
+human sends, pastes into a ticket or photographs. So the plugin's own reading quietly published the user's
+directory layout. Image drops were unaffected, which is exactly why it survived: the defect existed in two of
+three modalities, so two of three hand-tests looked clean.
+
+The disclosed fix was "relativise client-side". That was the wrong layer — the same text is *also* what the
+model reads, so a browser-side transform would have left the host route, the storefront demo and any future
+consumer leaking.
+
+**Guard:** one helper renders artifact references relative to the artifacts root (a path outside it is reduced
+to its file name), the resolver gained a matching fallback so a printed reference still opens the file, and
+`tests/draft-paths.test.mjs` asserts both halves — no absolute path in the text, *and* the printed reference
+resolves back to the real file. A wiring assertion covers the third failure mode unit tests cannot see: a
+caller that forgets to pass the root.
+
 ---
 
 ## The rule behind the rules

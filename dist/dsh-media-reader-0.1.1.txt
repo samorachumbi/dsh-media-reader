@@ -1,4 +1,4 @@
-# dsh-media-reader-0.1.0 — single-file edition
+# dsh-media-reader-0.1.1 — single-file edition
 Everything below is the text of this bundle, in reading order. Binary payloads (lib/, python/,
 fixtures/) are described in MANIFEST.json and are not inlined.
 
@@ -144,7 +144,7 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
 ```
 {
  "name": "dsh-media-reader",
- "version": "0.1.0",
+ "version": "0.1.1",
  "summary": "Read images, audio and video from DeepSeek Harness, including on a model route that cannot accept media.",
  "install": {
   "steps": [
@@ -184,8 +184,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   "path": "MANIFEST.json",
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
- "file_count": 77,
- "total_bytes": 1762154,
+ "file_count": 78,
+ "total_bytes": 1774317,
  "files": [
   {
    "path": "LICENSE",
@@ -234,8 +234,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "docs/README.md",
-   "bytes": 18655,
-   "sha256": "a9ad9064418b2d6bfa03c6773e9e42fb568f66e160163977bd853471176f0061"
+   "bytes": 18851,
+   "sha256": "3696d236e9328d8f9d5499141e865231a9552bc885c6fdc5ba9329b49be53b6b"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -309,8 +309,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/README.md",
-   "bytes": 18655,
-   "sha256": "a9ad9064418b2d6bfa03c6773e9e42fb568f66e160163977bd853471176f0061"
+   "bytes": 18851,
+   "sha256": "3696d236e9328d8f9d5499141e865231a9552bc885c6fdc5ba9329b49be53b6b"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -339,13 +339,13 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/lib/artifacts.js",
-   "bytes": 3026,
-   "sha256": "46789a534505f83796180f20708fc5e8d1ceab085bfd78d243eda236423700b8"
+   "bytes": 4987,
+   "sha256": "5cab7e0b346c61bd28749c1a7fa892aeae271794b2a37ac8daee85bb706a4c48"
   },
   {
    "path": "plugin/lib/audio.js",
-   "bytes": 5749,
-   "sha256": "b121c9d8f4de57223e99430e1b3c4a27392a6d67d9286ab73b04dd1fd6daf081"
+   "bytes": 6064,
+   "sha256": "2d4b84e5148a5e5fe5289f26c11b2c091253dd55d8f52a4a2dbf1a87d3824a0e"
   },
   {
    "path": "plugin/lib/client.js",
@@ -429,8 +429,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/lib/fsutil.js",
-   "bytes": 1476,
-   "sha256": "6beafecfc10a149b7bc02da6cb95c08f6a1d982d61a80e4fe9920a45c665e1d3"
+   "bytes": 2506,
+   "sha256": "e616b2d2ac15f35c22588ce0d68a1fd183fb04fce3ff2fe824ae9fc5be4efc35"
   },
   {
    "path": "plugin/lib/image.js",
@@ -439,8 +439,8 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/lib/index.js",
-   "bytes": 13141,
-   "sha256": "451b1f8da494255cbfd6e086ed4fd7373aa59e9b4e4bc188a33a429a8b7876ba"
+   "bytes": 13431,
+   "sha256": "8ac790f45889ee4895f5e8e701adcf0d1ebeef370d850edbbc357089e5262c10"
   },
   {
    "path": "plugin/lib/kie/client.js",
@@ -474,18 +474,18 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
   },
   {
    "path": "plugin/lib/upload.js",
-   "bytes": 2582,
-   "sha256": "e9ea77de98e8b9b87368f9c3ce1702f3c8cd2313a75f43cbd9d37c0e096d9f96"
+   "bytes": 2661,
+   "sha256": "f01997d92dd331543f6647fd84af4a7833fb0d67d6980213942feda391cc9272"
   },
   {
    "path": "plugin/lib/video.js",
-   "bytes": 19950,
-   "sha256": "0b22f0a62942e06ad7a810e05dca4b2566da923a2c60caaa1dbe63e8d030236f"
+   "bytes": 20287,
+   "sha256": "20badf4b0c9c17fb23280b42777b8edafe5f1e0d69ea8871a2e4a4af12464a7d"
   },
   {
    "path": "plugin/package.json",
    "bytes": 1803,
-   "sha256": "297c5cc88a949ff59e91177d2874189c7e6e71dba24c50376bffb5bb1699577f"
+   "sha256": "2287098cfbf827226adefc08c80ca213f79170f40ef6b07b432b601306ff7ced"
   },
   {
    "path": "plugin/probe/err-base.txt",
@@ -516,6 +516,11 @@ remains unverified. Model ids and prices in `docs/` are dated observations, not 
    "path": "plugin/probe/smoke.mjs",
    "bytes": 12390,
    "sha256": "3773bddb5cfb2e5c3706d9556581de998f2b01f7f64df4a8326c3fae020a5ee9"
+  },
+  {
+   "path": "plugin/probe/verify-draft-paths.mjs",
+   "bytes": 7759,
+   "sha256": "f202c015beeea29ed2ae8ddb793955a349e710fe2757513a0efb149bd4c53829"
   },
   {
    "path": "plugin/probe/verify-installed-tool.mjs",

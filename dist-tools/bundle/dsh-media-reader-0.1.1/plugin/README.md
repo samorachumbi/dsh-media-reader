@@ -235,12 +235,14 @@ a requested 60 s V6 music generation (12 credits) and a 15 s 9:16 Kling prompt-o
 - `media_video` on a text-only route describes a contact sheet and, when a
   question is supplied, up to two frames. Ask for a specific frame with
   `media_image` when more detail is needed.
-- **Known defect — the inserted draft text leaks absolute local paths.** For audio and video the
-  `<artifacts>` element carries the absolute paths of the transcript/contact-sheet/frame files, e.g.
-  `/home/<user>/artifacts/videos/…/digest.md`. If you drop an audio or video file and then paste the draft
-  into a chat, ticket or document, you publish your own directory layout. The image path inserts only the
-  file name and is unaffected. Until it is fixed, drop **images** for drafts you intend to share, or edit
-  the `<artifacts>` line out. The fix is a client-side change to relativise paths to the artifacts root.
+- **Artifact paths in model-facing text are relative, never absolute.** Audio and video results print
+  references like `<artifacts>{"contactSheet":"videos/clip.mp4-…/contact-sheet.png",…}</artifacts>`,
+  relative to the configured `artifactsDir`, and the media tools resolve exactly those references — so
+  “call `media_image` on the frame path” works on what the result actually printed. Before 0.1.1 these
+  were absolute (`/home/<user>/artifacts/videos/…`), so dropping a file and pasting the draft into a chat,
+  ticket or document published your own directory layout. `tests/draft-paths.test.mjs` now fails if the
+  text from either builder contains an absolute path or the home directory, and a mutation that unhooks the
+  resolver's artifact-root fallback fails the round-trip test rather than passing quietly.
 
 ## Artifacts
 
@@ -349,5 +351,5 @@ open an issue if you want to discuss commercial use.
 
 The prebuilt bundle in `dist/` was rebuilt after this notice was added, so it carries the licence at both
 the top level and beside the payload (`plugin/LICENSE`) — a copy of the terms travels with the artifact, not
-just with the repository. Its sha256 is beside it in `dsh-media-reader-0.1.0.tar.gz.sha256`, and the build
+just with the repository. Its sha256 is beside it in the matching `.tar.gz.sha256`, and the build
 now **fails** if a required file, the licence included, is missing.

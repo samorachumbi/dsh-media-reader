@@ -9,7 +9,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { ensureArtifactDir, withMediaLock } from './artifacts.js'
+import { ARTIFACT_NOTE, artifactRefs, ensureArtifactDir, withMediaLock } from './artifacts.js'
 import { IMAGE_VALUE_SCHEMA, describeAdmittedImage } from './image.js'
 import { MediaError } from './errors.js'
 import { runProcess } from './exec.js'
@@ -244,7 +244,7 @@ async function ingestVideo(ctx, config, resolved, probe, options) {
 }
 
 /** Render the model-facing digest. Exported so the counts it claims are testable. */
-export function digestText(resolved, probe, ingested, { canSeeImages, visualDescriptions }) {
+export function digestText(resolved, probe, ingested, { canSeeImages, visualDescriptions, artifactsRoot }) {
   const lines = [
     `<path>${resolved.displayPath}</path>`,
     '<type>video-digest</type>',
@@ -258,12 +258,13 @@ export function digestText(resolved, probe, ingested, { canSeeImages, visualDesc
     ...(ingested.cuts.length + 1 > ingested.timeline.length
       ? [`<samplingBudget>${ingested.timeline.length} of ${ingested.cuts.length + 1} detected shots were sampled; pass a higher maxFrames for more (media_evidence records every shot boundary)</samplingBudget>`]
       : []),
-    `<artifacts>${JSON.stringify({
+    `<artifacts>${JSON.stringify(artifactRefs(artifactsRoot, {
       digest: join(ingested.dir, 'digest.md'),
       timeline: join(ingested.dir, 'timeline.json'),
       contactSheet: ingested.contactSheetPath,
       frames: ingested.frames
-    })}</artifacts>`,
+    }))}</artifacts>`,
+    ARTIFACT_NOTE,
     '<timeline>'
   ]
   for (const shot of ingested.timeline) {
@@ -311,7 +312,11 @@ export async function describeVideoUpload(ctx, config, resolved, probe, options 
     }
   }
   const display = { ...resolved, displayPath: options.displayPath ?? resolved.displayPath }
-  const text = digestText(display, probe, ingested, { canSeeImages: false, visualDescriptions: descriptions })
+  const text = digestText(display, probe, ingested, {
+    canSeeImages: false,
+    visualDescriptions: descriptions,
+    artifactsRoot: config.artifactsDir
+  })
   await writeFile(join(ingested.dir, 'digest.md'), `${text}\n`, 'utf8')
   return {
     text,
@@ -364,7 +369,7 @@ export function registerVideoTool(ctx, config) {
         if (!['digest', 'frames', 'transcript'].includes(mode)) {
           throw new MediaError('INVALID_MODE', `mode must be digest, frames or transcript; got "${mode}"`)
         }
-        const resolved = await resolveMediaTarget(ctx, exec, args.path)
+        const resolved = await resolveMediaTarget(ctx, exec, args.path, { artifactsDir: config.artifactsDir })
         const probe = await probeTarget(ctx, resolved.target, {
           signal: exec.signal,
           displayPath: resolved.displayPath,
@@ -380,12 +385,13 @@ export function registerVideoTool(ctx, config) {
             durationSeconds: probe.durationSeconds,
             signal: exec.signal
           })
+          const artifacts = JSON.stringify(artifactRefs(config.artifactsDir, transcript.artifacts))
           if (transcript.segments.length === 0) {
-            return { text: `no speech detected in ${Number(transcript.duration).toFixed(1)} s of audio.\n<artifacts>${JSON.stringify(transcript.artifacts)}</artifacts>` }
+            return { text: `no speech detected in ${Number(transcript.duration).toFixed(1)} s of audio.\n<artifacts>${artifacts}</artifacts>\n${ARTIFACT_NOTE}` }
           }
           const preview = transcript.segments.slice(0, 40).map((segment) => `[${segment.start.toFixed(2)}-${segment.end.toFixed(2)}] ${segment.text}`).join('\n')
           return {
-            text: `<path>${resolved.displayPath}</path>\n<type>video-transcript</type>\n<processor>faster-whisper ${transcript.model} (local)</processor>\n<artifacts>${JSON.stringify(transcript.artifacts)}</artifacts>\n<content>\n${preview}\n</content>`
+            text: `<path>${resolved.displayPath}</path>\n<type>video-transcript</type>\n<processor>faster-whisper ${transcript.model} (local)</processor>\n<artifacts>${artifacts}</artifacts>\n${ARTIFACT_NOTE}\n<content>\n${preview}\n</content>`
           }
         }
         if (mode === 'frames' && !route.canSeeImages) {
@@ -422,7 +428,11 @@ export function registerVideoTool(ctx, config) {
             }
           }
         }
-        const text = digestText(resolved, probe, ingested, { canSeeImages: route.canSeeImages, visualDescriptions: descriptions })
+        const text = digestText(resolved, probe, ingested, {
+          canSeeImages: route.canSeeImages,
+          visualDescriptions: descriptions,
+          artifactsRoot: config.artifactsDir
+        })
         await writeFile(join(ingested.dir, 'digest.md'), `${text}\n`, 'utf8')
         return { text, images }
       } catch (error) {

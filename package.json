@@ -1,6 +1,6 @@
 {
   "name": "dsh-media-reader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Read local images, audio and video from DeepSeek Harness, including on text-only routes; includes a composer drag-and-drop target.",
   "keywords": [
