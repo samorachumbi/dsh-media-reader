@@ -58,7 +58,11 @@ test('the storefront claims the test count the suite actually has', async () => 
     const source = await readFile(new URL(`tests/${name}`, repo), 'utf8')
     declared += source.split('\n').filter((line) => line.startsWith('test(')).length
   }
-  const claimed = [...page.matchAll(/(\d+)\/(\d+) unit tests/gu)]
+  // Strip tags first: both places that state this count wrap the number in <b>/<span>, so matching raw
+  // HTML missed the proof-list copy entirely. The page shipped saying 113/113 in one place and 114/114
+  // in another while this guard stayed green. Rendered text is what a buyer reads — grade that.
+  const pageText = page.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ')
+  const claimed = [...pageText.matchAll(/(\d+)\/(\d+) unit tests/gu)]
   assert.ok(claimed.length > 0, 'the storefront must state the unit-test count')
   for (const [, passing, total] of claimed) {
     assert.equal(passing, total, 'a "N/N unit tests" claim must not describe a partial pass')

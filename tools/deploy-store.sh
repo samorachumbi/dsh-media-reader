@@ -20,7 +20,7 @@ DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
 # The public site: the selling page, its policy pages, its assets, and the agent-readable summary.
-WHITELIST=(index.html terms.html privacy.html refund.html llms.txt assets)
+WHITELIST=(index.html terms.html privacy.html refund.html 404.html llms.txt assets)
 
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT

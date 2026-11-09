@@ -121,3 +121,16 @@ test('the delivery promise is the one the fulfilment process can keep', async ()
   assert.match(home, /within one business day/u, 'the homepage FAQ must state the same window')
   assert.match(terms, /emailed to the address you paid with/u, 'delivery is by email to the payer')
 })
+
+test('an unknown path returns a real 404 page, not the homepage with a 200', async () => {
+  // Cloudflare Pages served index.html for every unmatched path until a 404.html existed, so a typo'd or
+  // guessed URL looked like a valid page. A reviewer following a broken link should see "not found".
+  const page = await read('404.html')
+  assert.match(page, /404/u, 'the page must say it is a 404')
+  assert.match(page, /noindex/u, 'a 404 page must not be indexed')
+  for (const target of ['/', 'terms.html', 'privacy.html', 'refund.html']) {
+    assert.match(page, new RegExp(`href="${target.replace('/', '\\/')}"`, 'u'), `404 page must link to ${target}`)
+  }
+  const script = (await import('node:fs/promises')).readFile(new URL('tools/deploy-store.sh', repo), 'utf8')
+  assert.match(await script, /WHITELIST=\(.*404\.html.*\)/u, '404.html must be deployed, or it has no effect')
+})
