@@ -18,36 +18,50 @@ hiding it in a licence file.
 **only when it has both a `url` and a `verified` date**:
 
 ```json
-{ "id": "flutterwave", "label": "Pay by card, M-Pesa or PayPal",
-  "url": "https://<your-flutterwave-payment-link>", "verified": "2026-11-04" }
+{ "id": "paddle", "kind": "paddle", "label": "Pay by card, Apple Pay or PayPal",
+  "note": "Paddle checkout — cards, Apple Pay, Google Pay and PayPal where available.",
+  "priceId": "pri_…", "clientToken": "live_…", "verified": "YYYY-MM-DD" }
+{ "id": "paystack", "kind": "link", "label": "Pay by M-Pesa or card (Kenya)",
+  "note": "Paystack checkout — M-Pesa, Visa, Mastercard, charged in KES.",
+  "url": "https://paystack.com/pay/…", "verified": "YYYY-MM-DD" }
 ```
 
-- `url` — the hosted-checkout link (Flutterwave payment link, Pesapal payment URL, IntaSend link).
-- `verified` — the date **you** saw a real (or test-mode) payment complete through that rail. This
-  field exists because a checkout that has never taken money is not a checkout. Leave it blank and the
-  button stays off.
+There are **two rail shapes**, because Paddle has no website checkout URL:
+
+- **`kind: "link"`** — a hosted checkout URL. Renders an `<a>` when it has `url` **and** `verified`.
+- **`kind: "paddle"`** — Paddle's **overlay checkout**, which needs `priceId` **and** a client-side
+  `clientToken` (plus `verified`). Renders a `<button>` that lazily loads Paddle.js and opens the overlay.
+
+- `verified` — the date **you** saw a real payment complete through that rail. This field exists because a
+  checkout that has never taken money is not a checkout. Leave it blank and the button stays off.
 
 While no rail is verified the page renders the price, an explicit "checkout is not open yet" note and
 the free download — never a button that looks like checkout and does nothing.
 
 ## Which processor, and why
 
-The requirement is one hosted checkout that accepts **M-Pesa, cards and classic PayPal**.
+Research is in the vault: `concepts/payment-rails-kenya-international.md` and the `/paddle-setup` skill.
 
-| processor | M-Pesa | cards | classic PayPal | verdict |
-|---|---|---|---|---|
-| **Flutterwave** | yes | yes | **yes** — documented PayPal partnership for African merchants | the only one of the three that meets the requirement |
-| IntaSend | yes | yes | no — **PYUSD only**, PayPal's stablecoin, not card-linked PayPal | does not meet it |
-| Pesapal | yes | yes | unverified — no current PayPal claim found | do not build on it |
+| rail | why | state |
+|---|---|---|
+| **Paddle** (merchant of record) | Kenya is not on Paddle's unsupported-seller list; **5% + 50¢**; sole traders accepted; global VAT/GST handled; cards, Apple/Google Pay, PayPal, and China-only Alipay/WeChat Pay | not live |
+| **Paystack Kenya** | M-Pesa **1.5%**, local card 2.9%, **international card 3.8%**; USD settlement; no-code Payment Pages | not live |
+| 2Checkout | optional third rail: the only documented **UnionPay** path for a Kenyan seller; fees contract-only | not used |
+| crypto (CoinPayments) | optional fourth rail, stablecoins only (USDC on Polygon ≈ $0.0023) | not used |
 
-Sources: [Flutterwave — pay with PayPal](https://flutterwave.com/ng/blog/pay-with-paypal-on-flutterwave),
-[TechCabal — PayPal on Flutterwave merchant payments](https://techcabal.com/2021/03/16/paypal-available-on-flutterwave-merchant-payments-africa/),
-[IntaSend — accept PayPal via PYUSD](https://www.linkedin.com/posts/intasend_accept-paypal-payments-via-pyusd-want-to-activity-7407679933914902528-schq).
+**Paddle is not a no-code paste-a-link processor.** Its docs state hosted checkout is *"for Mac or iOS apps
+only"*, so a website integrates **Paddle.js** (`Paddle.Initialize` + `Paddle.Checkout.open({ priceId })`).
+That is still serverless — client-side only — but it is code, and the rail reflects it.
 
-**The decisive test is in the dashboard, not in this file:** create a payment link and look at the
-methods the hosted page actually offers. If PayPal is not listed for your account and currency, the
-requirement is unmet and the answer is a second button (PayPal direct, once that account is healthy) —
-not a claim on the page.
+**Two things Paddle requires before it will verify the account**, both now present:
+
+1. publicly reachable **Terms** (`terms.html`), **Privacy** (`privacy.html`) and **Refunds** (`refund.html`),
+   linked in the site nav — refund window is **14 days**;
+2. a **contact email on the homepage** — `hello@itikia.co.ke` (verified by SMTP RCPT: accepted for that
+   address, rejected for `info@`, `support@` and a random control, so it is a real routing rule, not a catch-all).
+
+Prices must match the Paddle catalog, which is why the page now says **charged in USD** and marks the shilling
+figure as indicative: **KES is not a currency Paddle supports.**
 
 ## Deploying
 
@@ -72,7 +86,7 @@ Every number on it is traceable:
 | claim | source |
 |---|---|
 | 18/18 live checks | `ACCEPTANCE.md`, re-run from the extracted tarball against the live profile on 2026-11-03 |
-| 107/107 unit tests | `npm test` in the plugin repo |
+| 113/113 unit tests | `npm test` in the plugin repo |
 | 76 files with a sha256 each | `MANIFEST.json` inside the bundle; 0 hash mismatches when re-checked |
 | 0 home paths or credentials inside the bundle | the build's own hygiene gate, which fails the build if either appears |
 
@@ -175,34 +189,20 @@ before deciding anything.
 
 ## Turning checkout on — the operator's runbook
 
-Everything on the product side is finished and verified; this is the only remaining step, and it needs an
-account only you can open.
+Two rails, done in this order because the second one needs the site live first.
 
-**1. Open a Flutterwave business account** and complete KYC. Have ready: the BRS certificate, KRA PIN,
-the M-Pesa till (`1830775`) and a bank account. Verification can take days — start it before you need it.
+**Paddle (international).** Open the account at <https://vendors.paddle.com/signup> as an
+**individual/sole trader** — business verification is skipped for sole traders, identity verification is not.
+Create the product with tax category **`standard`** ("pre-written software downloaded and installed onto a
+local device"), one price of **79.00 USD**, no billing cycle, quantity 1–1. Submit `store.itikia.co.ke` under
+**My account › Settings › Website approval** (manual review 5–7 business days). Add payout details (bank or
+Payoneer, monthly, **$100 minimum**). Then create a **100% discount code**, run one real checkout on the
+approved domain, confirm the transaction completes, and archive the code. Paste the `priceId` and the
+`live_` client token into `#pay-config`.
 
-**2. Create a payment link** for one licence: **KSh 10,000** (or **$79**) — use whichever currency you want
-the default to be. Flutterwave's dashboard calls this a payment link / payment page / store item depending on
-the version; use its own wording.
-
-**3. THE DECISIVE CHECK — do this before anything else.** Open the link in a private window and look at the
-methods the hosted page actually offers:
-
-- **M-Pesa present?** required for Kenya. Its absence means the account is not fully enabled for collections.
-- **PayPal present?** this is the whole reason Flutterwave was chosen over IntaSend, whose PayPal is PYUSD
-  only — a rail a buyer with a card linked to PayPal cannot use. If PayPal is **not** listed, say so and we
-  add a second, direct PayPal button instead of quietly shipping a page that claims it.
-- Cards present? expected, and needed for everyone outside Kenya.
-
-**4. Make one real payment to yourself** (a small amount is fine), then confirm: the money arrives, the
-confirmation names **ITIKIA DIGITAL SOLUTIONS** and not a person, and you can find the payer reference.
-
-**5. Send me two things:** the payment link, and the date you saw that live payment clear. I put them in
-`#pay-config`, the button appears, and we deploy:
-
-```bash
-cd ~/projects/Video_Image_Voice/store && npx wrangler pages deploy . --project-name itikia-store
-```
+**Paystack (Kenya).** Open the account (Starter tier if unregistered), create a **Payment Page** for
+KSh 10,000, and request international payments **only after the site is deployed** — Paystack asks for a live
+page showing where the digital product is sold. Paste the page URL into `#pay-config`.
 
 ### The day you deploy — two things, both mandatory
 

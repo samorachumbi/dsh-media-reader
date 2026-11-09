@@ -16,13 +16,15 @@
 -->
 <script type="application/json" id="pay-config">
 {
-  "price": { "usd": 79, "kes": 10000, "unit": "per team, one-time" },
+  "price": { "usd": 79, "kes": 10000, "kesIndicative": true, "chargedIn": "USD", "unit": "per team, one-time" },
   "methods": [
-    { "id": "flutterwave", "label": "Pay by card, M-Pesa or PayPal", "note": "Flutterwave hosted checkout — Visa, Mastercard, M-Pesa and PayPal",
-      "url": "", "verified": "" },
-    { "id": "pesapal", "label": "Pay by card or M-Pesa (Pesapal)", "note": "Pesapal hosted checkout",
-      "url": "", "verified": "" },
-    { "id": "intasend", "label": "Pay by card or M-Pesa (IntaSend)", "note": "IntaSend hosted checkout — no classic PayPal",
+    { "id": "paddle", "kind": "paddle",
+      "label": "Pay by card, Apple Pay or PayPal",
+      "note": "Paddle checkout — Visa, Mastercard, Apple Pay, Google Pay and PayPal where available. Paddle is the merchant of record: sales tax and VAT are calculated, collected and remitted by Paddle, and the invoice comes from Paddle.",
+      "priceId": "", "clientToken": "", "verified": "" },
+    { "id": "paystack", "kind": "link",
+      "label": "Pay by M-Pesa or card (Kenya)",
+      "note": "Paystack checkout — M-Pesa, Visa and Mastercard, charged in Kenyan shillings.",
       "url": "", "verified": "" }
   ],
   "freeDownload": "https://github.com/samorachumbi/dsh-media-reader",
@@ -234,6 +236,9 @@
       <a href="#licence">Licence</a>
       <a href="#limits">Limits</a>
       <a href="#faq">FAQ</a>
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="refund.html">Refunds</a>
     </nav>
   </div>
 </header>
@@ -250,14 +255,14 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 107/107 unit tests</li>
+        <li>18/18 live checks, 113/113 unit tests</li>
       </ul>
     </div>
 
     <aside class="card buy" aria-labelledby="buy-h">
       <h2 id="buy-h" style="font-size:1.05rem;margin-bottom:12px">Commercial licence</h2>
-      <div class="price"><strong>$79</strong><span class="alt">/ KSh 10,000</span></div>
-      <p class="price-unit">Per team, one time. 12 months of updates included.</p>
+      <div class="price"><strong>$79</strong><span class="alt">≈ KSh 10,000</span></div>
+      <p class="price-unit">Per team, one time. 12 months of updates included. Charged in USD; the shilling figure is indicative.</p>
 
       <div id="pay-area">
         <!-- Static fallback for a reader with JavaScript off. The script below repaints this
@@ -431,7 +436,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>107/107</b><span>unit tests in the shipped suite</span></li>
+      <li><b>113/113</b><span>unit tests in the shipped suite</span></li>
       <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -532,7 +537,11 @@ Details: The background is a uniform dark blue with no visible objects or patter
 </main>
 
 <footer class="site wrap">
-  <p><strong>Itikia Digital Solutions</strong>, Nairobi, Kenya · USD prices; M-Pesa and cards accepted.</p>
+  <p><strong>Itikia Digital Solutions</strong>, Nairobi, Kenya · prices in USD. Card and mobile-money
+     payment opens once a rail has passed a live test payment — until then nothing here can take your money.</p>
+  <p class="footer-legal"><a href="terms.html">Terms of Service</a> ·
+     <a href="privacy.html">Privacy Policy</a> ·
+     <a href="refund.html">Refund Policy</a> — 14-day refund window.</p>
   <p>Talk to a person:
      <a href="https://github.com/samorachumbi/dsh-media-reader/issues/new/choose">open an issue</a> or
      <a href="mailto:hello@itikia.co.ke?subject=dsh-media-reader">email hello@itikia.co.ke</a>
@@ -554,9 +563,28 @@ Details: The background is a uniform dark blue with no visible objects or patter
   // The free path is always a real link.
   document.getElementById('free-link').href = cfg.freeDownload;
 
+  // A rail is LIVE only when it can actually take money AND someone has seen it take money:
+  //   - a link rail needs a real checkout URL
+  //   - the Paddle rail is a JS overlay, so it needs a price id AND a client-side token
+  // and in both cases a `verified` date. Nothing else renders a button. Ever.
+  function isLive(m) {
+    if (!m || !m.verified) return false;
+    if (m.kind === 'paddle') return Boolean(m.priceId && m.clientToken);
+    return Boolean(m.url);
+  }
+
+  function loadPaddle(done, fail) {
+    if (window.Paddle) return done();
+    var s = document.createElement('script');
+    s.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+    s.onload = done;
+    s.onerror = fail;
+    document.head.appendChild(s);
+  }
+
   var area = document.getElementById('pay-area');
   area.innerHTML = '';   // the markup carries a no-JS fallback; never stack both
-  var live = cfg.methods.filter(function (m) { return m.url && m.verified; });
+  var live = cfg.methods.filter(isLive);
 
   if (live.length === 0) {
     // No rail has taken a real payment yet. Say so plainly, and give the free path —
@@ -576,7 +604,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
 
     var ask = document.createElement('a');
     ask.className = 'btn';
-    ask.href = cfg.support + '/new/choose?title=Commercial%20licence%20enquiry';  // cfg-driven; the footer carries a static fallback
+    ask.href = cfg.support + '/new/choose?title=Commercial%20licence%20enquiry';
     ask.textContent = 'Ask about a commercial licence';
     area.appendChild(ask);
 
@@ -584,12 +612,39 @@ Details: The background is a uniform dark blue with no visible objects or patter
   }
 
   live.forEach(function (m, i) {
-    var a = document.createElement('a');
-    a.className = i === 0 ? 'btn' : 'btn secondary';
-    a.href = m.url;
-    a.rel = 'noopener';
-    a.innerHTML = m.label + ' <small>· $' + cfg.price.usd + '</small>';
-    area.appendChild(a);
+    var primary = i === 0;
+    var control;
+    if (m.kind === 'paddle') {
+      control = document.createElement('button');
+      control.type = 'button';
+      control.className = primary ? 'btn' : 'btn secondary';
+      control.addEventListener('click', function () {
+        control.disabled = true;
+        loadPaddle(function () {
+          try {
+            window.Paddle.Initialize({ token: m.clientToken });
+            window.Paddle.Checkout.open({ items: [{ priceId: m.priceId, quantity: 1 }] });
+          } finally {
+            control.disabled = false;
+          }
+        }, function () {
+          control.disabled = false;
+          var err = document.createElement('p');
+          err.className = 'pay-status';
+          err.innerHTML = '<strong>Checkout could not load.</strong> Please try again, or email ' +
+            '<a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send a payment link.';
+          area.appendChild(err);
+        });
+      });
+    } else {
+      control = document.createElement('a');
+      control.href = m.url;
+      control.rel = 'noopener';
+      control.className = primary ? 'btn' : 'btn secondary';
+    }
+    control.innerHTML = m.label + ' <small>· $' + cfg.price.usd + '</small>';
+    area.appendChild(control);
+
     var n = document.createElement('p');
     n.className = 'method-note';
     n.textContent = m.note;

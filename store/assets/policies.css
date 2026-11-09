@@ -1,0 +1,37 @@
+/* Shared styles for the policy pages (terms, privacy, refund).
+   Same colour tokens as the storefront so the pages read as one site, including dark mode. */
+:root {
+  --ink: #12161c; --ink-soft: #4a5462; --paper: #fbfaf7; --card: #ffffff;
+  --line: #dfdbd2; --accent: #1f5fd0; --accent-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #eef1f5; --ink-soft: #a7b0bd; --paper: #0d1117; --card: #151b23;
+    --line: #26303c; --accent: #6ea8ff; --accent-ink: #0b1220;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.wrap { max-width: 76ch; margin: 0 auto; padding: 0 20px; }
+header.site { border-bottom: 1px solid var(--line); }
+header.site .wrap { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: baseline; justify-content: space-between; padding-block: 18px; }
+.wordmark { font-weight: 650; letter-spacing: -.01em; }
+.wordmark span { color: var(--ink-soft); font-weight: 400; }
+header.site a { color: var(--accent); text-decoration: none; }
+header.site a:hover { text-decoration: underline; }
+main { padding-block: 40px 56px; }
+h1 { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2rem); line-height: 1.2; letter-spacing: -.02em; margin: 0 0 8px; }
+.updated { color: var(--ink-soft); font-size: .9rem; margin: 0 0 28px; }
+h2 { font-size: 1.1rem; margin: 32px 0 8px; letter-spacing: -.01em; }
+p, li { max-width: 68ch; }
+ul { padding-left: 22px; }
+li { margin: 6px 0; }
+a { color: var(--accent); }
+strong { font-weight: 650; }
+.note { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 20px 0; }
+footer.site { border-top: 1px solid var(--line); padding-block: 22px 40px; color: var(--ink-soft); font-size: .92rem; }
+footer.site a { color: var(--accent); }
