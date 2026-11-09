@@ -108,3 +108,16 @@ test('the refund page states the window the operator chose', async () => {
   assert.match(body, /statutory rights/iu, 'the policy must acknowledge statutory rights, which Paddle enforces')
   assert.match(body, /Paddle is the <strong>merchant of record<\/strong>/u, 'refunds are issued through Paddle')
 })
+
+test('the delivery promise is the one the fulfilment process can keep', async () => {
+  // The Terms said "normally immediate once payment is confirmed" while the FAQ said "within one business
+  // day" — and the fulfilment is `tools/issue-licence.py`, run by a human after the sale. Only one of those
+  // sentences was true. A delivery promise is a refund exposure, not marketing: make it match the mechanism
+  // and keep the two pages from drifting apart again.
+  const terms = await read('terms.html')
+  const home = await read('index.html')
+  assert.doesNotMatch(terms, /normally immediate/iu, 'the Terms must not promise immediate delivery')
+  assert.match(terms, /within one business day/u, 'the Terms must state the real delivery window')
+  assert.match(home, /within one business day/u, 'the homepage FAQ must state the same window')
+  assert.match(terms, /emailed to the address you paid with/u, 'delivery is by email to the payer')
+})
