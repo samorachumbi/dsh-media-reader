@@ -134,3 +134,21 @@ test('an unknown path returns a real 404 page, not the homepage with a 200', asy
   const script = (await import('node:fs/promises')).readFile(new URL('tools/deploy-store.sh', repo), 'utf8')
   assert.match(await script, /WHITELIST=\(.*404\.html.*\)/u, '404.html must be deployed, or it has no effect')
 })
+
+test('a pricing page exists, states the catalogue price, and is reachable from the nav', async () => {
+  // Paddle's verification form asks for "a link to your pricing page" and refuses the domain root. The review
+  // also compares the page against the catalogue, so the numbers here must be the numbers Paddle charges.
+  const page = await read('pricing.html')
+  assert.match(page, /\$79/u, 'the price must be stated')
+  assert.match(page, /per team, one time/u, 'the unit must be stated')
+  assert.match(page, /¥560/u, 'the CNY price must match the Paddle price (56000 fen)')
+  assert.match(page, /14 days/u, 'the refund window must match the refund policy')
+  assert.match(page, /merchant of record/u, 'it must say who processes payment')
+  assert.match(page, /Checkout opens shortly/u, 'it must not imply checkout is live when it is not')
+
+  const home = await read('index.html')
+  const nav = /<nav class="site"[\s\S]*?<\/nav>/u.exec(home)
+  assert.match(nav[0], /href="pricing.html"/u, 'the pricing page must be linked in the site nav')
+  const script = await (await import('node:fs/promises')).readFile(new URL('tools/deploy-store.sh', repo), 'utf8')
+  assert.match(script, /WHITELIST=\(.*pricing\.html.*\)/u, 'pricing.html must be deployed')
+})
