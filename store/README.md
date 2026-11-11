@@ -1,5 +1,8 @@
 # The storefront
 
+**Live at <https://store.itikia.co.ke>** — Cloudflare Pages project `itikia-store`, deployed from this directory by
+`tools/deploy-store.sh` (a whitelist: the runbook and the evidence PNGs are not published).
+
 A single static page that sells the **commercial licence** for `dsh-media-reader` at
 **$79 / KSh 10,000 per team, one time**. No build step, no framework, no dependencies: `index.html`
 is the whole site apart from two images in `assets/`.

@@ -349,6 +349,9 @@ non-commercial use is permitted; copying, redistributing, selling or using it in
 product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
 open an issue if you want to discuss commercial use.
 
+**Commercial licence: <https://store.itikia.co.ke>** — $79 / KSh 10,000 per team, one time, including 12 months of updates.
+The product itself stays free for personal, non-commercial use.
+
 The prebuilt bundle in `dist/` was rebuilt after this notice was added, so it carries the licence at both
 the top level and beside the payload (`plugin/LICENSE`) — a copy of the terms travels with the artifact, not
 just with the repository. Its sha256 is beside it in the matching `.tar.gz.sha256`, and the build
