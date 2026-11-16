@@ -199,27 +199,42 @@ test('a Paddle transaction link opens its checkout even while the buy button is 
     'the parameter must be read from the query string, not assumed')
 })
 
-test('the checkout asks who the licence is issued to, and the answer travels with the order', async () => {
+test('the checkout asks who the licence is issued to, and gets the email from nowhere else', async () => {
   // Found on the first real order, 2026-11-16: Paddle issued an invoice and the customer record held
   // only an email (`name: null`) — it collects an address, never a company. A licence that names a
-  // mailbox is not a team licence, so the storefront has to ask, and the answer has to reach the
-  // webhook that issues the document.
+  // mailbox is not a team licence, so the storefront has to ask for the entity.
+  //
+  // The address is the opposite case. The first build also asked for a "email for delivery", which
+  // put TWO addresses on one transaction: a buyer could pay with one and be licensed to another, and
+  // the Paddle invoice and our licence would then name different people permanently. Paddle holds the
+  // paying address; it is the only one allowed on the record.
   const html = await read('index.html')
 
   assert.match(html, /id="lic-entity"/u, 'the checkout must ask who the licence is issued to')
-  assert.match(html, /id="lic-email"/u, 'the checkout must ask which address receives it')
   // A placeholder is not a label: it vanishes on focus and screen readers may skip it.
   assert.match(html, /<label for="lic-entity">/u, 'the entity field needs a real label element')
-  assert.match(html, /<label for="lic-email">/u, 'the email field needs a real label element')
   assert.match(html, /licensee_entity:\s*entity\.value\.trim\(\)/u,
     'the entity must ride on the transaction as customData.licensee_entity')
   assert.match(html, /customData:/u, 'the values must be passed to Checkout.open as customData')
 
+  assert.doesNotMatch(html, /id="lic-email"/u, 'the storefront must not collect a second delivery address')
+  assert.doesNotMatch(html, /buyer_email/u, 'no second email may ride on the transaction as customData')
+  assert.doesNotMatch(html, /customer:\s*\{\s*email/u, 'the storefront must not prefill Paddle with an address')
+
   // The gate must be in front of the door, not behind it.
-  const checkAt = html.indexOf('if (!entity.value.trim()) bad = entity;')
+  const checkAt = html.indexOf('if (!entity.value.trim())')
   const openAt = html.indexOf('window.Paddle.Checkout.open({')
-  assert.ok(checkAt > -1, 'the click handler must validate the two fields')
+  assert.ok(checkAt > -1, 'the click handler must validate the entity field')
   assert.ok(openAt > -1, 'the Paddle checkout must still open')
   assert.ok(checkAt < openAt,
     'validation must run BEFORE Checkout.open, or an empty licensee reaches Paddle and the licence names nobody')
+
+  // The Worker must resolve the address from Paddle itself, never from anything the browser sent.
+  const worker = await (await import('node:fs/promises'))
+    .readFile(new URL('worker/licence/src/index.js', repo), 'utf8')
+  assert.match(worker, /fetchCustomerEmail\(env, txn\.customer_id\)/u,
+    'the Worker must read the address from the transaction customer')
+  assert.match(worker, /\/customers\/\$\{customerId\}/u, 'it must read Paddle customer record')
+  assert.doesNotMatch(worker, /custom\.buyer_email/u,
+    'the Worker must never trust an email supplied by the checkout form')
 })

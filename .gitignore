@@ -28,3 +28,7 @@ licences/
 # email address and the order total, and this repo is public. Never commit one.
 invoice_*.pdf
 receipt_*.pdf
+
+# licences downloaded from the issuer link land in the working tree with the same problem:
+# a licensee name and a paying email address.
+dsh-media-reader-licence-*.md

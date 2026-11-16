@@ -95,21 +95,27 @@ async function handlePaddleWebhook(request, env) {
 
   const custom = txn.custom_data ?? {};
   const entity = String(custom.licensee_entity ?? '').trim();
-  const email = String(custom.buyer_email ?? '').trim();
   const reference = String(txn.invoice_number ?? txn.id);
   const issued = String(txn.billed_at ?? new Date().toISOString()).slice(0, 10);
   const origin = new URL(request.url).origin;
 
-  // Rule 3: never issue a licence that names nobody.
-  if (!entity || !isEmail(email)) {
+  // The delivery address is read back from PADDLE, never taken from the storefront. Two email fields
+  // on one transaction lets a buyer pay with one address and be licensed to another, after which the
+  // invoice and the licence name different people permanently. Paddle's customer record is the single
+  // authority: it is the address the receipt was actually sent to.
+  const lookup = await fetchCustomerEmail(env, txn.customer_id);
+
+  // Rule 3: never issue a licence that names nobody, and never guess an address.
+  if (!entity || !lookup.ok) {
     await notifyOperator(env, {
       problem: !entity
-        ? 'Order paid but carries no licensee entity (the checkout form was bypassed or predates it).'
-        : `Order paid but the delivery address is not a usable email: ${email || '(empty)'}`,
-      reference, txn, custom, origin, link: null,
+        ? 'Order paid but carries no licensee entity (checkout form bypassed, or the order predates the form).'
+        : `Order paid but the paying address could not be read from Paddle: ${lookup.reason}`,
+      reference, txn, custom, origin, link: null, email: lookup.email ?? null,
     });
-    return json({ needs_manual_issue: true, reference }, 200);
+    return json({ needs_manual_issue: true, reference, reason: lookup.ok ? 'no_licensee_entity' : lookup.reason }, 200);
   }
+  const email = lookup.email;
 
   const doc = buildLicence(env, { entity, email, reference, issued });
   const token = randomToken();
@@ -128,8 +134,40 @@ async function handlePaddleWebhook(request, env) {
   return json({ issued: true, reference, link }, 200);
 }
 
-/* ─────────────────────────────────────────────────────────────────────── signature ── */
+/* ───────────────────────────────────────────────────────────────────── paddle api ── */
 
+/**
+ * Read the buyer's address from Paddle — the ONLY email on record for a transaction.
+ *
+ * Deliberately narrow: one GET, one field, no other Paddle call anywhere in this Worker. The key
+ * behind it carries far more than this job needs (it can issue refunds), so this function is the
+ * entire blast radius of putting it in the cloud. Swap PADDLE_API_KEY for a key holding only
+ * `customer.read` as soon as one exists — Paddle does not allow API-key creation through its API,
+ * so that swap has to be done in the dashboard.
+ */
+async function fetchCustomerEmail(env, customerId) {
+  if (!env.PADDLE_API_KEY) return { ok: false, reason: 'server_missing_paddle_api_key' };
+  if (!/^ctm_[a-z\d]{26}$/u.test(String(customerId ?? ''))) {
+    return { ok: false, reason: `unusable_customer_id:${customerId ?? '(none)'}` };
+  }
+  try {
+    const res = await fetch(`${env.PADDLE_API_BASE ?? 'https://api.paddle.com'}/customers/${customerId}`, {
+      headers: {
+        authorization: `Bearer ${env.PADDLE_API_KEY}`,
+        'paddle-version': '1',
+      },
+    });
+    if (!res.ok) return { ok: false, reason: `paddle_customer_lookup_${res.status}` };
+    const body = await res.json();
+    const email = String(body?.data?.email ?? '').trim();
+    if (!isEmail(email)) return { ok: false, reason: 'paddle_customer_has_no_usable_email' };
+    return { ok: true, email };
+  } catch (error) {
+    return { ok: false, reason: `paddle_customer_lookup_failed:${error?.message ?? 'unknown'}` };
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── signature ── */
 /**
  * `Paddle-Signature: ts=1671552777;h1=eb4d0dc8…` — HMAC-SHA256 over `${ts}:${rawBody}`.
  * The timestamp is checked too: without it a captured request could be replayed forever.

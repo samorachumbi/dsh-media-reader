@@ -651,20 +651,19 @@ Details: The background is a uniform dark blue with no visible objects or patter
     var primary = i === 0;
     var control;
     if (m.kind === 'paddle') {
-      // The licence names a legal entity and is emailed to an address. Paddle's checkout collects an
-      // email but never a company name, so before this the document could only ever name a mailbox —
-      // the fulfilment gap found on 2026-11-16. Both values ride along as customData on the
-      // transaction, so the webhook can issue the document with no second lookup.
+      // The licence names a legal entity. Paddle's checkout collects the buyer's email but never a
+      // company name, so the form asks for the one thing Paddle cannot supply — and nothing else.
+      // The delivery address is read back from Paddle itself (GET /customers/{id}) rather than asked
+      // for here: one transaction must have exactly one email on record, or a buyer can pay with one
+      // address and be licensed to another, and the invoice and the licence disagree forever.
       var fields = document.createElement('div');
       fields.className = 'buy-fields';
       fields.innerHTML =
         '<label for="lic-entity">Licence issued to</label>' +
         '<input id="lic-entity" name="licensee_entity" type="text" autocomplete="organization" ' +
           'placeholder="Your company or team" required maxlength="120">' +
-        '<label for="lic-email">Email for delivery</label>' +
-        '<input id="lic-email" name="buyer_email" type="email" autocomplete="email" ' +
-          'placeholder="you@company.com" required maxlength="160">' +
-        '<p class="field-help">Your licence is issued to this name and emailed here, usually within one business day.</p>';
+        '<p class="field-help">Your licence is issued to this name and emailed to the address you pay ' +
+          'with, usually within one business day.</p>';
       area.appendChild(fields);
 
       control = document.createElement('button');
@@ -672,34 +671,27 @@ Details: The background is a uniform dark blue with no visible objects or patter
       control.className = primary ? 'btn' : 'btn secondary';
       control.addEventListener('click', function () {
         var entity = fields.querySelector('#lic-entity');
-        var email = fields.querySelector('#lic-email');
-        var bad = null;
-        if (!entity.value.trim()) bad = entity;
-        else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())) bad = email;
-        if (bad) {
-          entity.removeAttribute('aria-invalid');
-          email.removeAttribute('aria-invalid');
-          bad.setAttribute('aria-invalid', 'true');
-          bad.focus();
+        if (!entity.value.trim()) {
+          entity.setAttribute('aria-invalid', 'true');
+          entity.focus();
           if (!fields.querySelector('.field-error')) {
             var fe = document.createElement('p');
             fe.className = 'field-error';
             fe.setAttribute('role', 'alert');
-            fe.textContent = 'Both fields are needed: the licence is issued to a named team and emailed to you.';
+            fe.textContent = 'Please enter the company or team this licence should be issued to.';
             fields.appendChild(fe);
           }
           return;
         }
+        entity.removeAttribute('aria-invalid');
         control.disabled = true;
         loadPaddle(function () {
           try {
             window.Paddle.Initialize({ token: m.clientToken });
             window.Paddle.Checkout.open({
               items: [{ priceId: m.priceId, quantity: 1 }],
-              customer: { email: email.value.trim() },
               customData: {
                 licensee_entity: entity.value.trim(),
-                buyer_email: email.value.trim(),
                 source: 'store.itikia.co.ke'
               }
             });
