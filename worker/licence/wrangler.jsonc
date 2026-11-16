@@ -1,0 +1,29 @@
+{
+  // The licence issuer. Deployed with `bash tools/deploy-licence-worker.sh`, which injects
+  // ARTIFACT_VERSION and ARTIFACT_SHA256 from dist/ so the document can only ever name an artifact
+  // this machine actually built and hashed.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dsh-licence",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-16",
+  "observability": { "enabled": true },
+
+  "kv_namespaces": [
+    { "binding": "LICENCES", "id": "92ee0f89192c4f438d9bdfe94f721b25" }
+  ],
+
+  // Email Sending binding. Requires Email Sending to be ENABLED for the domain
+  // (`wrangler email sending enable itikia.co.ke`) — the Workers Paid plan alone is not enough,
+  // which cost an hour on 2026-11-16: the plan was upgraded and the 403 email.sending_disabled
+  // persisted until the per-domain enable ran.
+  "send_email": [{ "name": "EMAIL", "remote": true }],
+
+  "vars": {
+    "ARTIFACT_VERSION": "0.1.2",
+    "ARTIFACT_SHA256": "6bf9255ba1e37cecebac9d497a42ac05e6178f60b3dedd9aa848db10e5853342",
+    "ARTIFACT_URL": "https://raw.githubusercontent.com/samorachumbi/dsh-media-reader/main/dist/dsh-media-reader-0.1.2.tar.gz",
+    "STORE_URL": "https://store.itikia.co.ke",
+    "FROM_EMAIL": "licence@itikia.co.ke",
+    "OPERATOR_EMAIL": "samorachumbi@gmail.com"
+  }
+}

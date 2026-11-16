@@ -97,6 +97,21 @@
   .btn small { font-weight: 500; opacity: .8; }
 
   .method-note { font-size: .8rem; color: var(--ink-soft); margin: 10px 0 0; }
+  /* The licence names a legal entity and is emailed to an address, so both are asked for here.
+     Paddle's checkout collects an email but never a company name, which is why the licence could
+     previously only name a mailbox. Labels are visible (never placeholder-only) and each field is
+     a 44px target. */
+  .buy-fields { display: grid; gap: 4px; margin: 0 0 12px; }
+  .buy-fields label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); letter-spacing: .01em; }
+  .buy-fields input {
+    font: inherit; font-size: .92rem; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px;
+    min-height: 44px; width: 100%; box-sizing: border-box;
+  }
+  .buy-fields input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .buy-fields input[aria-invalid="true"] { border-color: #b42318; }
+  .buy-fields .field-help { font-size: .74rem; color: var(--ink-soft); margin: 0; }
+  .buy-fields .field-error { font-size: .8rem; color: #b42318; margin: 4px 0 0; font-weight: 600; }
   .pay-status { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 12px 14px; font-size: .875rem; color: var(--ink-soft); margin: 0 0 14px; background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
   .pay-status strong { color: var(--ink); }
 
@@ -256,7 +271,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 117/117 unit tests</li>
+        <li>18/18 live checks, 118/118 unit tests</li>
       </ul>
     </div>
 
@@ -438,7 +453,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>117/117</b><span>unit tests in the shipped suite</span></li>
+      <li><b>118/118</b><span>unit tests in the shipped suite</span></li>
       <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -636,15 +651,58 @@ Details: The background is a uniform dark blue with no visible objects or patter
     var primary = i === 0;
     var control;
     if (m.kind === 'paddle') {
+      // The licence names a legal entity and is emailed to an address. Paddle's checkout collects an
+      // email but never a company name, so before this the document could only ever name a mailbox —
+      // the fulfilment gap found on 2026-11-16. Both values ride along as customData on the
+      // transaction, so the webhook can issue the document with no second lookup.
+      var fields = document.createElement('div');
+      fields.className = 'buy-fields';
+      fields.innerHTML =
+        '<label for="lic-entity">Licence issued to</label>' +
+        '<input id="lic-entity" name="licensee_entity" type="text" autocomplete="organization" ' +
+          'placeholder="Your company or team" required maxlength="120">' +
+        '<label for="lic-email">Email for delivery</label>' +
+        '<input id="lic-email" name="buyer_email" type="email" autocomplete="email" ' +
+          'placeholder="you@company.com" required maxlength="160">' +
+        '<p class="field-help">Your licence is issued to this name and emailed here, usually within one business day.</p>';
+      area.appendChild(fields);
+
       control = document.createElement('button');
       control.type = 'button';
       control.className = primary ? 'btn' : 'btn secondary';
       control.addEventListener('click', function () {
+        var entity = fields.querySelector('#lic-entity');
+        var email = fields.querySelector('#lic-email');
+        var bad = null;
+        if (!entity.value.trim()) bad = entity;
+        else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())) bad = email;
+        if (bad) {
+          entity.removeAttribute('aria-invalid');
+          email.removeAttribute('aria-invalid');
+          bad.setAttribute('aria-invalid', 'true');
+          bad.focus();
+          if (!fields.querySelector('.field-error')) {
+            var fe = document.createElement('p');
+            fe.className = 'field-error';
+            fe.setAttribute('role', 'alert');
+            fe.textContent = 'Both fields are needed: the licence is issued to a named team and emailed to you.';
+            fields.appendChild(fe);
+          }
+          return;
+        }
         control.disabled = true;
         loadPaddle(function () {
           try {
             window.Paddle.Initialize({ token: m.clientToken });
-            window.Paddle.Checkout.open({ items: [{ priceId: m.priceId, quantity: 1 }] });
+            window.Paddle.Checkout.open({
+              items: [{ priceId: m.priceId, quantity: 1 }],
+              customer: { email: email.value.trim() },
+              customData: {
+                licensee_entity: entity.value.trim(),
+                buyer_email: email.value.trim(),
+                source: 'store.itikia.co.ke'
+              }
+            });
           } finally {
             control.disabled = false;
           }
@@ -653,7 +711,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
           var err = document.createElement('p');
           err.className = 'pay-status';
           err.innerHTML = '<strong>Checkout could not load.</strong> Please try again, or email ' +
-            '<a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send a payment link.';
+            '<a href="mailto:samora@itikia.co.ke">samora@itikia.co.ke</a> and we will send a payment link.';
           area.appendChild(err);
         });
       });

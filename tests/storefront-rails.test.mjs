@@ -198,3 +198,28 @@ test('a Paddle transaction link opens its checkout even while the buy button is 
   assert.match(html, /new URLSearchParams\(location\.search\)/u,
     'the parameter must be read from the query string, not assumed')
 })
+
+test('the checkout asks who the licence is issued to, and the answer travels with the order', async () => {
+  // Found on the first real order, 2026-11-16: Paddle issued an invoice and the customer record held
+  // only an email (`name: null`) — it collects an address, never a company. A licence that names a
+  // mailbox is not a team licence, so the storefront has to ask, and the answer has to reach the
+  // webhook that issues the document.
+  const html = await read('index.html')
+
+  assert.match(html, /id="lic-entity"/u, 'the checkout must ask who the licence is issued to')
+  assert.match(html, /id="lic-email"/u, 'the checkout must ask which address receives it')
+  // A placeholder is not a label: it vanishes on focus and screen readers may skip it.
+  assert.match(html, /<label for="lic-entity">/u, 'the entity field needs a real label element')
+  assert.match(html, /<label for="lic-email">/u, 'the email field needs a real label element')
+  assert.match(html, /licensee_entity:\s*entity\.value\.trim\(\)/u,
+    'the entity must ride on the transaction as customData.licensee_entity')
+  assert.match(html, /customData:/u, 'the values must be passed to Checkout.open as customData')
+
+  // The gate must be in front of the door, not behind it.
+  const checkAt = html.indexOf('if (!entity.value.trim()) bad = entity;')
+  const openAt = html.indexOf('window.Paddle.Checkout.open({')
+  assert.ok(checkAt > -1, 'the click handler must validate the two fields')
+  assert.ok(openAt > -1, 'the Paddle checkout must still open')
+  assert.ok(checkAt < openAt,
+    'validation must run BEFORE Checkout.open, or an empty licensee reaches Paddle and the licence names nobody')
+})
