@@ -49,14 +49,31 @@ test('every payment rail is either a configured link or a configured Paddle over
     'the Paddle rail must require both a price id and a client token')
 })
 
-test('no rail is claimed live until a real payment has been seen', async () => {
+test('a rail renders only when it carries a recorded verification date', async () => {
   const cfg = payConfig(await read('index.html'))
-  const live = cfg.methods.filter((m) => m.verified && (m.kind === 'paddle' ? m.priceId && m.clientToken : m.url))
-  // When a rail goes live this assertion flips deliberately — update the page's wording with it.
-  assert.equal(live.length, 0, `these rails are claimed live without a recorded payment: ${live.map((m) => m.id)}`)
-
   const html = await read('index.html')
-  assert.match(html, /Checkout is not open yet/u, 'with no live rail the page must say so')
+
+  // Flipped deliberately 2026-11-16: the Paddle rail has now taken a real checkout (transaction
+  // txn_01m78ay7kgjnyhs7nc9j356q9z, invoice 55704-10001), so it is allowed to render. What must NOT
+  // survive is a rail claiming a verification it does not have.
+  for (const m of cfg.methods) {
+    if (!m.verified) continue
+    assert.match(m.verified, /^\d{4}-\d{2}-\d{2}$/u, `rail ${m.id} has a verified value that is not an ISO date`)
+    const t = Date.parse(`${m.verified}T00:00:00Z`)
+    assert.ok(Number.isFinite(t), `rail ${m.id} has an unparseable verified date`)
+    assert.ok(t <= Date.now(), `rail ${m.id} claims verification on ${m.verified}, a date that has not arrived`)
+  }
+
+  // Only the rail whose checkout actually completed may render. Paystack has never seen a payment,
+  // and its empty `verified` is the single field keeping it dark.
+  const live = cfg.methods.filter((m) => m.verified && (m.kind === 'paddle' ? m.priceId && m.clientToken : m.url))
+  assert.deepEqual(live.map((m) => m.id), ['paddle'], 'only a rail with a completed checkout may render a button')
+  const unverified = cfg.methods.find((m) => m.id === 'paystack')
+  assert.ok(unverified, 'the Paystack rail must still be declared')
+  assert.equal(unverified.verified, '', 'the Paystack rail must not claim a verification it does not have')
+
+  // And the dead-end branch must still exist for the case where nothing is verified.
+  assert.match(html, /Checkout is not open yet/u, 'the page needs a dead-end branch for a rail with no verification')
 })
 
 test('the page never promises a rail we dropped', async () => {
@@ -144,11 +161,40 @@ test('a pricing page exists, states the catalogue price, and is reachable from t
   assert.match(page, /¥560/u, 'the CNY price must match the Paddle price (56000 fen)')
   assert.match(page, /14 days/u, 'the refund window must match the refund policy')
   assert.match(page, /merchant of record/u, 'it must say who processes payment')
-  assert.match(page, /Checkout opens shortly/u, 'it must not imply checkout is live when it is not')
+  assert.match(page, /Checkout is open/u, 'now that a checkout has completed, the page must say checkout is open')
+  assert.doesNotMatch(page, /opens shortly|coming soon/iu, 'a closed-checkout promise must not survive checkout going live')
+  // The claim the page is allowed to make is bounded: a completed checkout on this domain, not a customer.
+  assert.doesNotMatch(page, /customers|trusted by|thousands/iu, 'no traction claim may be made from one $0.00 test order')
 
   const home = await read('index.html')
   const nav = /<nav class="site"[\s\S]*?<\/nav>/u.exec(home)
   assert.match(nav[0], /href="pricing.html"/u, 'the pricing page must be linked in the site nav')
   const script = await (await import('node:fs/promises')).readFile(new URL('tools/deploy-store.sh', repo), 'utf8')
   assert.match(script, /WHITELIST=\(.*pricing\.html.*\)/u, 'pricing.html must be deployed')
+})
+
+test('a Paddle transaction link opens its checkout even while the buy button is gated', async () => {
+  // Paddle appends ?_ptxn=<transaction id> to the account's default payment link, and Paddle.js opens
+  // the checkout for that transaction itself once it is initialized. Every Paddle transaction link —
+  // the checkout link on an invoice, and the founder verification checkout — arrives this way.
+  //
+  // The defect this catches was live on 2026-11-12: the script returned early on the "no live rail"
+  // branch BEFORE anything read the parameter, so a real, discounted, ready-to-pay transaction link
+  // landed on a page that silently did nothing. Reading _ptxn is not the same as having a live rail:
+  // a transaction keyed to an existing transaction can only collect that transaction's total, so
+  // honouring the link must NOT be gated on `verified`.
+  const html = await read('index.html')
+
+  const handlerAt = html.indexOf("URLSearchParams(location.search).get('_ptxn')")
+  assert.ok(handlerAt > -1, 'the page must read the _ptxn parameter Paddle appends to the default payment link')
+
+  const earlyReturnAt = html.indexOf('if (live.length === 0)')
+  assert.ok(earlyReturnAt > -1, 'the gated dead-end branch must still exist')
+  assert.ok(handlerAt < earlyReturnAt,
+    'the _ptxn handler must run BEFORE the "checkout is not open" early return, or a transaction link does nothing')
+
+  assert.match(html, /loadPaddle\(function \(\) \{\s*window\.Paddle\.Initialize\(\{ token: paddleRail\.clientToken \}\);/u,
+    'the handler must initialize Paddle.js from the Paddle rail client token so it can open the transaction checkout')
+  assert.match(html, /new URLSearchParams\(location\.search\)/u,
+    'the parameter must be read from the query string, not assumed')
 })

@@ -21,7 +21,7 @@
     { "id": "paddle", "kind": "paddle",
       "label": "Pay by card, Apple Pay or PayPal",
       "note": "Paddle checkout — Visa, Mastercard, Apple Pay, Google Pay and PayPal where available. Paddle is the merchant of record: sales tax and VAT are calculated, collected and remitted by Paddle, and the invoice comes from Paddle.",
-      "priceId": "pri_01m75znzdsm2gty7vs8hv53nbp", "clientToken": "live_702384985c0849d73279a400c31", "verified": "" },
+      "priceId": "pri_01m75znzdsm2gty7vs8hv53nbp", "clientToken": "live_702384985c0849d73279a400c31", "verified": "2026-11-16" },
     { "id": "paystack", "kind": "link",
       "label": "Pay by M-Pesa or card (Kenya)",
       "note": "Paystack checkout — M-Pesa, Visa and Mastercard, charged in Kenyan shillings.",
@@ -256,7 +256,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 116/116 unit tests</li>
+        <li>18/18 live checks, 117/117 unit tests</li>
       </ul>
     </div>
 
@@ -268,9 +268,10 @@
       <div id="pay-area">
         <!-- Static fallback for a reader with JavaScript off. The script below repaints this
              area when a payment rail is live; it never leaves a dead button behind. -->
-        <p class="pay-status"><strong>Checkout is not open yet.</strong> The payment rail is being
-          verified with a live test transaction, because a checkout that has never taken a payment is a
-          promise, not a feature. The plugin itself is available now for personal use.</p>
+        <p class="pay-status"><strong>Checkout needs JavaScript.</strong> Payment runs through Paddle in a
+          secure overlay, so with scripts switched off nothing on this page can take your order. Email
+          <a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send a payment link instead.
+          The plugin itself is available now for personal use.</p>
         <a class="btn secondary" href="https://github.com/samorachumbi/dsh-media-reader">Get it free for personal use</a>
         <a class="btn" href="https://github.com/samorachumbi/dsh-media-reader/issues/new/choose?title=Commercial%20licence%20enquiry">Ask about a commercial licence</a>
       </div>
@@ -437,7 +438,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>116/116</b><span>unit tests in the shipped suite</span></li>
+      <li><b>117/117</b><span>unit tests in the shipped suite</span></li>
       <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -587,14 +588,33 @@ Details: The background is a uniform dark blue with no visible objects or patter
   area.innerHTML = '';   // the markup carries a no-JS fallback; never stack both
   var live = cfg.methods.filter(isLive);
 
+  // Paddle appends ?_ptxn=<transaction id> to the account's default payment link, and Paddle.js opens
+  // the checkout for that transaction by itself once it is initialized. This has to run BEFORE the
+  // dead-end branch below, and it is deliberately not gated on `verified`: a checkout keyed to an
+  // existing transaction can only collect that transaction's own total, so honouring the link cannot
+  // open a sale the operator has not already created. Every Paddle transaction link arrives this way.
+  var ptxn = new URLSearchParams(location.search).get('_ptxn');
+  var paddleRail = cfg.methods.filter(function (m) { return m.kind === 'paddle' && m.clientToken; })[0];
+  if (ptxn && paddleRail) {
+    loadPaddle(function () {
+      window.Paddle.Initialize({ token: paddleRail.clientToken });
+    }, function () {
+      var paddleErr = document.createElement('p');
+      paddleErr.className = 'pay-status';
+      paddleErr.innerHTML = '<strong>Checkout could not load.</strong> Retry this link in a moment, or email ' +
+        '<a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send another.';
+      area.appendChild(paddleErr);
+    });
+  }
+
   if (live.length === 0) {
     // No rail has taken a real payment yet. Say so plainly, and give the free path —
     // never a button that looks like checkout and cannot take money.
     var note = document.createElement('p');
     note.className = 'pay-status';
-    note.innerHTML = '<strong>Checkout is not open yet.</strong> The payment rail is being verified with a ' +
-      'live test transaction, because a checkout that has never taken a payment is a promise, not a feature. ' +
-      'The plugin itself is available now for personal use.';
+    note.innerHTML = '<strong>Checkout is not open yet.</strong> No payment rail here has completed a live ' +
+      'checkout, and a button that has never taken a payment is a promise, not a feature. The plugin is ' +
+      'available now for personal use, and we can invoice you directly.';
     area.appendChild(note);
 
     var free = document.createElement('a');
