@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" focusable="false" role="img" aria-label="Itikia">
+  <title>Itikia Digital Solutions</title>
+  <!-- The Itikia company mark: a dot over a curved answer-stem, lifted from
+       itikia-company-site/assets/itikia-logo-mark-light.svg (declared geometry sha256
+       188dcb03d4aac53efeca253946a67689960ea86fbfb6b0fa86e6bdca079ded30) and inlined so this
+       file depends on nothing.
+
+       Three rules are load-bearing here, each learned from a failure on 2026-11-16:
+         1. FLAT. One colour, no gradients. A gradient and a rim at 16 px is mud.
+         2. SELF-CONTAINED. Every paint is a literal colour. A `url(#…)` pointing at a gradient
+            defined elsewhere renders as NOTHING here and raises no error, because a favicon is
+            fetched on its own — which is exactly how the previous icon shipped with an invisible
+            body. tests/storefront-icons.test.mjs fails on any unresolved paint reference.
+         3. NO PLATE. The dark rounded tile was removed after measuring: at 16 px it consumed
+            ~40% of the canvas and left the mark a shapeless blob. The mark now fills the frame,
+            which is what makes it readable at tab size. The iOS tile keeps its plate, because
+            180 px can afford one and a home-screen icon wants a solid shape. -->
+  <g fill="#1B6FA8" transform="translate(33.1034 5.5172) scale(2.758621)">
+    <circle cx="9" cy="8" r="6" />
+    <rect x="3" y="18" width="12" height="23" rx="6" />
+    <path d="M3 34 C3 44 8 49 17 51 C24 52.5 29 50 32 45 L26 40 C24 43 21 44 17 43 C12 42 11 39 11 35 Z" />
+  </g>
+</svg>
