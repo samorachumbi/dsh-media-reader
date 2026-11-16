@@ -60,7 +60,7 @@ def main() -> int:
 
 **Licensor:** Itikia Digital Solutions, Nairobi, Kenya
 **Licensee:** {args.buyer} ({args.email})
-**Order reference:** {args.order}
+**Order / invoice reference:** {args.order}
 **Issued:** {issued}
 **Covers this artifact exactly:** `dsh-media-reader-{version}.tar.gz`
 **sha256:** `{digest}`
@@ -94,8 +94,8 @@ hash, so the Licensee can confirm that what they received is what this licence c
 
 ---
 
-Issued by: ______________________  Date: {issued}
-Itikia Digital Solutions · hello@itikia.co.ke
+**Issued by:** Samora Chumbi, Itikia Digital Solutions  **Date:** {issued}
+Itikia Digital Solutions · samora@itikia.co.ke · https://store.itikia.co.ke
 """
 
     OUT.mkdir(exist_ok=True)
