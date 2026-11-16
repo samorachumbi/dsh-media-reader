@@ -23,3 +23,8 @@ generation/
 
 # issued licence documents carry a buyer name and email: this repo is public
 licences/
+
+# buyer invoices and receipts are downloaded here by the operator; they carry a buyer's
+# email address and the order total, and this repo is public. Never commit one.
+invoice_*.pdf
+receipt_*.pdf
