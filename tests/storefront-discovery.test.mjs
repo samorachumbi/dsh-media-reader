@@ -60,9 +60,9 @@ test('llms.txt routes agents through the live commercial pages and carries no fi
   assert.ok(llms.includes('https://store.itikia.co.ke/?utm_source=llms&utm_medium=agent&utm_campaign=discovery_repair'),
     'llms.txt must route an agent to the storefront with its own acquisition source')
   for (const url of [
-    'https://store.itikia.co.ke/pricing.html',
-    'https://store.itikia.co.ke/refund.html',
-    'https://store.itikia.co.ke/terms.html',
+    'https://store.itikia.co.ke/pricing',
+    'https://store.itikia.co.ke/refund',
+    'https://store.itikia.co.ke/terms',
     'https://github.com/samorachumbi/dsh-media-reader/blob/main/LICENSE',
   ]) {
     assert.ok(llms.includes(url), `llms.txt must link ${url}`)

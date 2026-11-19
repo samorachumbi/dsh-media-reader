@@ -8,9 +8,9 @@ Last updated: 2026-11-19
 ## Commercial licence
 
 - Storefront and checkout: https://store.itikia.co.ke/?utm_source=llms&utm_medium=agent&utm_campaign=discovery_repair
-- Price and terms: https://store.itikia.co.ke/pricing.html
-- Refund policy: https://store.itikia.co.ke/refund.html
-- Terms of service: https://store.itikia.co.ke/terms.html
+- Price and terms: https://store.itikia.co.ke/pricing
+- Refund policy: https://store.itikia.co.ke/refund
+- Terms of service: https://store.itikia.co.ke/terms
 - Licence text: https://github.com/samorachumbi/dsh-media-reader/blob/main/LICENSE
 
 ## What to hand your agent
