@@ -3,7 +3,11 @@
 Read local **images, audio and video** from DeepSeek Harness — including on a
 model route that cannot accept images.
 
-Four tools, one redirect, and a composer drop target:
+**Commercial licence:** $79 / KSh 10,000 per team, one time, including 12 months of updates —
+[get the licence](https://store.itikia.co.ke/?utm_source=github&utm_medium=repo&utm_campaign=discovery_repair).
+The plugin remains free for personal, non-commercial use.
+
+Five tools, one redirect, and a composer drop target:
 
 | Tool | What it does | Model calls |
 |---|---|---|
