@@ -94,6 +94,11 @@ async function handlePaddleWebhook(request, env) {
   }
 
   const custom = txn.custom_data ?? {};
+  // Which channel produced this sale, recorded on the order itself. The storefront attached the
+  // campaign tags it found on the visitor's URL; the client sent them, so they are re-sanitised here
+  // for the same reasons the storefront sanitised them. A missing or unusable tag becomes `unknown`
+  // and never blocks a paid order — attribution is evidence, not a gate.
+  const attribution = readAttribution(custom);
   const entity = String(custom.licensee_entity ?? '').trim();
   const reference = String(txn.invoice_number ?? txn.id);
   const issued = String(txn.billed_at ?? new Date().toISOString()).slice(0, 10);
@@ -125,6 +130,7 @@ async function handlePaddleWebhook(request, env) {
   // been emailed, and a retry re-issues — visibly, to the operator — rather than silently nothing.
   await env.LICENCES.put(`lic:${token}`, JSON.stringify({
     reference, entity, email, transaction: txn.id, issued, created: new Date().toISOString(), doc,
+    attribution,
   }));
 
   await sendBuyerEmail(env, { email, entity, reference, link, issued });
@@ -335,6 +341,7 @@ async function notifyOperator(env, { problem, reference, txn, custom, origin, li
     ['Reference', reference],
     ['Transaction', txn?.id ?? '(none)'],
     ['Amount', money],
+    ['Channel', channelLine(readAttribution(custom))],
     ['Licensee', entity ?? custom?.licensee_entity ?? '(none)'],
     ['Delivery email', email ?? custom?.buyer_email ?? '(none)'],
     ['Licence link', link ?? '(not issued)'],
@@ -358,6 +365,38 @@ ${problem ? `<p style="color:#b42318"><strong>Problem:</strong> ${escapeHtml(pro
 }
 
 /* ───────────────────────────────────────────────────────────────────────── helpers ── */
+
+/**
+ * Purchase attribution — sanitise the campaign tags the storefront put on the transaction.
+ *
+ * Same character class and caps as the storefront, applied a second time here because the browser is
+ * not a trustworthy source. Absent tags become `unknown` rather than empty, so the operator email never
+ * shows a blank channel and an old order (placed before attribution existed) reads honestly.
+ */
+const UTM_LIMITS = Object.freeze({ utm_source: 40, utm_medium: 40, utm_campaign: 60, utm_content: 40 });
+
+function readAttribution(custom) {
+  const tags = {};
+  for (const [key, max] of Object.entries(UTM_LIMITS)) {
+    const clean = String(custom?.[key] ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_.-]+/gu, '-')
+      .replace(/^[-.]+|[-.]+$/gu, '')
+      .slice(0, max);
+    if (clean) tags[key] = clean;
+  }
+  if (!tags.utm_source) tags.utm_source = 'unknown';
+  return tags;
+}
+
+/** One readable line for the operator email: `github / repo / discovery_repair`. */
+function channelLine(attribution) {
+  const parts = [attribution.utm_source];
+  for (const key of ['utm_medium', 'utm_campaign', 'utm_content']) {
+    if (attribution[key]) parts.push(attribution[key]);
+  }
+  return parts.join(' / ');
+}
 
 function randomToken() {
   const bytes = new Uint8Array(16);

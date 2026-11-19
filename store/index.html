@@ -275,7 +275,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 130/130 unit tests</li>
+        <li>18/18 live checks, 136/136 unit tests</li>
       </ul>
     </div>
 
@@ -457,7 +457,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>130/130</b><span>unit tests in the shipped suite</span></li>
+      <li><b>136/136</b><span>unit tests in the shipped suite</span></li>
       <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -603,6 +603,43 @@ Details: The background is a uniform dark blue with no visible objects or patter
     document.head.appendChild(s);
   }
 
+  // ── purchase attribution:begin ──────────────────────────────────────────────────────────────
+  // Which channel produced a sale, recorded on the transaction itself at the moment money moves.
+  //
+  // No cookie, no localStorage, no pageview beacon. The campaign tags exist only in the URL a visitor
+  // arrived on; they are read once, at click time, and ride to Paddle as customData on the order. A
+  // completed sale is the only evidence we count, and it is evidence that ad-blockers, browsers and
+  // consent banners cannot quietly distort — there is nothing to block and nothing to consent to.
+  //
+  // Deliberately flat and short: Paddle advises against nesting custom data, and its documentation
+  // states no hard size cap that we could find, so these four short strings stay well inside any
+  // plausible limit. Absent tags collapse to `direct` rather than an empty value, so an untagged sale
+  // is still classified instead of silently unmeasured.
+  function attrClean(name, max) {
+    var raw = new URLSearchParams(location.search).get(name) || '';
+    return raw.toLowerCase().replace(/[^a-z0-9_.-]+/g, '-').replace(/^[-.]+|[-.]+$/g, '').slice(0, max);
+  }
+
+  function attribution() {
+    var out = { utm_source: attrClean('utm_source', 40) || 'direct' };
+    var medium = attrClean('utm_medium', 40);
+    var campaign = attrClean('utm_campaign', 60);
+    var content = attrClean('utm_content', 40);
+    if (medium) out.utm_medium = medium;
+    if (campaign) out.utm_campaign = campaign;
+    if (content) out.utm_content = content;
+    return out;
+  }
+
+  function withAttribution(base) {
+    var tags = attribution();
+    for (var key in tags) {
+      if (Object.prototype.hasOwnProperty.call(tags, key)) base[key] = tags[key];
+    }
+    return base;
+  }
+  // ── purchase attribution:end ────────────────────────────────────────────────────────────────
+
   var area = document.getElementById('pay-area');
   area.innerHTML = '';   // the markup carries a no-JS fallback; never stack both
   var live = cfg.methods.filter(isLive);
@@ -694,10 +731,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
             window.Paddle.Initialize({ token: m.clientToken });
             window.Paddle.Checkout.open({
               items: [{ priceId: m.priceId, quantity: 1 }],
-              customData: {
+              customData: withAttribution({
                 licensee_entity: entity.value.trim(),
                 source: 'store.itikia.co.ke'
-              }
+              })
             });
           } finally {
             control.disabled = false;
