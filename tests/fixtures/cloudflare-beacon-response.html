@@ -1,0 +1,28 @@
+<!doctype html>
+<!--
+  TEST FIXTURE — not a page that is served anywhere.
+
+  This is a faithful capture of what a browser received from https://store.itikia.co.ke/ on
+  2026-11-19 before D4 changed the zone setting. It exists so the privacy guard has a positive case:
+  a detector that cannot find the beacon in THIS file is broken and must not be allowed to report a
+  pass on the live site.
+
+  The full captured responses (homepage + /privacy) are preserved outside the repository at
+  /home/samora/projects/plugin-requirements/evidence/b3-beacon-*.html with these hashes:
+    b3-beacon-home-2026-11-19.html     ebf965b22b57251222b179f2d56241b17fd564bf003e3c8b8d1b6fe9bdf47ac5
+    b3-beacon-privacy-2026-11-19.html  4ab7a19d8cd7b0691aea4a91f03fce9506f26df66351e9f195aa591ac6730cb7
+
+  The injected tag below is byte-identical to the one measured in the live response. The token is
+  Cloudflare's public Web Analytics site tag (it ships to every visitor's browser), not a secret.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>captured response — beacon present</title>
+</head>
+<body>
+  <main><h1>Captured live response</h1></main>
+  <script type="application/json" id="pay-config">{"price":{"usd":79}}</script>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"5945770eed1244f78cc5fabb57369205","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
