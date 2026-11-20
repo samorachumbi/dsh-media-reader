@@ -34,7 +34,7 @@ receipt_*.pdf
 dsh-media-reader-licence-*.md
 
 # The two execution plans are local working copies of the canonical PDFs in
-# /home/samora/projects/plugin-requirements/plans/. This repository is public and
+# the private requirements hub (plugin-requirements/plans/). This repository is public and
 # these name commercial strategy, so they must never be committed — a bare
 # `git add -A` beside them would publish the acquisition plan.
 /dsh-media-reader-acquisition-plan-2026-11-17.pdf
