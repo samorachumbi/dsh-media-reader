@@ -32,3 +32,10 @@ receipt_*.pdf
 # licences downloaded from the issuer link land in the working tree with the same problem:
 # a licensee name and a paying email address.
 dsh-media-reader-licence-*.md
+
+# The two execution plans are local working copies of the canonical PDFs in
+# /home/samora/projects/plugin-requirements/plans/. This repository is public and
+# these name commercial strategy, so they must never be committed — a bare
+# `git add -A` beside them would publish the acquisition plan.
+/dsh-media-reader-acquisition-plan-2026-11-17.pdf
+/dsh-media-reader-discovery-repair-plan-2026-11-18.pdf
