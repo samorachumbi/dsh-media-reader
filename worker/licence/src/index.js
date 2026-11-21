@@ -39,12 +39,18 @@ export default {
     if (request.method === 'POST' && url.pathname === '/paddle') {
       return handlePaddleWebhook(request, env);
     }
-    if (request.method === 'GET' && TOKEN_PATTERN.test(url.pathname.slice('/licence/'.length)) &&
+    // GET *and* HEAD. A HEAD that falls through to the 404 branch makes every link previewer, download
+    // manager, uptime probe and `curl -I` report a working licence as missing — found 2026-11-21, when a
+    // licence that downloaded perfectly answered HEAD with 404 JSON. HEAD must mirror GET's status and
+    // headers; only the body differs.
+    const isRead = request.method === 'GET' || request.method === 'HEAD';
+    if (isRead && TOKEN_PATTERN.test(url.pathname.slice('/licence/'.length)) &&
         url.pathname.startsWith('/licence/')) {
-      return serveLicence(url, env);
+      return serveLicence(url, env, request.method);
     }
-    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
-      return json({ ok: true, service: 'dsh-media-reader licence issuer', artifact: env.ARTIFACT_VERSION }, 200);
+    if (isRead && (url.pathname === '/' || url.pathname === '/health')) {
+      return json({ ok: true, service: 'dsh-media-reader licence issuer', artifact: env.ARTIFACT_VERSION },
+        200, request.method);
     }
     return json({ error: 'not_found' }, 404);
   },
@@ -268,13 +274,14 @@ Itikia Digital Solutions · samora@itikia.co.ke · ${env.STORE_URL}
 `;
 }
 
-async function serveLicence(url, env) {
+async function serveLicence(url, env, method = 'GET') {
   const token = url.pathname.slice('/licence/'.length);
   const raw = await env.LICENCES.get(`lic:${token}`);
-  if (!raw) return json({ error: 'not_found' }, 404);
+  if (!raw) return json({ error: 'not_found' }, 404, method);
 
   const record = JSON.parse(raw);
-  return new Response(record.doc, {
+  // HEAD carries the same status and headers with no body, so a prober sees exactly what a fetcher sees.
+  return new Response(method === 'HEAD' ? null : record.doc, {
     headers: {
       'content-type': 'text/markdown; charset=utf-8',
       'content-disposition': `attachment; filename="dsh-media-reader-licence-${record.reference}.md"`,
@@ -414,8 +421,9 @@ function escapeHtml(value) {
   ));
 }
 
-function json(payload, status) {
-  return new Response(JSON.stringify(payload), {
+function json(payload, status, method = 'GET') {
+  // HEAD must not carry a body, but it must carry the same status and headers.
+  return new Response(method === 'HEAD' ? null : JSON.stringify(payload), {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
