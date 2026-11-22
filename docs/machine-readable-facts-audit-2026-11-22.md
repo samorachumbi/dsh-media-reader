@@ -16,7 +16,7 @@ inventory, because the inventory is what exposes the gaps the map has to close.
 | Surface | State | Detail |
 |---|---|---|
 | `store/llms.txt` | **exists**, 1,820 B, dated `2026-11-19` | Tagged storefront link (`utm_source=llms`), pricing/refund/terms/licence links, five-skill list, install and verification facts |
-| `store/robots.txt` | **absent from the repo** | **The live URL returns 200 anyway** — 622 B of Cloudflare "content signals" injected at the edge, with **no `Sitemap:` line**. We do not control it |
+| `store/robots.txt` | **absent from the repo** | **The live URL returns 200 anyway** — **1,248 B** of Cloudflare "content signals" injected at the edge: **20 comment lines, zero rules, no `Sitemap:` line**. It is commentary, not policy, and we do not control it |
 | `store/sitemap.xml` | **absent** | live `/sitemap.xml` → **404** |
 | `store/humans.txt` | absent | not required by the plan |
 
@@ -53,7 +53,7 @@ Rails: `paddle` (kind `paddle`, `verified: "2026-11-16"`, price `pri_01m75znzdsm
 |---|---|---|
 | USD **79** | `#pay-config`, index, pricing, llms.txt, README, 404 | — |
 | **KSh 10,000** (indicative) | index, pricing, llms.txt, README | `#pay-config` (as a separate fact it is `price.kes`) |
-| **CNY ¥560** | **pricing.html only** | **`#pay-config`**, index, **llms.txt** |
+| **CNY ¥560** | **split across two pages**: the **number** `¥560` only on `pricing.html`, the **currency code** `CNY` only on `index.html`. Neither page carries both halves | **`#pay-config`** and **llms.txt**; and no single page states the whole fact |
 | **per team, one time** | `#pay-config` (`unit`), index, pricing, llms.txt | — |
 | **12 months of updates** | index, pricing, README | **llms.txt** |
 | **14-day refund** | index, pricing, refund, terms, 404 | **llms.txt** |
@@ -66,9 +66,10 @@ Rails: `paddle` (kind `paddle`, `verified: "2026-11-16"`, price `pri_01m75znzdsm
 ## 2. Gaps this audit found
 
 1. **`#pay-config` is not a complete source of truth.** The plan names CNY ¥560 as a canonical fact; it exists only
-   as prose in `pricing.html`. The declared source of truth cannot be the thing that produces the page if the page
-   knows a fact the config does not. → L2 must add CNY to `#pay-config` (or name Paddle's catalogue as the source and
-   derive the page from it).
+   as prose, and **split in half**: `pricing.html` states `¥560` without the currency code, `index.html` says "buyers
+   in China are charged in CNY" without the number. The declared source of truth cannot be the thing that produces
+   the page if the page knows a fact the config does not. → L2 must add CNY to `#pay-config` (or name Paddle's
+   catalogue as the source and derive the page from it).
 2. **`llms.txt` — the one file written for machines — omits four canonical facts:** CNY price, 12 months of updates,
    the 14-day refund, and the merchant of record. It links to the pages that state them, which is better than
    nothing, but an agent asking "what does this cost and what if I want a refund" cannot answer from the file
@@ -96,7 +97,7 @@ Rails: `paddle` (kind `paddle`, `verified: "2026-11-16"`, price `pri_01m75znzdsm
 | # | Fact | Source of truth | Required URL representation | Today |
 |---|---|---|---|---|
 | 1 | Price, USD 79, per team, one-time | `#pay-config` `price.usd` + `unit`; corroborated by Paddle price `pri_01m75znzdsm2gty7vs8hv53nbp` (7900 USD) | `/pricing` as `Product`/`Offer` JSON-LD (`price`, `priceCurrency: USD`, `eligibleQuantity` or description naming "per team, one-time") | prose only |
-| 2 | Price, CNY ¥560 | Paddle price `pri_01m76221de66ctw8ep7gzz9zj5` (56000 CNY) — **not in `#pay-config`** | `/pricing` as a second `Offer` with `priceCurrency: CNY` | prose only |
+| 2 | Price, CNY ¥560 | Paddle price `pri_01m76221de66ctw8ep7gzz9zj5` (56000 CNY) — **not in `#pay-config`** | `/pricing` as a second `Offer` with `priceCurrency: CNY` | **split**: number on `/pricing`, currency on `/`, never both |
 | 3 | Indicative KSh 10,000 | `#pay-config` `price.kes` with `kesIndicative: true` | **must not become an `Offer`** — it is not a chargeable currency. State it as indicative text only | correct today, must stay that way |
 | 4 | "per team, one-time" | `#pay-config` `price.unit` | `/pricing` Offer description or `UnitPriceSpecification` | prose only |
 | 5 | 12 months of updates | `pricing.html`, `index.html`, `README.md`, and the issued licence text | `/pricing` and `/terms`; a machine-readable statement on `/facts` | absent from `llms.txt` |
@@ -128,3 +129,21 @@ Rails: `paddle` (kind `paddle`, `verified: "2026-11-16"`, price `pri_01m75znzdsm
 - No JSON-LD, canonical, sitemap or robots file has been written.
 - Whether any of the above is *sufficient* for a specific agent or crawler is untested — L3 adds the machine-read
   tests that would answer that.
+
+---
+
+## 6. Two claims in this audit were wrong on first writing, and are corrected above
+
+Recorded rather than silently fixed, because both are the kind of error this project keeps re-learning.
+
+1. **"CNY ¥560 appears only on `pricing.html`."** False as stated. The *number* is only there; the *currency code*
+   `CNY` appears only on `index.html`, in the sentence "buyers in China are charged in CNY at the price shown at
+   checkout". A single grep for `¥ ?560|CNY` matched both files and I read it as one surface. The fact is **split
+   across two pages**, which is a worse finding than the one I wrote — no single page states the whole price fact.
+2. **"robots.txt is 622 bytes."** Wrong number, wrong reason. `622` was `curl -w '%{size_download}'` **with
+   `--compressed`**, which reports the *compressed transfer size*. The decoded file is **1,248 bytes**, and three
+   successive fetches confirm it is stable. The correct reading is even more informative: 1,248 bytes of which **all
+   20 lines that carry content are comments** — the file imposes **zero crawl rules** and names no sitemap.
+
+**Measurement rule added:** `%{size_download}` is the transfer size, not the content size, when `--compressed` is in
+play. Measure a fetched file with `wc -c` on the written file, never with curl's own counter.
