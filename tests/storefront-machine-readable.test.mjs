@@ -146,3 +146,42 @@ test('the refund window is machine-readable and equals the refund page own numbe
     'a finite window must be declared as such')
   assert.equal(policy.url, 'https://store.itikia.co.ke/refund', 'the policy must point at the refund page')
 })
+
+test('the file count and the "each with a sha256" claim are derived from the shipped bundle', async () => {
+  // The storefront tells a buyer a countable fact about a real artifact. This reads that artifact.
+  const { readdir, stat } = await import('node:fs/promises')
+  const { createHash } = await import('node:crypto')
+  const bundleRoot = new URL('dist-tools/bundle/', repo)
+  const dirs = (await readdir(bundleRoot, { withFileTypes: true })).filter((d) => d.isDirectory())
+  const manifests = []
+  for (const d of dirs) {
+    const candidate = new URL(`${d.name}/MANIFEST.json`, bundleRoot)
+    if (await stat(candidate).then(() => true, () => false)) manifests.push([d.name, candidate])
+  }
+  assert.equal(manifests.length, 1, `expected exactly one shipped bundle, found ${manifests.length}`)
+
+  const [name, manifestUrl] = manifests[0]
+  const manifest = JSON.parse(await readFile(manifestUrl, 'utf8'))
+  const files = manifest.files
+  assert.equal(manifest.file_count, files.length,
+    `MANIFEST file_count ${manifest.file_count} disagrees with its own ${files.length} entries`)
+
+  // "each with a sha256 you can check" — so check every one.
+  const base = new URL(`${name}/`, bundleRoot)
+  const bad = []
+  for (const entry of files) {
+    assert.match(String(entry.sha256), /^[a-f0-9]{64}$/u, `${entry.path} must carry a sha256`)
+    const actual = createHash('sha256').update(await readFile(new URL(entry.path, base))).digest('hex')
+    if (actual !== entry.sha256) bad.push(entry.path)
+  }
+  assert.deepEqual(bad, [], `these bundle files do not match their manifest hash: ${bad.join(', ')}`)
+
+  // And the pages must state that same number rather than a remembered one.
+  const claim = `${files.length} files`
+  const storefront = await read('store/index.html')
+  assert.match(storefront, new RegExp(`<b>${claim}</b>`, 'u'),
+    `the sales page must claim ${claim} — the artifact it ships has ${files.length}`)
+  const storeReadme = await read('store/README.md')
+  assert.match(storeReadme, new RegExp(`\\|\\s*${claim}\\b`, 'u'),
+    `store/README.md must claim ${claim} to match the shipped manifest`)
+})

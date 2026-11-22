@@ -90,7 +90,7 @@ Every number on it is traceable:
 |---|---|
 | 18/18 live checks | `ACCEPTANCE.md`, re-run from the extracted tarball against the live profile on 2026-11-03 |
 | 116/116 unit tests | `npm test` in the plugin repo |
-| 76 files with a sha256 each | `MANIFEST.json` inside the bundle; 0 hash mismatches when re-checked |
+| 78 files with a sha256 each | `MANIFEST.json` inside the bundle; 0 hash mismatches when re-checked |
 | 0 home paths or credentials inside the bundle | the build's own hygiene gate, which fails the build if either appears |
 
 It does **not** claim any customer, any testimonial or any revenue: there are none yet, and inventing
