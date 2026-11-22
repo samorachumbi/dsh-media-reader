@@ -1,5 +1,5 @@
 # dsh-media-reader
-Last updated: 2026-11-19
+Last updated: 2026-11-22
 
 > A plugin that lets a DeepSeek Harness agent read local images, audio and video — including on a model
 > route that cannot accept media at all. Commercial licence, $79 / KSh 10,000 per team, one time. Free for
@@ -12,6 +12,16 @@ Last updated: 2026-11-19
 - Refund policy: https://store.itikia.co.ke/refund
 - Terms of service: https://store.itikia.co.ke/terms
 - Licence text: https://github.com/samorachumbi/dsh-media-reader/blob/main/LICENSE
+
+### The commercial facts, stated here so an agent needs no second fetch
+
+- **Price:** $79 / KSh 10,000 per team, one time. Charged in USD. Buyers in China are charged ¥560 at
+  checkout. The shilling figure is indicative only — KES is not a currency the processor charges in.
+- **What it covers:** one team, one time, and 12 months of updates from the issue date.
+- **Refunds:** 14 days from purchase. Full detail: https://store.itikia.co.ke/refund
+- **Merchant of record:** Paddle. It calculates, collects and remits sales tax and issues the tax
+  invoice; we never see or store card details.
+- **Contact:** hello@itikia.co.ke
 
 ## What to hand your agent
 

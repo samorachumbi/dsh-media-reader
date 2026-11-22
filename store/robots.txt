@@ -1,0 +1,16 @@
+# robots.txt — store.itikia.co.ke, the dsh-media-reader commercial storefront.
+#
+# Everything here is meant to be read: the sales page, the pricing / terms / refund / privacy pages, and
+# llms.txt — the agent-facing summary of the commercial facts.
+#
+# No `Sitemap:` line yet. The plan permits one only when a real sitemap.xml is published, and naming a
+# sitemap that 404s is worse than staying quiet: a crawler that follows it learns the site is broken.
+#
+# NOTE FOR WHOEVER DEPLOYS THIS: Cloudflare already serves a robots.txt at the edge for this zone
+# (1,248 bytes of "content signals" comments, zero rules, no sitemap). Whether THIS file replaces that at
+# store.itikia.co.ke is unverified and cannot be tested from a *.pages.dev preview, because the zone-level
+# behaviour differs from the platform origin — the same shape as the Web Analytics beacon in defect B3.
+# Prove it after deploying by fetching the live URL and reading what comes back.
+
+User-agent: *
+Allow: /
