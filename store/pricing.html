@@ -25,6 +25,51 @@
   .cta.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
   .status { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 12px 14px; margin: 18px 0; }
 </style>
+  <link rel="canonical" href="https://store.itikia.co.ke/pricing">
+  <!--
+    Product/Offer JSON-LD. Every number here is asserted against #pay-config in index.html by
+    tests/storefront-machine-readable.test.mjs: these are static files with no build step, so the guard is
+    what makes the duplication safe. KES is deliberately NOT an Offer — the processor does not charge in
+    shillings, and an Offer naming an unpayable price would be a false claim. No returnMethod or
+    returnFees either: this is software, and "return by mail" would be a claim we cannot honour.
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "dsh-media-reader commercial licence",
+    "description": "Commercial licence for dsh-media-reader — one team, one time, including 12 months of updates. Personal non-commercial use is free.",
+    "url": "https://store.itikia.co.ke/pricing",
+    "license": "https://store.itikia.co.ke/terms",
+    "brand": { "@type": "Brand", "name": "Itikia Digital Solutions" },
+    "offers": [
+      {
+        "@type": "Offer",
+        "price": "79.00",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://store.itikia.co.ke/pricing",
+        "description": "Per team, one-time, charged in USD. Includes 12 months of updates.",
+        "seller": { "@type": "Organization", "name": "Itikia Digital Solutions", "url": "https://store.itikia.co.ke" }
+      },
+      {
+        "@type": "Offer",
+        "price": "560.00",
+        "priceCurrency": "CNY",
+        "availability": "https://schema.org/InStock",
+        "url": "https://store.itikia.co.ke/pricing",
+        "description": "Per team, one-time, for buyers in China. Includes 12 months of updates.",
+        "seller": { "@type": "Organization", "name": "Itikia Digital Solutions", "url": "https://store.itikia.co.ke" }
+      }
+    ],
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      "merchantReturnDays": 14,
+      "url": "https://store.itikia.co.ke/refund"
+    }
+  }
+  </script>
 </head>
 <body>
 

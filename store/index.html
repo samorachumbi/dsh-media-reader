@@ -20,7 +20,7 @@
 -->
 <script type="application/json" id="pay-config">
 {
-  "price": { "usd": 79, "kes": 10000, "kesIndicative": true, "chargedIn": "USD", "unit": "per team, one-time" },
+  "price": { "usd": 79, "cny": 560, "kes": 10000, "kesIndicative": true, "chargedIn": "USD", "unit": "per team, one-time" },
   "methods": [
     { "id": "paddle", "kind": "paddle",
       "label": "Pay by card, Apple Pay or PayPal",
@@ -243,6 +243,18 @@
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
+  <link rel="canonical" href="https://store.itikia.co.ke/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Itikia Digital Solutions",
+    "legalName": "Itikia Digital Solutions",
+    "url": "https://store.itikia.co.ke",
+    "email": "hello@itikia.co.ke",
+    "address": { "@type": "PostalAddress", "addressLocality": "Nairobi", "addressCountry": "KE" }
+  }
+  </script>
 </head>
 <body>
 
@@ -275,7 +287,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 138/138 unit tests</li>
+        <li>18/18 live checks, 144/144 unit tests</li>
       </ul>
     </div>
 
@@ -457,7 +469,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>138/138</b><span>unit tests in the shipped suite</span></li>
+      <li><b>144/144</b><span>unit tests in the shipped suite</span></li>
       <li><b>76 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
