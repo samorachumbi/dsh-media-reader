@@ -20,7 +20,11 @@ DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
 # The public site: the selling page, its policy pages, its assets, and the agent-readable summary.
-WHITELIST=(index.html pricing.html terms.html privacy.html refund.html 404.html llms.txt assets)
+# robots.txt belongs here. Cloudflare already serves an edge file for this zone, and the only way to learn whether
+# ours replaces it is to publish one. While it was missing from this list the gap was silent: the file existed in
+# git, every test passed, and the deploy shipped 13 files without it — so the live robots.txt would still have been
+# Cloudflare's, and L4 would have blamed the edge.
+WHITELIST=(index.html pricing.html terms.html privacy.html refund.html 404.html llms.txt robots.txt assets)
 
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
@@ -39,10 +43,14 @@ echo "staged for upload:"
 ( cd "$STAGE" && find . -type f | sort | sed 's/^\.\//  /' )
 echo "  $(find "$STAGE" -type f | wc -l) files, $(du -sh "$STAGE" | cut -f1)"
 
-# The page must still pass its own guards before anything is published.
-( cd "$REPO" && node --test tests/storefront-rails.test.mjs >/dev/null 2>&1 ) \
-  || { echo "refusing to deploy: storefront guards are failing (node --test tests/storefront-rails.test.mjs)" >&2; exit 1; }
-echo "storefront guards: pass"
+# The page must still pass its own guards before anything is published — ALL of them, not one file.
+# This used to run only storefront-rails.test.mjs, which covers rails, policy links and the 404; it does not know
+# that the JSON-LD disagrees with #pay-config, or that llms.txt contradicts the refund page. Those guards existed
+# and were green in the suite while a deploy could ship straight past them. The whole storefront subset runs in
+# under two seconds, so there is no speed argument for the narrow gate.
+( cd "$REPO" && node --test tests/storefront-*.test.mjs >/dev/null 2>&1 ) \
+  || { echo "refusing to deploy: storefront guards are failing (node --test tests/storefront-*.test.mjs)" >&2; exit 1; }
+echo "storefront guards: pass (all tests/storefront-*.test.mjs)"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "dry run — nothing was uploaded."

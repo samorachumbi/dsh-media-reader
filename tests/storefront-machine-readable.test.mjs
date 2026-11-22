@@ -119,13 +119,25 @@ test('the Product states what the licence covers: one team, one time, 12 months 
     'the Product must state the 12-month update period, or a buyer cannot tell what they are getting')
   assert.ok(product.license?.startsWith('https://store.itikia.co.ke/'),
     'the Product must link the licence terms')
+  // A licence URL that points at a page nobody publishes is worse than none: it is a broken promise an agent follows.
+  const slug = product.license.replace(/^https:\/\/store\.itikia\.co\.ke\/?/u, '') || 'index'
+  const licencePage = await read(`store/${slug}.html`)
+  assert.match(licencePage.replace(/<[^>]+>/gu, ' '), /licen[cs]e/iu,
+    `the Product links ${product.license}, so that page must actually be about the licence`)
 })
 
 test('the seller is machine-readable on the homepage: legal name, storefront URL and contact', async () => {
   const html = await read('store/index.html')
   const org = jsonLd(html).find((b) => b['@type'] === 'Organization')
   assert.ok(org, 'index.html must carry an Organization for the seller')
-  assert.equal(org.legalName, 'Itikia Digital Solutions', 'the legal name must match the policy pages')
+  // Compared against the policy pages rather than a literal: the seller's legal name is a fact those pages state, and
+  // a copy in this file would drift from them without anything noticing.
+  assert.ok(org.legalName, 'the Organization must state the seller legal name')
+  for (const page of ['terms', 'privacy', 'refund']) {
+    const prose = (await read(`store/${page}.html`)).replace(/<[^>]+>/gu, ' ')
+    assert.ok(prose.includes(org.legalName),
+      `the ${page} page must name the seller ${org.legalName}, the legal name the Organization publishes`)
+  }
   assert.equal(org.url, 'https://store.itikia.co.ke', 'the Organization URL must be the storefront')
   assert.equal(org.email, 'hello@itikia.co.ke',
     'the machine-readable contact must be the canonical published address, not the issuer personal address')
