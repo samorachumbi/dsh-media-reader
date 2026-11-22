@@ -7,6 +7,10 @@ model route that cannot accept images.
 [get the licence](https://store.itikia.co.ke/?utm_source=github&utm_medium=repo&utm_campaign=discovery_repair).
 The plugin remains free for personal, non-commercial use.
 
+Listed on dsh-plugin.org:
+
+[![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/samorachumbi/dsh-media-reader)
+
 Five tools, one redirect, and a composer drop target:
 
 | Tool | What it does | Model calls |
