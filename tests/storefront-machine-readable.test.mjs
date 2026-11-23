@@ -121,7 +121,11 @@ test('the Product states what the licence covers: one team, one time, 12 months 
     'the Product must link the licence terms')
   // A licence URL that points at a page nobody publishes is worse than none: it is a broken promise an agent follows.
   const slug = product.license.replace(/^https:\/\/store\.itikia\.co\.ke\/?/u, '') || 'index'
-  const licencePage = await read(`store/${slug}.html`)
+  // A missing page must fail as a stated claim, not as an unhandled ENOENT — the mutation probe requires a guard to
+  // name the defect, and "no such file" names nothing.
+  const licencePage = await read(`store/${slug}.html`).catch(() => {
+    assert.fail(`the Product links ${product.license}, but store/${slug}.html does not exist`)
+  })
   assert.match(licencePage.replace(/<[^>]+>/gu, ' '), /licen[cs]e/iu,
     `the Product links ${product.license}, so that page must actually be about the licence`)
 })

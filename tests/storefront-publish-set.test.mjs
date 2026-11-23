@@ -117,3 +117,26 @@ test('the pre-flight before a publish runs every storefront guard, not a single 
   const onDisk = (await readdir(new URL('tests/', repo))).filter((f) => /^storefront-.*\.test\.mjs$/u.test(f))
   assert.ok(onDisk.length >= 7, `expected the storefront guard suite on disk, found ${onDisk.length} files`)
 })
+
+test('every path the live verifier fetches is a path the deploy publishes', async () => {
+  // The verifier has its own list of URLs. If a page is dropped from the deploy whitelist, L4 would fail with a
+  // confusing 404 in a tool that is supposed to be diagnosing the site — or worse, silently stop covering a page.
+  const verifier = await read('scripts/verify-live-machine-readable.mjs')
+  const paths = new Set([
+    ...[...verifier.matchAll(/get\('(\/[^']*)'\)/gu)].map((m) => m[1]),
+    ...[...verifier.matchAll(/\['(\/[^']*)',\s*'[^']+'\]/gu)].map((m) => m[1]),
+  ])
+  // The unknown-path probe is deliberately not a published page: it exists to prove the 404 behaviour.
+  const checked = [...paths].filter((path) => !path.includes('does-not-exist'))
+  assert.ok(checked.length >= 6, `expected the verifier to check the site, found ${checked.length} path(s)`)
+
+  const list = whitelist()
+  const unreachable = []
+  for (const path of checked) {
+    const stem = path.replace(/^\//u, '')
+    const candidate = stem === '' ? 'index.html' : (stem.includes('.') ? stem : `${stem}.html`)
+    if (!published(candidate, list)) unreachable.push(`${path} → ${candidate}`)
+  }
+  assert.deepEqual(unreachable, [],
+    `the verifier fetches paths the deploy never publishes: ${unreachable.join(', ')}`)
+})
