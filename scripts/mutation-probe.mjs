@@ -254,6 +254,66 @@ const MUTATIONS = [
     replace: ['"legalName": "Itikia Digital Solutions"', '"legalName": "Itikia Ltd"'],
     expect: /must name the seller Itikia Ltd/,
   },
+  // ---- the hero walkthrough (2026-11-24) ----------------------------------------------------------------
+  // Each of these is a defect this page could plausibly ship: an animation nobody can stop, one that runs
+  // off screen, one that clips instead of trimming, and one whose text was retyped rather than replayed.
+  {
+    name: 'walkthrough-autoplay-repeats',
+    what: 'coming back into view restarts a finished walkthrough, so it loops instead of playing once',
+    file: 'store/index.html',
+    replace: ['          if (!playedOnce) { playedOnce = true; play(); } else { resumeOnscreen(); }', '          play();'],
+    expect: /autoplay is once/,
+  },
+  {
+    name: 'walkthrough-ignores-the-viewport',
+    what: 'the walkthrough keeps animating after it leaves the screen',
+    file: 'store/index.html',
+    replace: [
+      "      if (!playedOnce || done || userPaused) return;\n      if (timer) { clearTimeout(timer); timer = null; }\n      offscreen = true;\n      setPaused(true);",
+      '      return;',
+    ],
+    expect: /leaving the viewport pauses it/,
+  },
+  {
+    name: 'walkthrough-clips',
+    what: 'the stage silently hides the lines that do not fit instead of dropping them by measurement',
+    file: 'store/index.html',
+    replace: ['      trimToFit();\n', ''],
+    expect: /the tight stage must drop lines/,
+  },
+  {
+    name: 'walkthrough-retypes-its-output',
+    what: 'the walkthrough shows prose of its own instead of the captured body it claims to replay',
+    file: 'store/index.html',
+    replace: [
+      '        s.textContent = lines[i];   // verbatim captured text: nothing here is re-worded',
+      "        s.textContent = 'analysed in 2.0 s';",
+    ],
+    expect: /may only show captured output/,
+  },
+  {
+    name: 'walkthrough-hidden-does-not-hide',
+    what: 'the hidden attribute loses to the 900px display rule, so the figure shows at every width with an empty stage',
+    file: 'store/index.html',
+    replace: ['  .walkthrough[hidden] { display: none; }\n', ''],
+    expect: /the hidden attribute must beat the 900px/,
+  },
+  {
+    name: 'walkthrough-ignores-reduced-motion',
+    what: 'prefers-reduced-motion gets the moving animation anyway',
+    file: 'store/index.html',
+    replace: ['      if (reduced) {\n        pauseBtn.hidden = true;', '      if (false) {\n        pauseBtn.hidden = true;'],
+    // either assertion names it: with the animated path armed, the still frame is gone before the clock is checked
+    expect: /a still frame is not a paused animation|no timers at all under prefers-reduced-motion/,
+  },
+  {
+    name: 'walkthrough-never-rearms',
+    what: 'a window that is narrow at load keeps the figure hidden after it widens',
+    file: 'store/index.html',
+    replace: ['        if (!armed) { arm(); return; }\n', ''],
+    // the figure does unhide on resize, so the named failure is that it unhid unarmed — an empty stage on screen
+    expect: /armed on the resize|widening must reveal it/,
+  },
   {
     name: 'undeclared-store-file',
     what: 'a new file appears in the publish directory and nobody decides whether it ships',

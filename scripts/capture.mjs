@@ -18,7 +18,11 @@
  *
  *   node scripts/capture.mjs --url <url> --out <dir> [--width 1440] [--height 900]
  *        [--theme light|dark] [--reduced] [--shots 0,1000,2000,4000,8000] [--full] [--scroll 0]
- *        [--selector <css>] [--prefix <name>] [--timeout 30000]
+ *        [--selector <css>] [--prefix <name>] [--timeout 30000] [--eval <js>]
+ *        [--click '<css>@<ms>']   repeatable; clicks once when the frame clock reaches <ms> (default 0)
+ *
+ * --click exists for the states a still frame cannot otherwise reach: a paused animation, an opened panel, a
+ * toggled theme. Without it "the Pause button works" can only ever be a claim about the markup.
  *
  * Writes <out>/<prefix>-<theme>[-reduced]-<shot>.png plus <out>/manifest.json, which states what the frames do and
  * do NOT prove. Exit 0 only when every frame was captured.
@@ -57,6 +61,24 @@ const SHOTS = arg('shots', '0')
   .map((s) => Number(s))
   .filter((n) => Number.isFinite(n))
 const PREFIX = arg('prefix', 'shot')
+// --eval exists because an animation's state is not visible in a PNG: "paused" and "finished" look identical, and
+// reading computed style/DOM at a named moment is the only honest evidence for either. Evaluated once per frame,
+// after that frame's delay, so the trace lines up with the images.
+const EVAL = arg('eval')
+// Every --click value, in the order given. Each fires once, at the first frame at or after its millisecond.
+const CLICKS = argv.reduce((list, token, index) => {
+  if (token !== '--click') return list
+  const raw = argv[index + 1] ?? ''
+  const cut = raw.lastIndexOf('@')
+  const selector = cut === -1 ? raw : raw.slice(0, cut)
+  const at = cut === -1 ? 0 : Number(raw.slice(cut + 1))
+  if (selector === '' || !Number.isFinite(at)) {
+    console.error(`--click needs "<css>@<ms>", got "${raw}"`)
+    process.exit(2)
+  }
+  list.push({ selector, at, done: false })
+  return list
+}, [])
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -219,9 +241,30 @@ async function main() {
   }
 
   const frames = []
+  const startedAt = Date.now()
   let elapsed = 0
   for (const at of SHOTS) {
     if (at > elapsed) { await sleep(at - elapsed); elapsed = at }
+    // `at` is the nominal offset; capturing a frame costs real time, so the honest moment is measured. A guard
+    // reading this file for animation timing needs the difference, and a reader must not have to infer it.
+    const actualMs = Date.now() - startedAt
+    for (const click of CLICKS) {
+      if (click.done || click.at > at) continue
+      const out = await send('Runtime.evaluate', {
+        expression: `(() => { const el = document.querySelector(${JSON.stringify(click.selector)}); if (!el) return 'MISSING'; el.click(); return 'clicked' })()`,
+        returnByValue: true,
+      })
+      click.done = true
+      console.log(`  click @${at}ms ${click.selector}: ${out.result?.value ?? 'no result'}`)
+    }
+    let evaluated = null
+    if (EVAL) {
+      const out = await send('Runtime.evaluate', { expression: EVAL, returnByValue: true, awaitPromise: true })
+      evaluated = out.exceptionDetails === undefined
+        ? out.result?.value ?? null
+        : `EVAL ERROR: ${out.exceptionDetails.text} ${out.exceptionDetails.exception?.description ?? ''}`.trim()
+      console.log(`  eval @${at}ms: ${typeof evaluated === 'string' ? evaluated : JSON.stringify(evaluated)}`)
+    }
     const params = { format: 'png', captureBeyondViewport: false }
     if (FULL) {
       const metrics = await send('Page.getLayoutMetrics')
@@ -240,8 +283,10 @@ async function main() {
       bytes: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       atMs: at,
+      actualMs,
+      ...(EVAL ? { evaluated } : {}),
     })
-    console.log(`  ${name}  ${bytes.length} bytes  sha ${frames.at(-1).sha256.slice(0, 16)}`)
+    console.log(`  ${name}  ${bytes.length} bytes  sha ${frames.at(-1).sha256.slice(0, 16)}  (nominal ${at}ms, actual ${actualMs}ms)`)
   }
 
   await writeFile(join(OUT, 'manifest.json'), JSON.stringify({
@@ -252,6 +297,8 @@ async function main() {
     fullPage: FULL,
     scrollY: SCROLL,
     page: pageInfo,
+    ...(EVAL ? { evalExpression: EVAL } : {}),
+    ...(CLICKS.length ? { clicks: CLICKS.map(({ selector, at }) => ({ selector, at })) } : {}),
     frames,
     proves: [
       'the page rendered at this viewport, in this colour scheme, at these moments',
@@ -260,9 +307,10 @@ async function main() {
     doesNotProve: [
       'real-device rendering, another browser, or a HiDPI screen',
       'any theme or reduced-motion mode not listed here — an unrendered mode is unverified',
-      'interaction: nothing was clicked, typed or dropped',
+      CLICKS.length ? `interaction: only the ${CLICKS.length} click(s) listed above were performed` : 'interaction: nothing was clicked, typed or dropped',
       'anything below the captured height, if --full was not used',
       'accessibility, contrast conformance, or that a control works',
+      ...(EVAL ? ['anything about the page beyond the --eval expression that was actually run'] : []),
     ],
   }, null, 2))
   console.log(`  manifest: ${join(OUT, 'manifest.json')}`)

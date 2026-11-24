@@ -186,8 +186,49 @@
   p, li, td, th, figcaption { overflow-wrap: break-word; }
   .nowrap { white-space: nowrap; }
 
+  /* ---- the hero walkthrough ----
+     It exists to fill the space the buy card leaves under the hero text: measured at 425px at 1280–1440 and
+     451px at 1100 before it was built. Hidden below 900px, because below 900px the hero is one column and
+     there is nothing to fill. */
+  .walkthrough { display: none; }
+  /* the 900px media query below is an author rule and would beat the hidden attribute's user-agent
+     display:none. This pair keeps hidden meaning hidden. */
+  .walkthrough[hidden] { display: none; }
+  .walkthrough-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .walkthrough-head strong { font-size: .88rem; }
+  .walkthrough-head span { font-size: .72rem; color: var(--ink-soft); }
+  .walkthrough-stage { flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0; padding: 10px 12px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; line-height: 1.5; }
+  .walkthrough-file { margin: 0; color: var(--accent); font-weight: 650; }
+  .walkthrough-tool { margin: 2px 0 0; color: var(--ink-soft); font-size: .72rem; }
+  .walkthrough-out { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+  .walkthrough-out span { display: block; opacity: 0; transform: translateY(3px);
+    transition: opacity .2s ease, transform .2s ease; }
+  .walkthrough-out span[data-shown] { opacity: 1; transform: none; }
+  .walkthrough-caption { margin: 0; font-size: .72rem; color: var(--ink-soft); }
+  .walkthrough-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .walkthrough-btn, .walkthrough-cta { min-height: 44px; display: inline-flex; align-items: center;
+    font: inherit; font-size: .78rem; font-weight: 600; padding: 8px 12px; border-radius: 9px; text-decoration: none; }
+  .walkthrough-btn { border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+  /* same trap as the figure: .walkthrough-btn sets display, so a hidden button needs its own rule */
+  .walkthrough-btn[hidden] { display: none; }
+  .walkthrough-btn:hover, .walkthrough-cta:hover { border-color: var(--accent); }
+  .walkthrough-btn:focus-visible, .walkthrough-cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .walkthrough-cta { margin-left: auto; border: 1px solid var(--accent); color: var(--accent); font-weight: 650; }
+  .walkthrough[data-short] .walkthrough-caption { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .walkthrough-out span { transition: none; }
+  }
+
   @media (min-width: 900px) {
-    .hero { grid-template-columns: 1.55fr 1fr; align-items: start; }
+    /* stretch, not start: the left cell becomes as tall as the buy card, so the walkthrough takes exactly the
+       height the text does not use — no magic number, and it cannot spill past the card's bottom. */
+    .hero { grid-template-columns: 1.55fr 1fr; align-items: stretch; }
+    .hero > div:first-child { display: flex; flex-direction: column; }
+    .walkthrough { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0;
+      max-height: 360px; margin: 22px 0 0; padding: 12px 14px;
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
     /* the demo is a full-width band under the text and the buy card, not a third cell */
     .hero > .hero-demo { grid-column: 1 / -1; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
@@ -288,8 +329,28 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 174/174 unit tests</li>
+        <li>18/18 live checks, 183/183 unit tests</li>
       </ul>
+
+      <figure class="walkthrough" id="walkthrough" hidden>
+        <div class="walkthrough-head">
+          <strong>What that looks like</strong>
+          <span>real captured output</span>
+        </div>
+        <div class="walkthrough-stage" data-walk-stage aria-hidden="true">
+          <p class="walkthrough-file" data-walk-file>[media: hello.png]</p>
+          <p class="walkthrough-tool" data-walk-tool>media_image · image</p>
+          <div class="walkthrough-out" data-walk-out></div>
+        </div>
+        <p class="walkthrough-caption">
+          Dropping a PNG, a WAV and an MP4 in turn, and the text your agent receives for each.
+        </p>
+        <div class="walkthrough-foot">
+          <button type="button" class="walkthrough-btn" data-walk="pause" aria-pressed="false">Pause</button>
+          <button type="button" class="walkthrough-btn" data-walk="replay">Replay</button>
+          <a class="walkthrough-cta" href="#demo">Try it on a real file ↓</a>
+        </div>
+      </figure>
     </div>
 
     <aside class="card buy" aria-labelledby="buy-h">
@@ -470,7 +531,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>174/174</b><span>unit tests in the shipped suite</span></li>
+      <li><b>183/183</b><span>unit tests in the shipped suite</span></li>
       <li><b>78 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -911,6 +972,237 @@ Details: The background is a uniform dark blue with no visible objects or patter
       ].join('\n')
     }
   };
+
+  // ---- the hero walkthrough ----
+  // It replays the SAME captured output the demo below carries: every line it shows is read out of DEMOS at run
+  // time, so the animation cannot drift from the artifact, and there is no second copy to fall out of date.
+  // Autoplays once when a quarter of it is on screen, pauses when it leaves the viewport, and paints the final
+  // beat statically under prefers-reduced-motion. Nothing is clipped: lines are dropped by measurement instead.
+  (function () {
+    var box = document.getElementById('walkthrough');
+    if (!box) return;
+    var stageEl = box.querySelector('[data-walk-stage]');
+    var fileEl = box.querySelector('[data-walk-file]');
+    var toolEl = box.querySelector('[data-walk-tool]');
+    var outEl = box.querySelector('[data-walk-out]');
+    var pauseBtn = box.querySelector('[data-walk="pause"]');
+    var replayBtn = box.querySelector('[data-walk="replay"]');
+    if (!stageEl || !fileEl || !toolEl || !outEl || !pauseBtn || !replayBtn) return;
+
+    var ORDER = ['image', 'audio', 'video'];
+    // Which lines of each captured body are worth showing: the result type, one machine fact, then the content.
+    // Indices refer to DEMOS[key].body split on newlines, so line 0 (the [media: …] header) is the file label.
+    // Sized by measurement, not taste: three lines left 49% of the stage empty at 1100px, which is the same dead
+    // space this figure exists to remove, moved inside the panel. trimToFit() is still the safety net.
+    var PICKS = { image: [2, 3, 5, 7, 9], audio: [2, 3, 5, 9, 10], video: [2, 4, 7, 14] };
+    var LINE_MS = 220;
+    var HOLD_MS = 800;
+    var MIN_STAGE_PX = 66;     // below this the stage cannot hold three lines, so the figure stays hidden
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var spans = [];
+    var timer = null;
+    var beat = 0;
+    var line = 0;
+    var done = false;
+    var userPaused = false;
+    var offscreen = false;
+    var playedOnce = false;
+    var onScreen = false;
+
+    function bodyLines(key) {
+      var d = DEMOS[key];
+      if (!d || typeof d.body !== 'string') return null;
+      return d.body.split('\n');
+    }
+
+    function paintBeat(key) {
+      var lines = bodyLines(key);
+      if (!lines) return false;                 // no capture for this beat: show nothing rather than invent text
+      var picks = PICKS[key] || [];
+      fileEl.textContent = lines[0] || '';
+      toolEl.textContent = DEMOS[key].tool + ' \u00b7 ' + DEMOS[key].seconds;
+      outEl.textContent = '';
+      spans = [];
+      picks.forEach(function (i) {
+        if (typeof lines[i] !== 'string' || lines[i] === '') return;
+        var s = document.createElement('span');
+        s.textContent = lines[i];   // verbatim captured text: nothing here is re-worded
+        outEl.appendChild(s);
+        spans.push(s);
+      });
+      trimToFit();
+      return spans.length > 0;
+    }
+
+    // The stage clips whatever does not fit, so lines are dropped here — measured from the live DOM, never guessed.
+    function trimToFit() {
+      var dropped = 0;
+      while (spans.length > 1 && stageEl.scrollHeight > stageEl.clientHeight + 1) {
+        outEl.removeChild(spans.pop());
+        dropped++;
+      }
+      if (dropped > 0) box.setAttribute('data-walk-trim', String(dropped));
+    }
+
+    function reveal(n) {
+      spans.forEach(function (s, i) {
+        if (i < n) s.setAttribute('data-shown', ''); else s.removeAttribute('data-shown');
+      });
+    }
+
+    function setPaused(paused) {
+      pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+      pauseBtn.textContent = paused ? 'Play' : 'Pause';
+      box.setAttribute('data-walk-state', paused ? 'paused' : 'playing');
+    }
+
+    function finish() {
+      done = true;
+      if (timer) { clearTimeout(timer); timer = null; }
+      pauseBtn.disabled = true;                 // nothing is moving, so Pause is honestly unavailable
+      pauseBtn.setAttribute('aria-pressed', 'true');
+      box.setAttribute('data-walk-state', 'done');
+    }
+
+    function tick() {
+      if (done || userPaused) return;
+      if (line === 0 && !paintBeat(ORDER[beat])) { finish(); return; }
+      line++;
+      reveal(line);
+      if (line >= spans.length) {
+        if (beat >= ORDER.length - 1) { finish(); return; }
+        beat++;
+        line = 0;
+        timer = setTimeout(tick, HOLD_MS);
+        return;
+      }
+      timer = setTimeout(tick, LINE_MS);
+    }
+
+    // reduced motion: no timers and no typing — the last beat, complete, is simply on screen
+    // reduced motion: no motion at all. The same three captures, one per click of a button that says what it does.
+    function staticBeat(index) {
+      beat = index;
+      line = 0;
+      if (!paintBeat(ORDER[beat])) { box.hidden = true; return; }
+      reveal(spans.length);
+      box.setAttribute('data-walk-state', 'static');
+    }
+
+    function play() {
+      if (timer) { clearTimeout(timer); timer = null; }
+      done = false;
+      userPaused = false;
+      offscreen = false;
+      beat = 0;
+      line = 0;
+      pauseBtn.disabled = false;
+      setPaused(false);
+      if (!paintBeat(ORDER[0])) { finish(); return; }   // respond on the click, not 260ms later
+      reveal(0);
+      timer = setTimeout(tick, 260);
+    }
+
+    function togglePause() {
+      if (done) { play(); return; }
+      userPaused = !userPaused;
+      if (userPaused) {
+        if (timer) { clearTimeout(timer); timer = null; }
+        setPaused(true);
+      } else {
+        setPaused(false);
+        tick();
+      }
+    }
+
+    function pauseOffscreen() {
+      if (!playedOnce || done || userPaused) return;
+      if (timer) { clearTimeout(timer); timer = null; }
+      offscreen = true;
+      setPaused(true);
+    }
+
+    function resumeOnscreen() {
+      if (!playedOnce || done || userPaused || !offscreen) return;
+      offscreen = false;
+      setPaused(false);
+      tick();
+    }
+
+    // Show only where there is room for it. Below 900px the hero is one column and there is no void to fill; and
+    // if the leftover height cannot hold three lines, the figure would be a sliver, so it stays away.
+    function roomEnough() {
+      box.hidden = false;
+      var h = stageEl.clientHeight;
+      if (!window.matchMedia('(min-width: 900px)').matches || h < MIN_STAGE_PX) {
+        box.hidden = true;
+        box.setAttribute('data-walk-unsized', String(Math.round(h)));
+        return false;
+      }
+      box.removeAttribute('data-walk-unsized');
+      box.setAttribute('data-walk-ready', '');
+      if (box.clientHeight < 300) box.setAttribute('data-short', ''); else box.removeAttribute('data-short');
+      return true;
+    }
+
+    // Arm it once there is room. Arming is separate from the first paint because a window that is narrow now and
+    // wide later must still get the walkthrough — the resize handler below arms it then.
+    var armed = false;
+    function arm() {
+      if (armed) return;
+      armed = true;
+      paintBeat(ORDER[0]);                      // file label and tool up front; no output line until it plays
+      reveal(0);
+      box.setAttribute('data-walk-state', 'ready');   // armed, not running — nothing is moving yet
+
+      if (reduced) {
+        pauseBtn.hidden = true;                 // there is nothing to pause
+        replayBtn.textContent = 'Next file';    // and the one control steps the stills
+        box.setAttribute('data-reduced', '');
+        replayBtn.addEventListener('click', function () { staticBeat((beat + 1) % ORDER.length); });
+        staticBeat(0);
+        return;
+      }
+
+      pauseBtn.addEventListener('click', togglePause);
+      replayBtn.addEventListener('click', play);
+
+      if (typeof IntersectionObserver === 'function') {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            onScreen = e.isIntersecting && e.intersectionRatio >= 0.25;
+            if (onScreen) {
+              if (!playedOnce) { playedOnce = true; play(); } else { resumeOnscreen(); }
+            } else {
+              pauseOffscreen();
+            }
+          });
+        }, { threshold: [0, 0.25, 0.5] }).observe(box);
+      } else {
+        playedOnce = true;
+        play();
+      }
+    }
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) pauseOffscreen(); else if (onScreen) resumeOnscreen();
+    });
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (!roomEnough()) { pauseOffscreen(); return; }
+        if (!armed) { arm(); return; }
+        if (reduced) { staticBeat(beat); return; }
+        if (!playedOnce && onScreen) { playedOnce = true; play(); }
+      }, 180);
+    });
+
+    if (roomEnough()) arm();
+  })();
+
 
   var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
   var stage = document.querySelector('[data-demo-stage]');
