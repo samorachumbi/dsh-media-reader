@@ -47,7 +47,7 @@ const MUTATIONS = [
     what: 'a China offer is relabelled as a currency the processor cannot charge',
     file: 'store/pricing.html',
     replace: ['"priceCurrency": "CNY"', '"priceCurrency": "KES"'],
-    expect: /must not publish a KES offer/,
+    expect: /publishes a KES Offer but no live rail charges shillings|a CNY offer is required/,
   },
   {
     name: 'refund-window-drift',
@@ -113,6 +113,27 @@ const MUTATIONS = [
     file: 'tools/deploy-store.sh',
     replace: [' llms.txt robots.txt assets)', ' llms.txt assets)'],
     expect: /would never ship/,
+  },
+  {
+    name: 'kes-hedge-removed',
+    what: 'the page stops saying shillings are not yet chargeable while the Kenya rail is dark',
+    file: 'store/llms.txt',
+    replace: ['no rail charges', 'shillings are charged'],
+    expect: /must say shillings are not charged yet/,
+  },
+  {
+    name: 'kes-offer-without-a-live-rail',
+    what: 'a KES Offer appears while no rail can charge shillings',
+    file: 'store/pricing.html',
+    replace: ['"priceCurrency": "CNY"', '"priceCurrency": "KES"'],
+    expect: /publishes a KES Offer but no live rail charges shillings/,
+  },
+  {
+    name: 'rail-charges-undeclared',
+    what: 'a rail stops declaring the currency it charges',
+    file: 'store/index.html',
+    replace: ['"charges": "KES",', ''],
+    expect: /must declare the currency it charges in/,
   },
   {
     name: 'whitelist-drops-a-verifier-page',

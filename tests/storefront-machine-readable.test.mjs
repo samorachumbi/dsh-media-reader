@@ -7,8 +7,8 @@
  * against the refund page's own prose. Change the config without changing the markup and this fails.
  *
  * The two rules that are about *not* claiming things:
- *   - KES must never appear as an Offer. The processor does not charge in shillings, so an Offer naming
- *     shillings would advertise a price nobody can pay. It stays indicative prose.
+ *   - A KES Offer may appear only while a live rail charges shillings. The rule is not "never KES": it is
+ *     "never a price nobody can pay", so chargeability is read from #pay-config.methods[].charges.
  *   - No `returnMethod`/`returnFees`: this is software. "Return by mail" is the kind of structured claim
  *     that is worse than silence.
  */
@@ -90,16 +90,22 @@ test('the Pricing structured data is derived from #pay-config, not typed indepen
   }
 })
 
-test('no Offer advertises a currency the processor cannot charge', async () => {
+test('an Offer exists for a currency only while a live rail can charge it', async () => {
+  // Rewritten 2026-11-23 (P0). The previous version forbade a KES Offer outright, because no processor charged
+  // shillings. That premise expired when the Kenyan rail was configured. The rule was never "never KES" — it is
+  // "never a price nobody can pay" — so chargeability is now read from #pay-config.methods[].charges.
+  const cfg = payConfig(await read('store/index.html'))
+  const live = (m) => Boolean(m.verified) &&
+    (m.kind === 'paddle' ? Boolean(m.priceId && m.clientToken) : Boolean(m.url))
+  const kesLive = cfg.methods.filter(live).some((m) => m.charges === 'KES')
+
   for (const file of Object.keys(CANONICAL)) {
-    const offers = offersIn(jsonLd(await read(`store/${file}`)))
-    for (const offer of offers) {
-      assert.notEqual(offer.priceCurrency, 'KES',
-        `${file} must not publish a KES offer — shillings are indicative prose, not a chargeable price`)
-      assert.notEqual(Number(offer.price), 10000,
-        `${file} must not publish the indicative shilling figure as an offer price`)
-      assert.ok(!/shilling/i.test(String(offer.description ?? '')),
-        `${file}: an Offer description must not call a price shillings`)
+    for (const offer of offersIn(jsonLd(await read(`store/${file}`)))) {
+      if (offer.priceCurrency !== 'KES') continue
+      assert.ok(kesLive,
+        `${file} publishes a KES Offer but no live rail charges shillings — that advertises a price nobody can pay`)
+      assert.equal(Number(offer.price), cfg.price.kes,
+        `${file}: the KES Offer ${offer.price} disagrees with #pay-config price.kes ${cfg.price.kes}`)
     }
   }
 })

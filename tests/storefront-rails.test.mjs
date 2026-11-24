@@ -89,13 +89,39 @@ test('the page never promises a rail we dropped', async () => {
   assert.equal(mentions, inRail, 'PayPal may only be mentioned as a Paddle payment method')
 })
 
-test('the advertised price is a currency Paddle can actually charge', async () => {
+test('chargeability is derived from the rails, and the prose agrees with it in both states', async () => {
   const cfg = payConfig(await read('index.html'))
   assert.equal(cfg.price.usd, 79, 'the catalog price is USD 79')
-  assert.equal(cfg.price.chargedIn, 'USD', 'the page must state which currency is charged')
-  assert.equal(cfg.price.kesIndicative, true, 'KES must be marked indicative: it is not a Paddle currency')
-  const html = await read('index.html')
-  assert.match(html, /Charged in USD/u, 'the buy area must say the charge is in USD')
+
+  // Chargeability is DERIVED, not asserted once at the top. The fields this test used to require
+  // (chargedIn: 'USD', kesIndicative: true) encoded "shillings can never be charged" — a premise that expired
+  // when a Kenyan processor was configured, and one the paystack rail's own note contradicted all along.
+  for (const method of cfg.methods) {
+    assert.ok(['USD', 'KES', 'CNY'].includes(method.charges),
+      `${method.id} must declare the currency it charges in, got ${JSON.stringify(method.charges)}`)
+  }
+  const live = (m) => Boolean(m.verified) &&
+    (m.kind === 'paddle' ? Boolean(m.priceId && m.clientToken) : Boolean(m.url))
+  const chargeable = cfg.methods.filter(live).map((m) => m.charges)
+  assert.ok(chargeable.length > 0, 'at least one rail must be live, or the page cannot take an order at all')
+
+  // The hedge is what keeps the page honest while the Kenya rail is dark. It must be present when no live rail
+  // charges KES and MUST disappear the moment one does, so opening a rail cannot leave a stale caveat behind.
+  const kesLive = chargeable.includes('KES')
+  // Whitespace-tolerant on purpose: llms.txt and pricing.html wrap this sentence across lines, and a literal
+  // pattern fails on the wrap while the wording is perfectly correct (the same trap as a journal anchor).
+  // Tolerant at EVERY gap, not just one: llms.txt wraps after "charges", pricing.html wraps after "rail".
+  const hedge = /no\s+rail\s+charges\s+shillings\s+today/iu
+  for (const name of ['index.html', 'llms.txt', 'pricing.html']) {
+    const text = await read(name)
+    if (kesLive) {
+      assert.doesNotMatch(text, hedge,
+        `${name} still says no rail charges shillings, but ${chargeable.join('/')} is live and KES is chargeable`)
+    } else {
+      assert.match(text, hedge,
+        `${name} must say shillings are not charged yet — no live rail charges KES (live: ${chargeable.join('/') || 'none'})`)
+    }
+  }
 })
 
 test('Paddle-required policy pages exist, are linked, and name the contact address', async () => {

@@ -136,7 +136,7 @@ test('every fact llms.txt claims to have saved a fetch for is actually stated th
   for (const [what, pattern] of [
     ['the USD price', /\$79/u],
     ['the shilling indication', /KSh 10,000/u],
-    ['that shillings are indicative and not charged', /indicative|not a currency the processor charges/iu],
+    ['that shillings are not charged by any rail yet', /no\s+rail\s+charges\s+shillings\s+today/iu],
     ['what the licence covers', /one team, one time/iu],
     ['the update period', /\d+ months of updates/iu],
     ['the refund window', /\d+ days/iu],

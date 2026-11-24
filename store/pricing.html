@@ -29,8 +29,9 @@
   <!--
     Product/Offer JSON-LD. Every number here is asserted against #pay-config in index.html by
     tests/storefront-machine-readable.test.mjs: these are static files with no build step, so the guard is
-    what makes the duplication safe. KES is deliberately NOT an Offer — the processor does not charge in
-    shillings, and an Offer naming an unpayable price would be a false claim. No returnMethod or
+    what makes the duplication safe. A KES Offer is published only while a live rail charges shillings: no
+    rail does today, and an Offer naming a price nobody can pay is a false claim. Chargeability is derived from
+    `#pay-config.methods[].charges` by the guard rather than asserted here. No returnMethod or
     returnFees either: this is software, and "return by mail" would be a claim we cannot honour.
   -->
   <script type="application/ld+json">
@@ -86,8 +87,9 @@
 
   <div class="pricecard">
     <div class="amount">$79 <span>per team, one time</span></div>
-    <p class="unit">Includes 12 months of updates. Charged in USD. Buyers in China are charged
-       <strong>¥560</strong>; the shilling figure (≈ KSh 10,000) is indicative.</p>
+    <p class="unit">Includes 12 months of updates. The card rail charges USD 79; buyers in China are charged
+       <strong>¥560</strong>. Kenyan buyers pay <strong>KSh 10,000</strong> on the M-Pesa rail, and no rail
+       charges shillings today.</p>
     <p class="unit">Prices include applicable sales tax where required — the amount you see at checkout is the
        amount you pay. Paddle is the merchant of record and issues your invoice.</p>
   </div>
