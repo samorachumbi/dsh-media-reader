@@ -16,8 +16,8 @@ Last updated: 2026-11-22
 ### The commercial facts, stated here so an agent needs no second fetch
 
 - **Price:** $79 / KSh 10,000 per team, one time. The card rail charges **USD 79**; buyers in China are
-  charged **¥560** at checkout. Kenyan buyers pay **KSh 10,000** on the M-Pesa rail, and no rail charges
-  shillings today.
+  charged **¥560** at checkout; Kenyan buyers pay **KSh 10,000** on the M-Pesa rail, charged in shillings
+  through Paystack, and the licence is emailed automatically once the payment is confirmed.
 - **What it covers:** one team, one time, and 12 months of updates from the issue date.
 - **Refunds:** 14 days from purchase. Full detail: https://store.itikia.co.ke/refund
 - **Merchant of record:** Paddle. It calculates, collects and remits sales tax and issues the tax

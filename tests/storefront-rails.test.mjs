@@ -32,7 +32,10 @@ test('every payment rail is either a configured link or a configured Paddle over
       assert.equal(typeof method[field], 'string', `rail ${method.id ?? '(no id)'} needs a ${field}`)
       assert.ok(method[field].length > 0, `rail ${method.id} has an empty ${field}`)
     }
-    assert.ok(['paddle', 'link'].includes(method.kind), `rail ${method.id} has unknown kind ${method.kind}`)
+    // 'paystack' added 2026-11-24: a rail whose checkout our own Worker starts, rather than a hosted link
+    // or the Paddle overlay. It still needs a url (the init endpoint) before it may render.
+    assert.ok(['paddle', 'link', 'paystack'].includes(method.kind),
+      `rail ${method.id} has unknown kind ${method.kind}`)
     // The fields each kind needs before it may render. A half-configured rail must render nothing.
     const required = method.kind === 'paddle' ? ['priceId', 'clientToken'] : ['url']
     for (const field of required) {
@@ -64,13 +67,19 @@ test('a rail renders only when it carries a recorded verification date', async (
     assert.ok(t <= Date.now(), `rail ${m.id} claims verification on ${m.verified}, a date that has not arrived`)
   }
 
-  // Only the rail whose checkout actually completed may render. Paystack has never seen a payment,
-  // and its empty `verified` is the single field keeping it dark.
+  // Both rails have now taken a real live payment, so both may render. What must NOT survive is a rail
+  // claiming a verification it does not have — so each date is tied to the event that produced it.
   const live = cfg.methods.filter((m) => m.verified && (m.kind === 'paddle' ? m.priceId && m.clientToken : m.url))
-  assert.deepEqual(live.map((m) => m.id), ['paddle'], 'only a rail with a completed checkout may render a button')
-  const unverified = cfg.methods.find((m) => m.id === 'paystack')
-  assert.ok(unverified, 'the Paystack rail must still be declared')
-  assert.equal(unverified.verified, '', 'the Paystack rail must not claim a verification it does not have')
+  assert.deepEqual(live.map((m) => m.id).sort(), ['paddle', 'paystack'],
+    'both rails have taken a real live payment and may render; an unverified third rail must not appear')
+
+  const paystack = cfg.methods.find((m) => m.id === 'paystack')
+  assert.ok(paystack, 'the Paystack rail must be declared')
+  // The date is the day the first live KSh 10,000 cleared (reference dsh_b4f7d503…, Paystack txn
+  // 6796301894, licence issued 1.9 s later). A rail may not claim a date earlier than that.
+  assert.equal(paystack.verified, '2026-11-24', 'the Paystack rail verifies against the first real payment, not a guess')
+  assert.match(paystack.url, /^https:\/\/dsh-licence\.itikia\.workers\.dev\/paystack\/init$/u,
+    'the Kenya rail starts its checkout at our own Worker, which is what makes fulfilment automatic')
 
   // And the dead-end branch must still exist for the case where nothing is verified.
   assert.match(html, /Checkout is not open yet/u, 'the page needs a dead-end branch for a rail with no verification')
@@ -225,7 +234,7 @@ test('a Paddle transaction link opens its checkout even while the buy button is 
     'the parameter must be read from the query string, not assumed')
 })
 
-test('the checkout asks who the licence is issued to, and gets the email from nowhere else', async () => {
+test('the checkout asks who the licence is issued to, and Paddle never receives an address from the page', async () => {
   // Found on the first real order, 2026-11-16: Paddle issued an invoice and the customer record held
   // only an email (`name: null`) — it collects an address, never a company. A licence that names a
   // mailbox is not a team licence, so the storefront has to ask for the entity.
@@ -236,16 +245,27 @@ test('the checkout asks who the licence is issued to, and gets the email from no
   // paying address; it is the only one allowed on the record.
   const html = await read('index.html')
 
-  assert.match(html, /id="lic-entity"/u, 'the checkout must ask who the licence is issued to')
+  // Ids are per-rail since 2026-11-24: two live rails each render a licence-entity field, and duplicate DOM
+  // ids would break every <label for> on the page.
+  assert.match(html, /id="lic-entity-' \+ m\.id/u, 'the checkout must ask who the licence is issued to')
   // A placeholder is not a label: it vanishes on focus and screen readers may skip it.
-  assert.match(html, /<label for="lic-entity">/u, 'the entity field needs a real label element')
+  assert.match(html, /<label for="lic-entity-' \+ m\.id/u, 'the entity field needs a real label element')
   assert.match(html, /licensee_entity:\s*entity\.value\.trim\(\)/u,
     'the entity must ride on the transaction as customData.licensee_entity')
   assert.match(html, /customData:/u, 'the values must be passed to Checkout.open as customData')
 
-  assert.doesNotMatch(html, /id="lic-email"/u, 'the storefront must not collect a second delivery address')
-  assert.doesNotMatch(html, /buyer_email/u, 'no second email may ride on the transaction as customData')
+  // The Paddle prohibition survives unchanged: Paddle holds the paying address, so the page must not send it
+  // one. Scoped to customData, because the Paystack rail must collect an address — Paystack has no customer
+  // record to read back from — and the Worker re-reads it from the verify response rather than trusting it.
+  assert.doesNotMatch(html, /customData:\s*\{[^}]*\bemail\b/iu,
+    'no address may ride on a Paddle transaction as customData')
   assert.doesNotMatch(html, /customer:\s*\{\s*email/u, 'the storefront must not prefill Paddle with an address')
+  assert.match(html, /authorization_url/u, 'the Kenya rail must send the buyer to the checkout Paystack returns')
+
+  const workerSrc = await (await import('node:fs/promises'))
+    .readFile(new URL('worker/licence/src/index.js', repo), 'utf8')
+  assert.match(workerSrc, /txn\.customer\?\.email/u,
+    'the Worker must take the payer address from Paystack verify response, not from the form')
 
   // The gate must be in front of the door, not behind it.
   const checkAt = html.indexOf('if (!entity.value.trim())')

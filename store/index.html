@@ -27,10 +27,10 @@
       "label": "Pay by card, Apple Pay or PayPal",
       "note": "Paddle checkout — Visa, Mastercard, Apple Pay, Google Pay and PayPal where available. Paddle is the merchant of record: sales tax and VAT are calculated, collected and remitted by Paddle, and the invoice comes from Paddle.",
       "priceId": "pri_01m75znzdsm2gty7vs8hv53nbp", "clientToken": "live_702384985c0849d73279a400c31", "verified": "2026-11-16" },
-    { "id": "paystack", "kind": "link", "charges": "KES",
+    { "id": "paystack", "kind": "paystack", "charges": "KES",
       "label": "Pay by M-Pesa or card (Kenya)",
-      "note": "Paystack checkout — M-Pesa, Visa and Mastercard, charged in Kenyan shillings.",
-      "url": "", "verified": "" }
+      "note": "Paystack checkout — M-Pesa, Visa and Mastercard, charged in Kenyan shillings. The licence is issued automatically once Paystack confirms the payment, and emailed to the address you give.",
+      "url": "https://dsh-licence.itikia.workers.dev/paystack/init", "verified": "2026-11-24" }
   ],
   "freeDownload": "https://github.com/samorachumbi/dsh-media-reader",
   "support": "https://github.com/samorachumbi/dsh-media-reader/issues"
@@ -295,7 +295,7 @@
     <aside class="card buy" aria-labelledby="buy-h">
       <h2 id="buy-h" style="font-size:1.05rem;margin-bottom:12px">Commercial licence</h2>
       <div class="price"><strong>$79</strong><span class="alt">≈ KSh 10,000</span></div>
-      <p class="price-unit">Per team, one time. 12 months of updates included. The card rail charges USD 79 and buyers in China are charged ¥560 at checkout. Kenyan buyers pay KSh 10,000 on the M-Pesa rail, and no rail charges shillings today.</p>
+      <p class="price-unit">Per team, one time. 12 months of updates included. The card rail charges USD 79 and buyers in China are charged ¥560 at checkout. Kenyan buyers pay KSh 10,000 on the M-Pesa rail, charged in shillings at checkout.</p>
 
       <div id="pay-area">
         <!-- Static fallback for a reader with JavaScript off. The script below repaints this
@@ -713,8 +713,8 @@ Details: The background is a uniform dark blue with no visible objects or patter
       var fields = document.createElement('div');
       fields.className = 'buy-fields';
       fields.innerHTML =
-        '<label for="lic-entity">Licence issued to</label>' +
-        '<input id="lic-entity" name="licensee_entity" type="text" autocomplete="organization" ' +
+        '<label for="lic-entity-' + m.id + '">Licence issued to</label>' +
+        '<input id="lic-entity-' + m.id + '" name="licensee_entity" type="text" autocomplete="organization" ' +
           'placeholder="Company or team name" required maxlength="120">' +
         '<p class="field-help">Your licence is issued to this name and emailed to the address you pay ' +
           'with, usually within one business day.</p>';
@@ -724,7 +724,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
       control.type = 'button';
       control.className = primary ? 'btn' : 'btn secondary';
       control.addEventListener('click', function () {
-        var entity = fields.querySelector('#lic-entity');
+        var entity = fields.querySelector('#lic-entity-' + m.id);
         if (!entity.value.trim()) {
           entity.setAttribute('aria-invalid', 'true');
           entity.focus();
@@ -757,7 +757,74 @@ Details: The background is a uniform dark blue with no visible objects or patter
           var err = document.createElement('p');
           err.className = 'pay-status';
           err.innerHTML = '<strong>Checkout could not load.</strong> Please try again, or email ' +
-            '<a href="mailto:samora@itikia.co.ke">samora@itikia.co.ke</a> and we will send a payment link.';
+            '<a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send a payment link.';
+          area.appendChild(err);
+        });
+      });
+    } else if (m.kind === 'paystack') {
+      // Unlike Paddle there is no customer record to read the address back from: Paystack's initialize call
+      // requires an email, so the page collects both the entity and the address. The Worker still refuses to
+      // trust either — it re-reads the amount, the currency and the payer address from Paystack's verify
+      // response before releasing a licence, so "pay with one address, be licensed to another" cannot happen.
+      var psFields = document.createElement('div');
+      psFields.className = 'buy-fields';
+      psFields.innerHTML =
+        '<label for="lic-entity-' + m.id + '">Licence issued to</label>' +
+        '<input id="lic-entity-' + m.id + '" name="licensee_entity" type="text" autocomplete="organization" ' +
+          'placeholder="Company or team name" required maxlength="120">' +
+        '<label for="lic-email-' + m.id + '">Email for the licence</label>' +
+        '<input id="lic-email-' + m.id + '" name="payer_email" type="email" autocomplete="email" ' +
+          'placeholder="you@company.com" required maxlength="120">' +
+        '<p class="field-help">Your licence is issued to this name and emailed to this address as soon as ' +
+          'Paystack confirms the payment. Paying by M-Pesa? The prompt appears on your phone.</p>';
+      area.appendChild(psFields);
+
+      control = document.createElement('button');
+      control.type = 'button';
+      control.className = primary ? 'btn' : 'btn secondary';
+      control.addEventListener('click', function () {
+        var entityEl = psFields.querySelector('#lic-entity-' + m.id);
+        var emailEl = psFields.querySelector('#lic-email-' + m.id);
+        var bad = null;
+        if (!entityEl.value.trim()) bad = entityEl;
+        else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailEl.value.trim())) bad = emailEl;
+        if (bad) {
+          bad.setAttribute('aria-invalid', 'true');
+          bad.focus();
+          if (!psFields.querySelector('.field-error')) {
+            var fe = document.createElement('p');
+            fe.className = 'field-error';
+            fe.setAttribute('role', 'alert');
+            fe.textContent = 'Please enter the company or team, and an email we can send the licence to.';
+            psFields.appendChild(fe);
+          }
+          return;
+        }
+        entityEl.removeAttribute('aria-invalid');
+        emailEl.removeAttribute('aria-invalid');
+        control.disabled = true;
+        fetch(m.url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(withAttribution({
+            entity: entityEl.value.trim(),
+            email: emailEl.value.trim()
+          }))
+        }).then(function (r) {
+          return r.json().then(function (b) { return { ok: r.ok, body: b }; });
+        }).then(function (res) {
+          // A redirect to the checkout Paystack created. Anything else is a failure the buyer must see.
+          if (res.ok && res.body && res.body.authorization_url) {
+            location.href = res.body.authorization_url;
+            return;
+          }
+          throw new Error('checkout could not start');
+        }).catch(function () {
+          control.disabled = false;
+          var err = document.createElement('p');
+          err.className = 'pay-status';
+          err.innerHTML = '<strong>Checkout could not start.</strong> Please try again, or email ' +
+            '<a href="mailto:hello@itikia.co.ke">hello@itikia.co.ke</a> and we will send a payment link.';
           area.appendChild(err);
         });
       });
@@ -767,7 +834,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
       control.rel = 'noopener';
       control.className = primary ? 'btn' : 'btn secondary';
     }
-    control.innerHTML = m.label + ' <small>· $' + cfg.price.usd + '</small>';
+    var railPrice = m.charges === 'KES'
+      ? 'KSh ' + Number(cfg.price.kes).toLocaleString('en-KE')
+      : '$' + cfg.price.usd;
+    control.innerHTML = m.label + ' <small>· ' + railPrice + '</small>';
     area.appendChild(control);
 
     var n = document.createElement('p');

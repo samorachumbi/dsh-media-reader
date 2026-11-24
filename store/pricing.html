@@ -29,9 +29,9 @@
   <!--
     Product/Offer JSON-LD. Every number here is asserted against #pay-config in index.html by
     tests/storefront-machine-readable.test.mjs: these are static files with no build step, so the guard is
-    what makes the duplication safe. A KES Offer is published only while a live rail charges shillings: no
-    rail does today, and an Offer naming a price nobody can pay is a false claim. Chargeability is derived from
-    `#pay-config.methods[].charges` by the guard rather than asserted here. No returnMethod or
+    what makes the duplication safe. A KES Offer is published only while a live rail charges shillings — the
+    Paystack rail does, as of 2026-11-24 — and chargeability is derived from `#pay-config.methods[].charges` by
+    the guard rather than asserted here. No returnMethod or
     returnFees either: this is software, and "return by mail" would be a claim we cannot honour.
   -->
   <script type="application/ld+json">
@@ -61,6 +61,15 @@
         "url": "https://store.itikia.co.ke/pricing",
         "description": "Per team, one-time, for buyers in China. Includes 12 months of updates.",
         "seller": { "@type": "Organization", "name": "Itikia Digital Solutions", "url": "https://store.itikia.co.ke" }
+      },
+      {
+        "@type": "Offer",
+        "price": "10000.00",
+        "priceCurrency": "KES",
+        "availability": "https://schema.org/InStock",
+        "url": "https://store.itikia.co.ke/pricing",
+        "description": "Per team, one-time, for buyers in Kenya. Charged in Kenyan shillings through Paystack; the licence is emailed automatically once the payment is confirmed.",
+        "seller": { "@type": "Organization", "name": "Itikia Digital Solutions", "url": "https://store.itikia.co.ke" }
       }
     ],
     "hasMerchantReturnPolicy": {
@@ -88,8 +97,8 @@
   <div class="pricecard">
     <div class="amount">$79 <span>per team, one time</span></div>
     <p class="unit">Includes 12 months of updates. The card rail charges USD 79; buyers in China are charged
-       <strong>¥560</strong>. Kenyan buyers pay <strong>KSh 10,000</strong> on the M-Pesa rail, and no rail
-       charges shillings today.</p>
+       <strong>¥560</strong>. Kenyan buyers pay <strong>KSh 10,000</strong> on the M-Pesa rail, charged in
+       shillings through Paystack. Your licence is emailed automatically once the payment is confirmed.</p>
     <p class="unit">Prices include applicable sales tax where required — the amount you see at checkout is the
        amount you pay. Paddle is the merchant of record and issues your invoice.</p>
   </div>

@@ -161,16 +161,20 @@ const MUTATIONS = [
   },
   {
     name: 'kes-hedge-removed',
-    what: 'the page stops saying shillings are not yet chargeable while the Kenya rail is dark',
+    // Re-pointed 2026-11-24: the hedge is now correctly absent because a live rail charges KES, so the defect
+    // to inject is the stale caveat coming BACK — which is exactly what a forgotten prose edit would do.
+    what: 'a stale "not chargeable yet" caveat survives after the Kenya rail went live',
     file: 'store/llms.txt',
-    replace: ['no rail charges', 'shillings are charged'],
-    expect: /must say shillings are not charged yet/,
+    replace: ['charged in shillings', 'charged in shillings, and no rail charges shillings today'],
+    expect: /still says no rail charges shillings/,
   },
   {
     name: 'kes-offer-without-a-live-rail',
-    what: 'a KES Offer appears while no rail can charge shillings',
-    file: 'store/pricing.html',
-    replace: ['"priceCurrency": "CNY"', '"priceCurrency": "KES"'],
+    // Re-pointed 2026-11-24: the KES Offer is correct now that a rail charges KES, so the defect is the rail
+    // going dark (its `verified` date removed) while the Offer stays published.
+    what: 'the Kenya rail loses its verification while a KES Offer stays published',
+    file: 'store/index.html',
+    replace: ['"verified": "2026-11-24" }', '"verified": "" }'],
     expect: /publishes a KES Offer but no live rail charges shillings/,
   },
   {

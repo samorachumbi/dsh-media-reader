@@ -136,7 +136,9 @@ test('every fact llms.txt claims to have saved a fetch for is actually stated th
   for (const [what, pattern] of [
     ['the USD price', /\$79/u],
     ['the shilling indication', /KSh 10,000/u],
-    ['that shillings are not charged by any rail yet', /no\s+rail\s+charges\s+shillings\s+today/iu],
+    // Re-targeted 2026-11-24: a live Paystack rail now charges KES, so the promised fact reversed. The old
+    // wording asserted the opposite, and would have kept passing only by keeping the page wrong.
+    ['that shillings are charged on the Kenya rail', /charged in shillings/iu],
     ['what the licence covers', /one team, one time/iu],
     ['the update period', /\d+ months of updates/iu],
     ['the refund window', /\d+ days/iu],
