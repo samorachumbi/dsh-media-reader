@@ -126,8 +126,20 @@ async function runChecks(get) {
         'contradicts itself')
     }
     if (Number(cny.price) !== cfg.price.cny) fail(`/pricing: live CNY offer ${cny.price} disagrees with #pay-config ${cfg.price.cny}`)
-    if (offers.some((offer) => offer.priceCurrency === 'KES')) {
-      fail('/pricing: a live KES offer advertises a price the processor cannot charge')
+    // Re-targeted 2026-11-24. The old rule forbade a KES offer outright because no processor charged shillings.
+    // That premise expired when the Paystack rail went live (first real KSh 10,000 payment, reference
+    // dsh_b4f7d503…), so the rule is now what it always meant: a currency may be offered only if a LIVE rail
+    // charges it, and the offered number must be the configured number.
+    const kesOffer = offers.find((offer) => offer.priceCurrency === 'KES')
+    if (kesOffer) {
+      const chargesKes = (m) => m.charges === 'KES' && Boolean(m.verified) &&
+        (m.kind === 'paddle' ? Boolean(m.priceId && m.clientToken) : Boolean(m.url))
+      if (!cfg.methods?.some(chargesKes)) {
+        fail('/pricing: a live KES offer is published but no live rail charges shillings — a price nobody can pay')
+      }
+      if (Number(kesOffer.price) !== cfg.price.kes) {
+        fail(`/pricing: live KES offer ${kesOffer.price} disagrees with the live #pay-config ${cfg.price.kes}`)
+      }
     }
     const days = String(product.hasMerchantReturnPolicy?.merchantReturnDays)
     if (days !== String(cfg.terms.refundDays)) {
