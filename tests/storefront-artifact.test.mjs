@@ -73,3 +73,31 @@ test('the storefront claims the test count the suite actually has', async () => 
     )
   }
 })
+
+test('the live-check count the storefront promises is the number of checks the smoke probe runs', async () => {
+  // The page tells a buyer to run ./smoke.sh and "Expect 18/18 checks passed", and llms.txt repeats the figure.
+  // That is a claim about a DIFFERENT artifact from the unit-test count above, and until now nothing derived it:
+  // a check added to probe/smoke.mjs would have left the page promising a number the probe never prints, and a
+  // buyer pasting real output would have seen the mismatch before we did.
+  const page = await readFile(new URL('store/index.html', repo), 'utf8')
+  const llms = await readFile(new URL('store/llms.txt', repo), 'utf8')
+  const smoke = await readFile(new URL('probe/smoke.mjs', repo), 'utf8')
+
+  const declared = smoke.split('\n').filter((line) => /^\s*check\(/u.test(line)).length
+  assert.ok(declared > 0, 'probe/smoke.mjs must declare its checks as check(…) lines — the count is derived from them')
+
+  const claims = []
+  for (const [where, text] of [['index.html', page.replace(/<[^>]+>/gu, ' ')], ['llms.txt', llms]]) {
+    for (const match of text.matchAll(/(\d+)\/(\d+)\s+(?:live\s+)?checks/gu)) {
+      claims.push({ where, passing: match[1], total: match[2] })
+    }
+  }
+  assert.ok(claims.length >= 3, `the live-check count must be stated where buyers read it; found ${claims.length}`)
+
+  for (const claim of claims) {
+    assert.equal(claim.passing, claim.total,
+      `${claim.where} states ${claim.passing}/${claim.total} checks: a partial pass must not be advertised as a full one`)
+    assert.equal(Number(claim.total), declared,
+      `${claim.where} promises ${claim.total} live checks but probe/smoke.mjs declares ${declared}`)
+  }
+})

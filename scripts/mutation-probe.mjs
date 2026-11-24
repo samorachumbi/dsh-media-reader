@@ -254,6 +254,23 @@ const MUTATIONS = [
     replace: ['"legalName": "Itikia Digital Solutions"', '"legalName": "Itikia Ltd"'],
     expect: /must name the seller Itikia Ltd/,
   },
+  {
+    name: 'live-check-count-overstated',
+    what: 'the storefront promises more live checks than the smoke probe runs',
+    file: 'store/llms.txt',
+    replace: ['18/18 checks passed', '19/19 checks passed'],
+    expect: /llms\.txt promises 19 live checks but probe\/smoke\.mjs declares 18/,
+  },
+  {
+    name: 'live-check-count-understated',
+    what: 'the smoke probe gains a check and the page keeps advertising the old figure',
+    file: 'probe/smoke.mjs',
+    replace: [
+      "  check('silence is reported as no speech'",
+      "  check('an extra check nobody told the storefront about', true, '')\n  check('silence is reported as no speech'",
+    ],
+    expect: /promises 18 live checks but probe\/smoke\.mjs declares 19/,
+  },
   // ---- the hero walkthrough (2026-11-24) ----------------------------------------------------------------
   // Each of these is a defect this page could plausibly ship: an animation nobody can stop, one that runs
   // off screen, one that clips instead of trimming, and one whose text was retyped rather than replayed.
