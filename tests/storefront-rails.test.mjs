@@ -284,3 +284,21 @@ test('the checkout asks who the licence is issued to, and Paddle never receives 
   assert.doesNotMatch(worker, /custom\.buyer_email/u,
     'the Worker must never trust an email supplied by the checkout form')
 })
+
+test('every payment rail renders as a primary button, so no payment option is de-emphasised', async () => {
+  // Found 2026-11-24, the day the M-Pesa rail went live: only the first rail was styled `btn` and every other
+  // rail got `btn secondary`, which is a transparent outline. The effect was that the option a Kenyan buyer most
+  // wants looked like the least prominent control on the page. A payment option is not a secondary action.
+  const html = await read('index.html')
+  const assignments = [...html.matchAll(/control\.className\s*=\s*([^;]+);/gu)].map((m) => m[1].trim())
+
+  assert.ok(assignments.length >= 3,
+    `expected a class assignment in each rail branch (Paddle, Paystack, plain link), found ${assignments.length}`)
+  for (const value of assignments) {
+    assert.doesNotMatch(value, /secondary/u,
+      `a payment rail must not be styled as secondary: the branch assigns ${value}`)
+  }
+  // The free download is not a payment rail and legitimately stays secondary.
+  assert.match(html, /free\.className = 'btn secondary'/u,
+    'the free-download button is not a rail and should still read as secondary')
+})

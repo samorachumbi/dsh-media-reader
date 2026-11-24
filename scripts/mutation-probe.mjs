@@ -125,6 +125,13 @@ const MUTATIONS = [
     expect: /must not become readable/,
   },
   {
+    name: 'a-rail-de-emphasised',
+    what: 'a payment option is styled as a secondary button',
+    file: 'store/index.html',
+    replace: ["control.className = 'btn';", "control.className = 'btn secondary';"],
+    expect: /must not be styled as secondary/,
+  },
+  {
     name: 'no-cors-preflight',
     what: 'the browser preflight is not answered, so the storefront can never call the checkout',
     file: 'worker/licence/src/index.js',

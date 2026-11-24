@@ -288,7 +288,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 173/173 unit tests</li>
+        <li>18/18 live checks, 174/174 unit tests</li>
       </ul>
     </div>
 
@@ -470,7 +470,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>173/173</b><span>unit tests in the shipped suite</span></li>
+      <li><b>174/174</b><span>unit tests in the shipped suite</span></li>
       <li><b>78 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -701,8 +701,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
     return;
   }
 
-  live.forEach(function (m, i) {
-    var primary = i === 0;
+  live.forEach(function (m) {
+    // Every payment rail renders as the filled primary button. The old code made only the first rail
+    // primary and pushed the rest to `btn secondary` — which is how the M-Pesa button, the one a Kenyan
+    // buyer is most likely to want, ended up looking like the least prominent thing on the page.
     var control;
     if (m.kind === 'paddle') {
       // The licence names a legal entity. Paddle's checkout collects the buyer's email but never a
@@ -722,7 +724,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
 
       control = document.createElement('button');
       control.type = 'button';
-      control.className = primary ? 'btn' : 'btn secondary';
+      control.className = 'btn';
       control.addEventListener('click', function () {
         var entity = fields.querySelector('#lic-entity-' + m.id);
         if (!entity.value.trim()) {
@@ -781,7 +783,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
 
       control = document.createElement('button');
       control.type = 'button';
-      control.className = primary ? 'btn' : 'btn secondary';
+      control.className = 'btn';
       control.addEventListener('click', function () {
         var entityEl = psFields.querySelector('#lic-entity-' + m.id);
         var emailEl = psFields.querySelector('#lic-email-' + m.id);
@@ -832,7 +834,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
       control = document.createElement('a');
       control.href = m.url;
       control.rel = 'noopener';
-      control.className = primary ? 'btn' : 'btn secondary';
+      control.className = 'btn';
     }
     var railPrice = m.charges === 'KES'
       ? 'KSh ' + Number(cfg.price.kes).toLocaleString('en-KE')
