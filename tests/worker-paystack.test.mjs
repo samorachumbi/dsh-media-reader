@@ -362,3 +362,42 @@ test('the return route issues on success and resolves a cancelled prompt', async
     stub.restore()
   }
 })
+
+/* ──────────────────────────────────────────────────────────────────────────────── cors ── */
+
+test('the browser preflight is answered, or the storefront cannot call init at all', async () => {
+  const { env } = createEnv()
+  const response = await worker.fetch(new Request(`${ORIGIN}/paystack/init`, {
+    method: 'OPTIONS', headers: { origin: 'https://store.itikia.co.ke', 'access-control-request-method': 'POST' },
+  }), env)
+  assert.equal(response.status, 204, 'the preflight must be answered with 204, not fall through to the 404 branch')
+  assert.equal(response.headers.get('access-control-allow-origin'), 'https://store.itikia.co.ke',
+    'the storefront origin must be allowed, or every checkout POST is blocked by the browser')
+  assert.match(String(response.headers.get('access-control-allow-methods')), /POST/u)
+  assert.match(String(response.headers.get('access-control-allow-headers')), /content-type/iu)
+})
+
+test('every init response carries the CORS header, including the refusals', async () => {
+  const { env } = createEnv()
+  const stub = stubPaystack()
+  try {
+    for (const [payload, label] of [
+      [{ email: 'buyer@example.com', entity: 'Acme Team Ltd' }, 'success'],
+      [{ email: 'nope', entity: 'Acme' }, 'invalid_email'],
+      [{ email: 'buyer@example.com' }, 'missing_entity'],
+    ]) {
+      const response = await worker.fetch(init(payload), env)
+      assert.equal(response.headers.get('access-control-allow-origin'), 'https://store.itikia.co.ke',
+        `${label}: a refusal the browser cannot read is a failure the buyer never sees`)
+    }
+  } finally {
+    stub.restore()
+  }
+})
+
+test('CORS is scoped to the checkout: the licence route is not made cross-origin readable', async () => {
+  const { env } = createEnv()
+  const response = await worker.fetch(new Request(`${ORIGIN}/licence/${'0'.repeat(32)}`), env)
+  assert.equal(response.headers.get('access-control-allow-origin'), null,
+    'a licence document must not become readable from any origin that asks for it')
+})

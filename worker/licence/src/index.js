@@ -50,6 +50,10 @@ export default {
     }
     // The Kenyan rail. Paystack is a GATEWAY, not a merchant of record: the order is ITIKIA's, the tax
     // is ITIKIA's problem, and the 14-day refund on /refund becomes something an operator performs.
+    if (request.method === 'OPTIONS' && url.pathname === '/paystack/init') {
+      // The browser's preflight. Without it the storefront cannot call this endpoint at all.
+      return new Response(null, { status: 204, headers: paystackCors(env) });
+    }
     if (request.method === 'POST' && url.pathname === '/paystack/init') {
       return paystackInit(request, env);
     }
@@ -232,15 +236,15 @@ async function paystackInit(request, env) {
   try {
     payload = await request.json();
   } catch {
-    return json({ error: 'invalid_json' }, 400, request.method);
+    return json({ error: 'invalid_json' }, 400, request.method, paystackCors(env));
   }
 
   const email = String(payload?.email ?? '').trim();
   const entity = String(payload?.entity ?? '').trim();
-  if (!isEmail(email)) return json({ error: 'invalid_email' }, 400, request.method);
+  if (!isEmail(email)) return json({ error: 'invalid_email' }, 400, request.method, paystackCors(env));
   // The licence names a legal entity. A licence that names nobody cannot be issued, and guessing one is
   // worse than refusing.
-  if (!entity) return json({ error: 'missing_licensee_entity' }, 400, request.method);
+  if (!entity) return json({ error: 'missing_licensee_entity' }, 400, request.method, paystackCors(env));
 
   const reference = `dsh_${randomToken()}`;
   const amount = paystackAmountMinor(env);
@@ -261,7 +265,7 @@ async function paystackInit(request, env) {
 
   if (!created.ok || !created.body?.status) {
     console.warn('paystack initialize failed:', created.status, created.body?.message ?? created.reason ?? '');
-    return json({ error: 'paystack_init_failed', status: created.status }, 502, request.method);
+    return json({ error: 'paystack_init_failed', status: created.status }, 502, request.method, paystackCors(env));
   }
 
   // The order is what a webhook is matched against. Without it an unknown reference has nothing to fulfil,
@@ -274,7 +278,7 @@ async function paystackInit(request, env) {
     reference,
     authorization_url: created.body.data?.authorization_url ?? null,
     access_code: created.body.data?.access_code ?? null,
-  }, 200, request.method);
+  }, 200, request.method, paystackCors(env));
 }
 
 async function handlePaystackWebhook(request, env) {
@@ -709,10 +713,27 @@ function escapeHtml(value) {
   ));
 }
 
-function json(payload, status, method = 'GET') {
+function json(payload, status, method = 'GET', extra = {}) {
   // HEAD must not carry a body, but it must carry the same status and headers.
   return new Response(method === 'HEAD' ? null : JSON.stringify(payload), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
   });
+}
+
+/**
+ * CORS for the checkout endpoint only.
+ *
+ * The storefront is a static site on its own hostname and must call this Worker from the browser, so the
+ * browser preflights the POST. Scoped deliberately: only `/paystack/init` is callable cross-origin, and
+ * only from the store's own origin — the licence route and the webhook stay same-origin/server-only.
+ */
+function paystackCors(env) {
+  return {
+    'access-control-allow-origin': String(env.STORE_URL ?? 'https://store.itikia.co.ke'),
+    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+    'access-control-max-age': '600',
+    vary: 'origin',
+  };
 }

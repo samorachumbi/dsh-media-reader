@@ -115,6 +115,23 @@ const MUTATIONS = [
     expect: /would never ship/,
   },
   {
+    name: 'cors-scope-leaks-to-licences',
+    what: 'a licence document becomes cross-origin readable',
+    file: 'worker/licence/src/index.js',
+    // Anchored on an inner string with no leading whitespace: three separate mutations in this session failed
+    // because the anchor assumed an indentation the file did not have.
+    replace: ["headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },",
+              "headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'access-control-allow-origin': '*', ...extra },"],
+    expect: /must not become readable/,
+  },
+  {
+    name: 'no-cors-preflight',
+    what: 'the browser preflight is not answered, so the storefront can never call the checkout',
+    file: 'worker/licence/src/index.js',
+    replace: ["    if (request.method === 'OPTIONS' && url.pathname === '/paystack/init') {", "    if (false) {"],
+    expect: /preflight must be answered with 204/,
+  },
+  {
     name: 'amount-sent-in-major-units',
     what: 'the Worker charges 10000 instead of 1000000 minor units — a 100x underpricing',
     file: 'worker/licence/src/index.js',
