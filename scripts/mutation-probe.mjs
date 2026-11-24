@@ -115,6 +115,34 @@ const MUTATIONS = [
     expect: /would never ship/,
   },
   {
+    name: 'amount-sent-in-major-units',
+    what: 'the Worker charges 10000 instead of 1000000 minor units — a 100x underpricing',
+    file: 'worker/licence/src/index.js',
+    replace: ['const PAYSTACK_AMOUNT_MINOR_DEFAULT = 1000000;', 'const PAYSTACK_AMOUNT_MINOR_DEFAULT = 10000;'],
+    expect: /sells the licence for one hundredth/,
+  },
+  {
+    name: 'trusts-the-callback-amount',
+    what: 'the Worker stops re-reading the amount from Paystack and believes the webhook body',
+    file: 'worker/licence/src/index.js',
+    replace: ['if (Number(txn.amount) !== expected) {', 'if (false) {'],
+    expect: /must not issue a KSh 10,000 licence/,
+  },
+  {
+    name: 'webhook-signature-not-checked',
+    what: 'the webhook handler accepts any body instead of verifying the signature',
+    file: 'worker/licence/src/index.js',
+    replace: ["  if (!check.ok) {\n    console.warn('rejected paystack webhook:', check.reason);", "  if (false) {\n    console.warn('rejected paystack webhook:', check.reason);"],
+    expect: /must be refused with 401|must not even trigger a verify call/,
+  },
+  {
+    name: 'no-user-agent-on-paystack-calls',
+    what: 'Paystack calls go out without a User-Agent, which Cloudflare answers with 403/1010',
+    file: 'worker/licence/src/index.js',
+    replace: ["      'user-agent': 'dsh-media-reader-licence/1.0 (+https://store.itikia.co.ke)',\n", ''],
+    expect: /Cloudflare's bot filter with 403 error 1010/,
+  },
+  {
     name: 'kes-hedge-removed',
     what: 'the page stops saying shillings are not yet chargeable while the Kenya rail is dark',
     file: 'store/llms.txt',
@@ -247,7 +275,9 @@ async function freshCopy() {
 }
 
 function suite(dir, full) {
-  const globs = full ? ['tests/*.test.mjs'] : ['tests/storefront-*.test.mjs']
+  // The Worker tests are included in the fast subset: they execute the real handler, so they are where the
+  // money arithmetic is guarded, and a mutation to the amount must be able to fail something.
+  const globs = full ? ['tests/*.test.mjs'] : ['tests/storefront-*.test.mjs', 'tests/worker-*.test.mjs']
   const result = spawnSync('node', ['--test', ...globs], { cwd: dir, encoding: 'utf8' })
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
 }

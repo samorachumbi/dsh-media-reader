@@ -48,6 +48,17 @@ export default {
         url.pathname.startsWith('/licence/')) {
       return serveLicence(url, env, request.method);
     }
+    // The Kenyan rail. Paystack is a GATEWAY, not a merchant of record: the order is ITIKIA's, the tax
+    // is ITIKIA's problem, and the 14-day refund on /refund becomes something an operator performs.
+    if (request.method === 'POST' && url.pathname === '/paystack/init') {
+      return paystackInit(request, env);
+    }
+    if (request.method === 'POST' && url.pathname === '/paystack/webhook') {
+      return handlePaystackWebhook(request, env);
+    }
+    if (isRead && url.pathname.startsWith('/paystack/verify/')) {
+      return paystackVerifyRoute(url, env, request.method);
+    }
     if (isRead && (url.pathname === '/' || url.pathname === '/health')) {
       return json({ ok: true, service: 'dsh-media-reader licence issuer', artifact: env.ARTIFACT_VERSION },
         200, request.method);
@@ -157,6 +168,283 @@ async function handlePaddleWebhook(request, env) {
  * `customer.read` as soon as one exists — Paddle does not allow API-key creation through its API,
  * so that swap has to be done in the dashboard.
  */
+/* ────────────────────────────────────────────────────────────────────── paystack ── */
+
+/**
+ * Kenyan rail — M-Pesa and cards through Paystack.
+ *
+ * Three rules decide the shape of everything below:
+ *
+ *   1. **An acknowledgement is not a payment.** The hosted flow returns a redirect and, for M-Pesa, an STK
+ *      prompt on the buyer's phone. None of that is money. Paystack sends the `charge.success` webhook only
+ *      for successes, so a cancelled prompt never arrives at all and must be resolved by verification.
+ *   2. **A valid signature proves provenance, not truth.** The body is still sender-controlled, so amount
+ *      and currency are re-read from the Verify API before any licence exists.
+ *   3. **Amounts are minor units.** KSh 10,000 is `1000000`. A factor-of-100 error sells a KSh 10,000
+ *      licence for KSh 100 and nothing else would notice, so the expected amount is asserted against the
+ *      storefront's own price by the test suite.
+ */
+
+// Must equal `#pay-config.price.kes` x 100. The equality is asserted by tests/worker-paystack.test.mjs;
+// this copy exists only because a Worker cannot read a static page's JSON block cheaply.
+const PAYSTACK_AMOUNT_MINOR_DEFAULT = 1000000;
+const PAYSTACK_CURRENCY = 'KES';
+const PAYSTACK_API = 'https://api.paystack.co';
+const PAYSTACK_ORDER_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+function paystackAmountMinor(env) {
+  const configured = Number(env.PAYSTACK_AMOUNT_MINOR ?? PAYSTACK_AMOUNT_MINOR_DEFAULT);
+  return Number.isInteger(configured) && configured > 0 ? configured : PAYSTACK_AMOUNT_MINOR_DEFAULT;
+}
+
+/**
+ * The one place that talks to Paystack, so the User-Agent is set exactly once.
+ *
+ * Paystack sits behind Cloudflare, which refuses bot-looking clients with **HTTP 403 and `error code:
+ * 1010`**. That looks identical to a rejected API key and is not one — a session that read it as an auth
+ * failure discarded a working key. Hence the explicit User-Agent.
+ */
+async function paystackFetch(env, path, init = {}) {
+  if (!env.PAYSTACK_SECRET_KEY) return { status: 0, ok: false, body: null, reason: 'no_secret_configured' };
+  const response = await fetch(`${PAYSTACK_API}${path}`, {
+    ...init,
+    headers: {
+      authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+      'content-type': 'application/json',
+      'user-agent': 'dsh-media-reader-licence/1.0 (+https://store.itikia.co.ke)',
+      ...(init.headers ?? {}),
+    },
+  });
+  const text = await response.text();
+  let body = null;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    // A non-JSON body from a JSON API means the edge answered, not the API. Leave body null so the caller
+    // treats it as a failed call instead of crashing on `.data.status`.
+  }
+  return { status: response.status, ok: response.ok, body, text };
+}
+
+/** Start a checkout. Returns where to send the buyer — never a licence, never a payment. */
+async function paystackInit(request, env) {
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ error: 'invalid_json' }, 400, request.method);
+  }
+
+  const email = String(payload?.email ?? '').trim();
+  const entity = String(payload?.entity ?? '').trim();
+  if (!isEmail(email)) return json({ error: 'invalid_email' }, 400, request.method);
+  // The licence names a legal entity. A licence that names nobody cannot be issued, and guessing one is
+  // worse than refusing.
+  if (!entity) return json({ error: 'missing_licensee_entity' }, 400, request.method);
+
+  const reference = `dsh_${randomToken()}`;
+  const amount = paystackAmountMinor(env);
+  const origin = new URL(request.url).origin;
+  const attribution = readAttribution(payload?.utm ?? {});
+
+  const created = await paystackFetch(env, '/transaction/initialize', {
+    method: 'POST',
+    body: JSON.stringify({
+      email,
+      amount,
+      currency: PAYSTACK_CURRENCY,
+      reference,
+      callback_url: `${origin}/paystack/verify/${reference}`,
+      metadata: { licensee_entity: entity, ...attribution },
+    }),
+  });
+
+  if (!created.ok || !created.body?.status) {
+    console.warn('paystack initialize failed:', created.status, created.body?.message ?? created.reason ?? '');
+    return json({ error: 'paystack_init_failed', status: created.status }, 502, request.method);
+  }
+
+  // The order is what a webhook is matched against. Without it an unknown reference has nothing to fulfil,
+  // which is the point: a posted body alone can never mint a licence.
+  await env.LICENCES.put(`ps:order:${reference}`, JSON.stringify({
+    email, entity, attribution, amount, currency: PAYSTACK_CURRENCY, created: new Date().toISOString(),
+  }), { expirationTtl: PAYSTACK_ORDER_TTL_SECONDS });
+
+  return json({
+    reference,
+    authorization_url: created.body.data?.authorization_url ?? null,
+    access_code: created.body.data?.access_code ?? null,
+  }, 200, request.method);
+}
+
+async function handlePaystackWebhook(request, env) {
+  // Raw text first: the signature is over the exact bytes sent.
+  const raw = await request.text();
+  const check = await verifyPaystackSignature(
+    env.PAYSTACK_SECRET_KEY, request.headers.get('x-paystack-signature'), raw,
+  );
+  if (!check.ok) {
+    console.warn('rejected paystack webhook:', check.reason);
+    return json({ error: 'invalid_signature', reason: check.reason }, 401);
+  }
+
+  let event;
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return json({ error: 'invalid_json' }, 400);
+  }
+
+  // Everything else is acknowledged and ignored, so Paystack stops retrying it.
+  if (event?.event !== 'charge.success') return json({ ignored: event?.event ?? 'unknown' }, 200);
+
+  const reference = String(event.data?.reference ?? '');
+  if (!reference) return json({ error: 'missing_reference' }, 400);
+
+  const outcome = await fulfilPaystackOrder(env, reference, new URL(request.url).origin);
+  return json(outcome.body, outcome.status);
+}
+
+/** Where the buyer's browser lands after paying — including when they cancelled. Never trusts the query. */
+async function paystackVerifyRoute(url, env, method) {
+  const reference = decodeURIComponent(url.pathname.slice('/paystack/verify/'.length));
+  if (!reference) return json({ error: 'missing_reference' }, 400, method);
+  const outcome = await fulfilPaystackOrder(env, reference, new URL(url).origin);
+  return json(outcome.body, outcome.status, method);
+}
+
+/**
+ * Turn a reference into a licence — only if Paystack itself confirms a payment of the right amount in the
+ * right currency. Shared by the webhook and the return route so the two cannot drift, and safe to call
+ * repeatedly, because that is exactly what a retried webhook is.
+ */
+async function fulfilPaystackOrder(env, reference, origin) {
+  const paidKey = `ps:paid:${reference}`;
+  if (await env.LICENCES.get(paidKey)) {
+    // A retry, or the buyer reloading the return page. A second licence for one payment would be two
+    // apparently-valid documents naming the same order.
+    return { status: 200, body: { duplicate: true, reference } };
+  }
+
+  const order = await env.LICENCES.get(`ps:order:${reference}`, 'json');
+  if (!order) {
+    // Ignored rather than refused: an unknown reference is not evidence of anything.
+    return { status: 200, body: { ignored: 'unknown_reference', reference } };
+  }
+
+  const verified = await paystackFetch(env, `/transaction/verify/${encodeURIComponent(reference)}`);
+  const txn = verified.body?.data;
+  if (!verified.ok || !verified.body?.status || !txn) {
+    return { status: 502, body: { error: 'verify_failed', status: verified.status } };
+  }
+
+  const email = String(txn.customer?.email ?? '').trim();
+  const entity = String(order.entity ?? '').trim();
+
+  if (txn.status !== 'success') {
+    return { status: 200, body: { ignored: `status:${txn.status}`, reference } };
+  }
+
+  // Two ways for the money to be wrong, and both stop the licence dead.
+  const expected = paystackAmountMinor(env);
+  if (Number(txn.amount) !== expected) {
+    await notifyOperator(env, {
+      problem: `Paystack payment of ${txn.amount} ${txn.currency} does not equal ${expected} ${PAYSTACK_CURRENCY} — NO licence issued.`,
+      reference, txn, custom: order, origin, link: null, email,
+    });
+    return { status: 200, body: { needs_manual_issue: true, reference, reason: 'amount_mismatch' } };
+  }
+  if (String(txn.currency ?? '').toUpperCase() !== PAYSTACK_CURRENCY) {
+    await notifyOperator(env, {
+      problem: `Paystack charged ${txn.currency}, not ${PAYSTACK_CURRENCY} — NO licence issued.`,
+      reference, txn, custom: order, origin, link: null, email,
+    });
+    return { status: 200, body: { needs_manual_issue: true, reference, reason: 'currency_mismatch' } };
+  }
+
+  if (!isEmail(email) || !entity) {
+    await notifyOperator(env, {
+      problem: !entity
+        ? 'Paystack order paid but carries no licensee entity (form bypassed, or the order expired from KV).'
+        : 'Paystack order paid but carries no payer email.',
+      reference, txn, custom: order, origin, link: null, email: email || null,
+    });
+    return {
+      status: 200,
+      body: { needs_manual_issue: true, reference, reason: !entity ? 'no_licensee_entity' : 'no_payer_email' },
+    };
+  }
+
+  const issued = String(txn.paid_at ?? new Date().toISOString()).slice(0, 10);
+  const doc = buildLicence(env, { entity, email, reference, issued });
+  const token = randomToken();
+  const link = `${origin}/licence/${token}`;
+
+  // Same order as the Paddle path: document, buyer email, then the idempotency key. A crash between them
+  // re-issues visibly rather than silently doing nothing.
+  await env.LICENCES.put(`lic:${token}`, JSON.stringify({
+    reference, entity, email, transaction: txn.id ?? reference, issued,
+    created: new Date().toISOString(), doc, rail: 'paystack',
+    attribution: order.attribution ?? readAttribution({}),
+  }));
+
+  await sendBuyerEmail(env, { email, entity, reference, link });
+  await env.LICENCES.put(paidKey, token);
+  await notifyOperator(env, { problem: null, reference, txn, custom: order, origin, link, entity, email });
+
+  return { status: 200, body: { issued: true, reference, link } };
+}
+
+/**
+ * Verify Paystack's webhook signature, handling BOTH shapes an account may present.
+ *
+ * The classic scheme is a bare hex HMAC-SHA512 of the raw body keyed by the secret key, which is what most
+ * SDKs implement. Paystack's current documentation instead describes a timestamped `t=…,v1=<key id>:<sig>`
+ * form with `whk_`-prefixed key ids. Which arrives depends on whether a signing secret has been rolled out
+ * to the account, so this reads what actually arrives rather than assuming.
+ */
+async function verifyPaystackSignature(secret, header, body, nowMs = Date.now()) {
+  if (!secret) return { ok: false, reason: 'no_secret_configured' };
+  if (!header) return { ok: false, reason: 'missing_header' };
+
+  const fields = new Map();
+  for (const part of header.split(',')) {
+    const eq = part.indexOf('=');
+    if (eq !== -1) fields.set(part.slice(0, eq).trim(), part.slice(eq + 1).trim());
+  }
+
+  if (fields.has('v1')) {
+    const timestamp = fields.get('t');
+    const signed = timestamp ? `${timestamp}.${body}` : body;
+    const expected = await hmacSha512Hex(secret, signed);
+    for (const [key, value] of fields) {
+      if (key !== 'v1') continue;
+      const signature = value.includes(':') ? value.slice(value.indexOf(':') + 1) : value;
+      if (!timingSafeEqualHex(expected, signature.toLowerCase())) continue;
+      if (timestamp && Math.abs(Math.floor(nowMs / 1000) - Number(timestamp)) > SIGNATURE_TOLERANCE_SECONDS * 12) {
+        // Generous: this arm is documented but has not been observed on this account yet, so a tight window
+        // would reject valid events the day it starts being used. Tightened once one is captured.
+        return { ok: false, reason: 'stale_timestamp' };
+      }
+      return { ok: true, scheme: 'timestamped' };
+    }
+    return { ok: false, reason: 'signature_mismatch' };
+  }
+
+  const expected = await hmacSha512Hex(secret, body);
+  return timingSafeEqualHex(expected, header.trim().toLowerCase())
+    ? { ok: true, scheme: 'classic' }
+    : { ok: false, reason: 'signature_mismatch' };
+}
+
+async function hmacSha512Hex(secret, message) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign'],
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+  return [...new Uint8Array(signature)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function fetchCustomerEmail(env, customerId) {
   if (!env.PADDLE_API_KEY) return { ok: false, reason: 'server_missing_paddle_api_key' };
   if (!/^ctm_[a-z\d]{26}$/u.test(String(customerId ?? ''))) {
