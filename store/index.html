@@ -701,41 +701,47 @@ Details: The background is a uniform dark blue with no visible objects or patter
     return;
   }
 
+  // ONE field set for every rail. The licence names the same entity whichever button is pressed, and the
+  // Paystack rail needs the same address — so the fields belong to the card, not to a rail. Rendering them per
+  // rail is what produced two identical "Licence issued to" labels the day a second rail went live
+  // (2026-11-24). The card rail still never sends the address: Paddle collects it, and the Worker reads it back
+  // from Paddle rather than trusting the page.
+  var shared = document.createElement('div');
+  shared.className = 'buy-fields';
+  shared.innerHTML =
+    '<label for="lic-entity">Licence issued to</label>' +
+    '<input id="lic-entity" name="licensee_entity" type="text" autocomplete="organization" ' +
+      'placeholder="Company or team name" required maxlength="120">' +
+    '<label for="lic-email">Email for the licence</label>' +
+    '<input id="lic-email" name="payer_email" type="email" autocomplete="email" ' +
+      'placeholder="you@company.com" maxlength="120">' +
+    '<p class="field-help">One form for both options. Your licence is issued to this name and emailed to this ' +
+      'address. Paying by card? Paddle collects the address itself, so the email field is ignored there.</p>';
+  area.appendChild(shared);
+
   live.forEach(function (m) {
     // Every payment rail renders as the filled primary button. The old code made only the first rail
     // primary and pushed the rest to `btn secondary` — which is how the M-Pesa button, the one a Kenyan
     // buyer is most likely to want, ended up looking like the least prominent thing on the page.
     var control;
     if (m.kind === 'paddle') {
-      // The licence names a legal entity. Paddle's checkout collects the buyer's email but never a
-      // company name, so the form asks for the one thing Paddle cannot supply — and nothing else.
-      // The delivery address is read back from Paddle itself (GET /customers/{id}) rather than asked
-      // for here: one transaction must have exactly one email on record, or a buyer can pay with one
-      // address and be licensed to another, and the invoice and the licence disagree forever.
-      var fields = document.createElement('div');
-      fields.className = 'buy-fields';
-      fields.innerHTML =
-        '<label for="lic-entity-' + m.id + '">Licence issued to</label>' +
-        '<input id="lic-entity-' + m.id + '" name="licensee_entity" type="text" autocomplete="organization" ' +
-          'placeholder="Company or team name" required maxlength="120">' +
-        '<p class="field-help">Your licence is issued to this name and emailed to the address you pay ' +
-          'with, usually within one business day.</p>';
-      area.appendChild(fields);
-
+      // Paddle collects the buyer's email but never a company name, so only the shared entity field is used
+      // here. The address is read back from Paddle itself (GET /customers/{id}): one transaction must have
+      // exactly one email on record, or the invoice and the licence disagree forever.
       control = document.createElement('button');
       control.type = 'button';
       control.className = 'btn';
       control.addEventListener('click', function () {
-        var entity = fields.querySelector('#lic-entity-' + m.id);
+        var entity = shared.querySelector('#lic-entity');
         if (!entity.value.trim()) {
           entity.setAttribute('aria-invalid', 'true');
           entity.focus();
-          if (!fields.querySelector('.field-error')) {
+          if (!shared.querySelector('.field-error')) {
             var fe = document.createElement('p');
             fe.className = 'field-error';
             fe.setAttribute('role', 'alert');
             fe.textContent = 'Please enter the company or team this licence should be issued to.';
-            fields.appendChild(fe);
+            shared.appendChild(fe);
           }
           return;
         }
@@ -764,41 +770,27 @@ Details: The background is a uniform dark blue with no visible objects or patter
         });
       });
     } else if (m.kind === 'paystack') {
-      // Unlike Paddle there is no customer record to read the address back from: Paystack's initialize call
-      // requires an email, so the page collects both the entity and the address. The Worker still refuses to
-      // trust either — it re-reads the amount, the currency and the payer address from Paystack's verify
-      // response before releasing a licence, so "pay with one address, be licensed to another" cannot happen.
-      var psFields = document.createElement('div');
-      psFields.className = 'buy-fields';
-      psFields.innerHTML =
-        '<label for="lic-entity-' + m.id + '">Licence issued to</label>' +
-        '<input id="lic-entity-' + m.id + '" name="licensee_entity" type="text" autocomplete="organization" ' +
-          'placeholder="Company or team name" required maxlength="120">' +
-        '<label for="lic-email-' + m.id + '">Email for the licence</label>' +
-        '<input id="lic-email-' + m.id + '" name="payer_email" type="email" autocomplete="email" ' +
-          'placeholder="you@company.com" required maxlength="120">' +
-        '<p class="field-help">Your licence is issued to this name and emailed to this address as soon as ' +
-          'Paystack confirms the payment. Paying by M-Pesa? The prompt appears on your phone.</p>';
-      area.appendChild(psFields);
-
+      // Paystack's initialize call requires an email, so this rail uses BOTH shared fields. The Worker still
+      // refuses to trust them: it re-reads the amount, the currency and the payer address from Paystack's
+      // verify response before releasing a licence.
       control = document.createElement('button');
       control.type = 'button';
       control.className = 'btn';
       control.addEventListener('click', function () {
-        var entityEl = psFields.querySelector('#lic-entity-' + m.id);
-        var emailEl = psFields.querySelector('#lic-email-' + m.id);
+        var entityEl = shared.querySelector('#lic-entity');
+        var emailEl = shared.querySelector('#lic-email');
         var bad = null;
         if (!entityEl.value.trim()) bad = entityEl;
         else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailEl.value.trim())) bad = emailEl;
         if (bad) {
           bad.setAttribute('aria-invalid', 'true');
           bad.focus();
-          if (!psFields.querySelector('.field-error')) {
+          if (!shared.querySelector('.field-error')) {
             var fe = document.createElement('p');
             fe.className = 'field-error';
             fe.setAttribute('role', 'alert');
             fe.textContent = 'Please enter the company or team, and an email we can send the licence to.';
-            psFields.appendChild(fe);
+            shared.appendChild(fe);
           }
           return;
         }

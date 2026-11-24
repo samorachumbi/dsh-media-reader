@@ -245,11 +245,15 @@ test('the checkout asks who the licence is issued to, and Paddle never receives 
   // paying address; it is the only one allowed on the record.
   const html = await read('index.html')
 
-  // Ids are per-rail since 2026-11-24: two live rails each render a licence-entity field, and duplicate DOM
-  // ids would break every <label for> on the page.
-  assert.match(html, /id="lic-entity-' \+ m\.id/u, 'the checkout must ask who the licence is issued to')
+  // ONE shared field set for every rail, since 2026-11-24. Rendering the fields per rail produced two
+  // identical "Licence issued to" labels the day a second rail went live, which is what this asserts against:
+  // exactly one entity input, one label, for however many rails are live.
+  assert.equal([...html.matchAll(/id="lic-entity"/gu)].length, 1,
+    'the checkout must ask who the licence is issued to, exactly once for all rails')
   // A placeholder is not a label: it vanishes on focus and screen readers may skip it.
-  assert.match(html, /<label for="lic-entity-' \+ m\.id/u, 'the entity field needs a real label element')
+  assert.match(html, /<label for="lic-entity">/u, 'the entity field needs a real label element')
+  assert.equal([...html.matchAll(/<label for="lic-email">/gu)].length, 1,
+    'one address field for the card, shared by the rails that need it')
   assert.match(html, /licensee_entity:\s*entity\.value\.trim\(\)/u,
     'the entity must ride on the transaction as customData.licensee_entity')
   assert.match(html, /customData:/u, 'the values must be passed to Checkout.open as customData')
