@@ -347,7 +347,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 208/208 unit tests</li>
+        <li>18/18 live checks, 221/221 unit tests</li>
       </ul>
 
       <figure class="walkthrough" id="walkthrough" hidden>
@@ -548,9 +548,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <h2 id="proof-h">What was actually verified</h2>
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
+      <li><b>Updated</b><span>2026-11-26 — 0.1.3 adds PDF and document reading; free for every existing licence</span></li>
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>208/208</b><span>unit tests in the shipped suite</span></li>
-      <li><b>78 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
+      <li><b>221/221</b><span>unit tests in the shipped suite</span></li>
+      <li><b>80 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
     <div class="two-col" style="margin-top:32px">
@@ -564,7 +565,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
         <p>The plugin crate is public. Download it, verify its hash, and run the smoke test on your own harness
           before you buy anything:</p>
         <ul class="plain">
-          <li><code>sha256sum -c dsh-media-reader-0.1.2.tar.gz.sha256</code></li>
+          <li><code>sha256sum -c dsh-media-reader-0.1.3.tar.gz.sha256</code></li>
           <li><code>./install.sh --dry-run</code> — reads out every action first</li>
           <li><code>DSH_TEST_URL=… ./smoke.sh</code> — 18 checks on your machine</li>
         </ul>
@@ -1502,10 +1503,10 @@ Details: The background is a uniform dark blue with no visible objects or patter
   var form = document.getElementById('agent-form');
   if (!form) return;
 
-  var V = 'dsh-media-reader-0.1.2';
+  var V = 'dsh-media-reader-0.1.3';
   var REPO = 'https://github.com/samorachumbi/dsh-media-reader';
   var RAW = 'https://raw.githubusercontent.com/samorachumbi/dsh-media-reader/main/dist/' + V + '.tar.gz';
-  var HASH = '6bf9255ba1e37cecebac9d497a42ac05e6178f60b3dedd9aa848db10e5853342';
+  var HASH = 'd141907a6c1323dd83545339db30285c9c16f409238c6cdb1b25e46eb42f1ab0';
 
   function val(name) {
     var el = form.querySelector('[name="' + name + '"]');

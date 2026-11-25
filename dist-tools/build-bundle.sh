@@ -27,6 +27,12 @@ VERSION="$(python3 -c "import json;print(json.load(open('$REPO/package.json'))['
 STAGE="$REPO/dist-tools/bundle/$NAME-$VERSION"
 OUT="$REPO/dist"
 
+# One staged bundle at a time: the staged directory is a BUILD ARTEFACT for the current version, and the
+# storefront guards require exactly one of them (so the page can only ever name the artifact it ships).
+# Published tarballs stay in dist/ — a licence already issued names its own version forever.
+for stale in "$REPO"/dist-tools/bundle/*/; do
+  case "$(basename "$stale")" in "$NAME-$VERSION") ;; *) [ -f "$stale/MANIFEST.json" ] && rm -rf "$stale" ;; esac
+done
 rm -rf "$STAGE"; mkdir -p "$STAGE"/{plugin,plugin/fixtures,skills,docs,fixtures}
 
 # --- plugin payload -------------------------------------------------------
@@ -58,6 +64,7 @@ copy_skill dsh-plugin-install-safety    dsh-plugin-install-safety-SKILL.md
 copy_skill dsh-skill-install            dsh-skill-install-SKILL.md
 copy_skill dsh-test-boot                dsh-test-boot-SKILL.md
 copy_skill media-reading-discipline      media-reading-discipline-SKILL.md
+copy_skill document-and-display-reading  document-and-display-reading-SKILL.md
 
 # --- docs ----------------------------------------------------------------
 for doc in RESEARCH.md PRODUCTION-PIPELINE.md REPLICATION-RESEARCH.md EVIDENCE-PACK.md \

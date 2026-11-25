@@ -21,12 +21,14 @@ import { IMAGE_VALUE_SCHEMA, presentImage } from './image.js'
 import { registerAudioTool } from './audio.js'
 import { registerVideoTool } from './video.js'
 import { registerUploadRoute } from './upload-route.js'
+import { documentEnvelope, readDocument } from './documents.js'
 import { defaultModelDir, defaultSttPython } from './stt.js'
 import { buildEvidencePack, jobNameFor } from './evidence/index.js'
 import { createPluginRunner } from './evidence/runner.js'
 import { formatEvidenceSummary } from './evidence/summary.js'
 import { resolveKieKey } from './kie/client.js'
 import { runProcess } from './exec.js'
+import { isSupportedDocumentPath } from './documents.js'
 
 export { formatEvidenceSummary }
 export const name = 'dsh-media-reader'
@@ -126,6 +128,56 @@ function registerProbeTool(ctx, config) {
           throw new MediaError('UNSUPPORTED_MEDIA', `ffprobe could not classify "${resolved.displayPath}" as image, audio or video`)
         }
         return JSON.stringify(info, null, 2)
+      } catch (error) {
+        throw modelFacingError(error)
+      }
+    }
+  }))
+}
+
+function registerDocumentTool(ctx, config) {
+  ctx.tools.register(defineTool({
+    name: 'media_document',
+    description:
+      'Read a local PDF or text document and return its text as a tagged block: PDF (text layer via ' +
+      'pdftotext, with the page count), Markdown, plain text, CSV/TSV, JSON, YAML, HTML/XML, subtitles. Use this ' +
+      'for the files the composer cannot attach — it accepts only png/jpeg/webp/gif — such as an invoice, a ' +
+      'licence, a CSV export or a spec. A PDF with no text layer (a scan) returns document-unreadable with the ' +
+      'reason and the route that would work, and never invents content.',
+    parameters: {
+      path: {
+        type: 'string',
+        required: true,
+        description: 'Path to a local PDF or text document, resolved against the session workspace.'
+      },
+      maxChars: {
+        type: 'number',
+        description: 'Optional: maximum characters of body text to include (default 60000). Truncation is always stated in the output.'
+      }
+    },
+    output: {
+      schema: { type: 'string' },
+      render: (_args, value) => [{ type: 'text', text: value }]
+    },
+    isConcurrencySafe: () => true,
+    async execute(args, exec) {
+      try {
+        const resolved = await resolveMediaTarget(ctx, exec, args.path, { artifactsDir: config.artifactsDir })
+        if (!isSupportedDocumentPath(resolved.displayPath)) {
+          throw new MediaError(
+            'UNSUPPORTED_MEDIA',
+            `"${resolved.displayPath}" is not a supported document extension. For images, audio and video use ` +
+            'media_image, media_audio, media_video or media_probe.'
+          )
+        }
+        const result = await readDocument(ctx, {
+          path: resolved.target,
+          signal: exec.signal,
+          maxChars: typeof args.maxChars === 'number' && args.maxChars > 0 ? Math.min(args.maxChars, 400_000) : undefined
+        })
+        return documentEnvelope(resolved.displayPath, result, {
+          maxChars: typeof args.maxChars === 'number' && args.maxChars > 0 ? Math.min(args.maxChars, 400_000) : undefined
+        })
       } catch (error) {
         throw modelFacingError(error)
       }
@@ -324,6 +376,7 @@ function registerReadImageRedirect(ctx, config) {
 export function apply(ctx, config) {
   const settings = normalizeConfig(config)
   registerProbeTool(ctx, settings)
+  registerDocumentTool(ctx, settings)
   registerImageTool(ctx, settings)
   registerAudioTool(ctx, settings)
   registerVideoTool(ctx, settings)

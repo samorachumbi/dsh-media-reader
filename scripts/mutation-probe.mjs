@@ -96,7 +96,7 @@ const MUTATIONS = [
   {
     name: 'bundle-file-tampered',
     what: 'a shipped file no longer matches the hash its manifest publishes',
-    file: 'dist-tools/bundle/dsh-media-reader-0.1.2/LICENSE',
+    file: 'dist-tools/bundle/dsh-media-reader-0.1.3/LICENSE',
     replace: [null, '\n'],
     expect: /do not match their manifest hash/,
   },
@@ -104,8 +104,8 @@ const MUTATIONS = [
     name: 'file-count-claim',
     what: 'the sales page claims a file count the manifest contradicts',
     file: 'store/index.html',
-    replace: ['<b>78 files</b>', '<b>76 files</b>'],
-    expect: /must claim 78 files/,
+    replace: ['<b>80 files</b>', '<b>76 files</b>'],
+    expect: /must claim 80 files/,
   },
   {
     name: 'whitelist-drops-robots',
@@ -274,6 +274,37 @@ const MUTATIONS = [
     file: 'worker/licence/src/index.js',
     replace: ["const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);", "const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money', 'bank_transfer']);"],
     expect: /asks for bank_transfer but the button and note never mention it|must be asked for a card channel/,
+  },
+  // ---- documents (0.1.3) ----
+  // A reader that invents content is worse than one that refuses: each of these reintroduces a way to look
+  // successful while having read nothing.
+  {
+    name: 'document-empty-pdf-looks-read',
+    what: 'a scanned PDF returns an empty body instead of document-unreadable, so the model summarises nothing',
+    file: 'lib/documents.js',
+    replace: ["    if (trimmed.length === 0) {\n      // A scan", "    if (false) {\n      // A scan"],
+    expect: /scanned PDF reports no-text-layer/,
+  },
+  {
+    name: 'document-truncation-silent',
+    what: 'a long document is cut without saying so, and the agent believes it read the whole file',
+    file: 'lib/documents.js',
+    replace: ["  lines.push(`<truncated>${truncated}</truncated>`)", "  lines.push('<truncated>false</truncated>')"],
+    expect: /truncation is stated, never silent/,
+  },
+  {
+    name: 'document-binary-passed-as-text',
+    what: 'binary bytes with a text extension are returned as if they were text',
+    file: 'lib/documents.js',
+    replace: ["  if (sample.includes('\\u0000') || nonPrintable / sample.length > 0.1) {", "  if (false) {"],
+    expect: /binary file says so/,
+  },
+  {
+    name: 'document-drop-not-claimed',
+    what: 'a document drop is not claimed, so the composer answers "Only PNG, JPG, WebP, and GIF images are supported"',
+    file: 'lib/client.js',
+    replace: ["          if (list.some(isDocumentFile)) event.stopPropagation()", "          if (false) event.stopPropagation()"],
+    expect: /must stop propagation before the composer sees it|must claim document drops/,
   },
   // ---- the contact form (2026-11-25) ----
   // An endpoint that mails a human on behalf of any caller: an open relay, a bot loop, a silently dropped
@@ -467,7 +498,14 @@ async function freshCopy() {
 function suite(dir, full) {
   // The Worker tests are included in the fast subset: they execute the real handler, so they are where the
   // money arithmetic is guarded, and a mutation to the amount must be able to fail something.
-  const globs = full ? ['tests/*.test.mjs'] : ['tests/storefront-*.test.mjs', 'tests/worker-*.test.mjs']
+  // The document/plugin tests execute real code (the reader, the client predicates), so they belong in the fast
+  // subset for the same reason the Worker tests do: a mutation in lib/documents.js must have something to fail.
+  // `document.test.mjs` is here because it executes lib/documents.js and lib/client.js, so a mutation in either has
+  // something to fail. `plugin.test.mjs` deliberately is NOT: it imports @deepseek-ai/dsh-tools, which is not part
+  // of the copied set, so it can only run in the real tree (the `--full` path does not use the copy either).
+  const globs = full
+    ? ['tests/*.test.mjs']
+    : ['tests/storefront-*.test.mjs', 'tests/worker-*.test.mjs', 'tests/document.test.mjs']
   const result = spawnSync('node', ['--test', ...globs], { cwd: dir, encoding: 'utf8' })
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
 }

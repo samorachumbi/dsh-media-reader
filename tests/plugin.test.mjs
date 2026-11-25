@@ -72,7 +72,9 @@ function execFor(model, filePath = '/fixtures/photo.png') {
 test('apply registers the Day 1 tools and the read_image redirect listener', () => {
   const { ctx, tools, listeners } = fakePluginContext()
   apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision' })
-  assert.deepEqual([...tools.keys()].sort(), ['media_audio', 'media_evidence', 'media_image', 'media_probe', 'media_video'])
+  // 0.1.3 added media_document: the composer accepts only four image types, so PDFs and text files need a
+  // tool of their own rather than being squeezed through a media path that cannot classify them.
+  assert.deepEqual([...tools.keys()].sort(), ['media_audio', 'media_document', 'media_evidence', 'media_image', 'media_probe', 'media_video'])
   assert.equal(listeners.filter((entry) => entry.event === 'tools/pre-execute').length, 1)
 })
 
@@ -168,7 +170,7 @@ test('every tool that resolves a path can actually reach its resolver', async ()
   apply(ctx, { visionProvider: 'test-provider', visionModel: 'vision', artifactsDir: '/tmp/mr-artifacts' })
 
   let executed = 0
-  for (const name of ['media_probe', 'media_image', 'media_audio', 'media_video', 'media_evidence']) {
+  for (const name of ['media_probe', 'media_image', 'media_audio', 'media_video', 'media_evidence', 'media_document']) {
     executed += 1
     try {
       await tools.get(name).execute({ path: '/fixtures/photo.png' }, execFor('vision'))
@@ -182,5 +184,5 @@ test('every tool that resolves a path can actually reach its resolver', async ()
       )
     }
   }
-  assert.equal(executed, 5, 'all five tools must have been executed')
+  assert.equal(executed, 6, 'all six tools must have been executed — 0.1.3 added media_document')
 })

@@ -28,8 +28,9 @@ Last updated: 2026-11-22
 
 - The storefront's "Install it with your own agent" section generates a prompt tailored to the visitor's
   harness, runtime, model route and goal. It is generated on the visitor's device; nothing is uploaded.
-- The bundle ships five skills written to be read by an agent: media-reading-discipline,
-  dsh-plugin-install-safety, dsh-skill-install, dsh-test-boot, product-motion-studio.
+- The bundle ships six skills written to be read by an agent: media-reading-discipline,
+  dsh-plugin-install-safety, dsh-skill-install, dsh-test-boot, product-motion-studio, and
+  document-and-display-reading (documents the composer cannot attach, and what a browser check proves).
 
 ## Facts an agent can rely on
 

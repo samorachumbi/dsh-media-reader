@@ -96,9 +96,18 @@ const chrome = spawn('google-chrome', [
   `--user-data-dir=${userDir}`,
   '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--disable-dev-shm-usage',
   '--hide-scrollbars', '--force-device-scale-factor=1',
-  ...(HEADFUL ? ['--window-position=-32000,-32000', '--window-size=1280,900'] : []),
+  // This machine's desktop is Wayland (GNOME, gdm-password). Without an explicit ozone platform Chrome tries
+  // X11, finds no authorised X server, and dies before writing DevToolsActivePort — which reads as "Chrome
+  // never started" rather than "Chrome could not reach a display". Headful therefore implies Wayland here.
+  ...(HEADFUL ? ['--ozone-platform=wayland', '--window-position=40,40', '--window-size=1280,900'] : []),
   'about:blank',
-], { stdio: ['ignore', 'ignore', 'pipe'] })
+], {
+  stdio: ['ignore', 'ignore', 'pipe'],
+  // A headful child needs the live session's bus and compositor, which this shell inherits neither of.
+  env: HEADFUL
+    ? { ...process.env, WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY ?? 'wayland-0', XDG_RUNTIME_DIR: process.env.XDG_RUNTIME_DIR ?? `/run/user/${process.getuid?.() ?? 1000}` }
+    : process.env,
+})
 
 // The pid is recorded when we spawn it, so cleanup never needs a pattern — the fifth `pkill -f` landing was a
 // pattern matching the shell that ran it.

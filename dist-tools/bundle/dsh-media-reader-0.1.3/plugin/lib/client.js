@@ -20,6 +20,10 @@ window.__ModuleLoader__.load({
 
     const MAX_BYTES = 128 * 1024 * 1024
     const MEDIA_EXTENSION = /\.(png|jpe?g|webp|gif|mp3|wav|m4a|aac|flac|ogg|opus|mp4|mov|mkv|webm|m4v|avi|mpeg|mpg)$/iu
+    // Documents the composer cannot attach at all: it accepts only png/jpeg/webp/gif and answers anything else
+    // with "Only PNG, JPG, WebP, and GIF images are supported". These are claimed here instead, so a drop
+    // produces a reading rather than a refusal.
+    const DOCUMENT_EXTENSION = /\.(pdf|md|markdown|txt|text|log|rst|csv|tsv|json|jsonl|ya?ml|html?|xml|srt|vtt)$/iu
     const MIME_EXTENSION = {
       'image/png': 'png',
       'image/jpeg': 'jpg',
@@ -44,9 +48,18 @@ window.__ModuleLoader__.load({
       return typeof file.type === 'string' && /^(image|audio|video)\//u.test(file.type)
     }
 
+    function isDocumentFile(file) {
+      if (file === null || file === undefined) return false
+      return DOCUMENT_EXTENSION.test(String(file.name ?? ''))
+    }
+
+    function isHandledFile(file) {
+      return isMediaFile(file) || isDocumentFile(file)
+    }
+
     function uploadName(file) {
       const name = String(file.name ?? '').trim()
-      if (MEDIA_EXTENSION.test(name)) return name
+      if (MEDIA_EXTENSION.test(name) || DOCUMENT_EXTENSION.test(name)) return name
       const extension = MIME_EXTENSION[String(file.type ?? '').toLowerCase()]
       return extension === undefined ? name : `pasted.${extension}`
     }
@@ -120,9 +133,9 @@ window.__ModuleLoader__.load({
 
       async function processFiles(files) {
         const list = [...files].filter((file) => file && file.size > 0)
-        const supported = list.filter(isMediaFile)
+        const supported = list.filter(isHandledFile)
         if (supported.length === 0) {
-          setStatus('No supported image/audio/video file in that drop')
+          setStatus('No supported media or document file in that drop')
           return
         }
         if (busy) return
@@ -192,12 +205,18 @@ window.__ModuleLoader__.load({
           event.preventDefault()
           setOver(false)
           const files = event.dataTransfer?.files
-          if (files !== undefined && files !== null) processRef.current(files)
+          if (files === undefined || files === null) return
+          // A document is claimed outright: stopPropagation, so the composer's image-only handler never sees
+          // it and never answers "Only PNG, JPG, WebP, and GIF images are supported". Media keeps flowing to
+          // the harness as before — swallowing that was what once broke native image attachments.
+          const list = [...files]
+          if (list.some(isDocumentFile)) event.stopPropagation()
+          processRef.current(files)
         }
         const onPaste = (event) => {
           const files = event.clipboardData?.files
           if (files === undefined || files === null || files.length === 0) return
-          const supported = [...files].filter(isMediaFile)
+          const supported = [...files].filter(isHandledFile)
           if (supported.length === 0) return
           event.preventDefault()
           event.stopPropagation()
@@ -244,7 +263,7 @@ window.__ModuleLoader__.load({
         React.createElement('input', {
           ref: fileRef,
           type: 'file',
-          accept: 'image/*,audio/*,video/*',
+          accept: 'image/*,audio/*,video/*,.pdf,.md,.markdown,.txt,.log,.csv,.tsv,.json,.yaml,.yml,.html,.xml,.srt,.vtt',
           multiple: true,
           style: { display: 'none' },
           onChange: (event) => {
