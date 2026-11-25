@@ -66,6 +66,18 @@ if ! npx --yes wrangler@4.163.0 secret list --config "$WORKER/wrangler.jsonc" 2>
   exit 1
 fi
 
+# ── every address this Worker prints to a buyer must be able to receive ───────────────────────
+# On 2026-11-24 five licences went out naming samora@itikia.co.ke, an address with no routing rule and a
+# disabled catch-all: a paying customer's only support route was a dead mailbox, printed on a legal
+# document. The licence template is where that address lives, so the deploy is where to refuse it.
+cd "$ROOT"
+if ! node tools/check-buyer-contact-addresses.mjs; then
+  echo "REFUSING: a buyer-facing address in this Worker cannot receive mail." >&2
+  echo "A licence that tells a buyer to write to a dead address is worse than one with no contact line." >&2
+  exit 1
+fi
+echo
+
 cd "$WORKER"
 npx --yes wrangler@4.163.0 deploy \
   --var "ARTIFACT_VERSION:$VERSION" \
