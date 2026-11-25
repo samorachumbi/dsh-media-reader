@@ -197,6 +197,10 @@ const PAYSTACK_CURRENCY = 'KES';
 // rather than left to the account's default settings, because the page's own wording ("M-Pesa or card", "M-Pesa,
 // Visa and Mastercard") is a promise the checkout has to keep. tests/storefront-rails.test.mjs checks the two
 // against each other in both directions, so neither side can drift.
+// Confirmed against the live checkout on 2026-11-25 (operator screenshot of store.itikia.co.ke): these two channels
+// render as FOUR clickable methods — Card, M-PESA, M-PESA Till, Airtel Money — because Airtel Money and the till flow
+// are wallets inside `mobile_money`. Do not add an `airtel_money` or `m_pesa_till` channel: they are not Paystack
+// channels, the API would accept the name and ignore it, and every local guard would still pass.
 const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);
 const PAYSTACK_API = 'https://api.paystack.co';
 const PAYSTACK_ORDER_TTL_SECONDS = 60 * 60 * 24 * 7;
