@@ -35,7 +35,17 @@ const SELF_TEST = process.argv.includes('--self-test')
 
 /* ── the addresses the product tells buyers to use ─────────────────────────────────────────────── */
 
-const SOURCES = ['worker/licence/src/index.js', 'tools/issue-licence.py', 'worker/licence/wrangler.jsonc']
+// Every surface that prints an address to a customer. The first three are the fulfilment path; the rest are
+// the places a non-developer actually lands — the README they read first, the "New issue" page, the support
+// and security routes GitHub links, and the storefront footer. An address added to any of them is checked.
+const SOURCES = [
+  'worker/licence/src/index.js', 'tools/issue-licence.py', 'worker/licence/wrangler.jsonc',
+  'README.md', 'SUPPORT.md', 'SECURITY.md',
+  '.github/ISSUE_TEMPLATE/config.yml', '.github/ISSUE_TEMPLATE/bug_report.yml',
+  '.github/ISSUE_TEMPLATE/feature_request.yml',
+  'store/index.html', 'store/llms.txt', 'store/pricing.html', 'store/terms.html', 'store/privacy.html',
+  'store/refund.html', 'store/404.html',
+]
 
 async function buyerFacingAddresses() {
   const found = new Map() // address -> Set(files)

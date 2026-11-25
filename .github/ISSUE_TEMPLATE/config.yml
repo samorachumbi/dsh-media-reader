@@ -1,0 +1,17 @@
+# The "New issue" page is the first thing a non-developer meets here, and a blank
+# editor is a wall. Every entry below is a route AWAY from GitHub for people who
+# do not live in it.
+blank_issues_enabled: true
+contact_links:
+  - name: "Not a developer? Email Samora — every route reaches a human"
+    url: https://store.itikia.co.ke/#contact
+    about: "Licence questions, invoices, procurement forms, or \"is this the right tool for us?\". Write to samora@itikia.co.ke — answered within one business day, and a call is fine if you'd rather talk."
+  - name: "Buy a licence, or ask about team / commercial use"
+    url: https://store.itikia.co.ke/
+    about: "USD 79 / KSh 10,000 per team, one time, 12 months of updates. Card (Paddle) or M-Pesa (Paystack). No account to create."
+  - name: "Paid, but the licence email never arrived"
+    url: https://store.itikia.co.ke/#contact
+    about: "Email samora@itikia.co.ke with your order reference (dsh_…) and the entity the licence should name. It is reissued the same day."
+  - name: "Security issue or a leaked credential (please do not post publicly)"
+    url: https://store.itikia.co.ke/#contact
+    about: "Email samora@itikia.co.ke with subject \"Security\" instead of opening an issue, so it is not public while it is unfixed."

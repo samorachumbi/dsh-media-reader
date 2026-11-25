@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in dsh-media-reader does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Not a developer, or this is about a licence, a payment or "can it do X"?**
+        Email [samora@itikia.co.ke](mailto:samora@itikia.co.ke) instead — you will get a person, not a template.
+        Issues here are public and permanent; email is neither.
+  - type: input
+    id: version
+    attributes:
+      label: Version and how you installed it
+      description: The `dsh plugin list` line, or the bundle filename, or the git commit.
+      placeholder: "dsh-media-reader 0.1.2, installed from dist/dsh-media-reader-0.1.2.tar.gz"
+    validations:
+      required: true
+  - type: dropdown
+    id: route
+    attributes:
+      label: What kind of model route was the session on?
+      options:
+        - A vision route (the model accepts images)
+        - A text-only route (the model cannot accept images)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Paste the tool output, including the `<type>…</type>` line if there is one. Trim anything private.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Drop a 640x360 PNG on the composer
+        2. Ask "what does this image say?"
+        3. The draft gets …
+  - type: input
+    id: file
+    attributes:
+      label: The file that triggered it
+      description: Kind, rough size and duration are enough — please do not attach anything confidential.

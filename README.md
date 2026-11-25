@@ -7,6 +7,13 @@ model route that cannot accept images.
 [get the licence](https://store.itikia.co.ke/?utm_source=github&utm_medium=repo&utm_campaign=discovery_repair).
 The plugin remains free for personal, non-commercial use.
 
+**Not a developer, or you would rather not use GitHub?** Email
+**[samora@itikia.co.ke](mailto:samora@itikia.co.ke)** — licence questions, invoices, "is this the right
+tool for us", or a bug you cannot describe in a form. Answered within one business day, and a call is
+fine if you would rather talk. **You do not need an account here to reach a person.** Developers with a
+reproducible bug are better served by an [issue](https://github.com/samorachumbi/dsh-media-reader/issues/new/choose);
+everything else is better served by email. See [SUPPORT.md](SUPPORT.md).
+
 Listed on dsh-plugin.org:
 
 [![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/samorachumbi/dsh-media-reader)
@@ -354,8 +361,9 @@ install any of them without breaking a profile:
 
 **Proprietary — all rights reserved.** Reading, studying and running this for personal,
 non-commercial use is permitted; copying, redistributing, selling or using it in a commercial
-product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms, and
-open an issue if you want to discuss commercial use.
+product is not, without a written agreement. See [LICENSE](LICENSE) for the exact terms. To discuss
+commercial or team use, email **[samora@itikia.co.ke](mailto:samora@itikia.co.ke)** or just buy a
+licence at <https://store.itikia.co.ke> — a public issue is the wrong place for a contract question.
 
 **Commercial licence: <https://store.itikia.co.ke>** — $79 / KSh 10,000 per team, one time, including 12 months of updates.
 The product itself stays free for personal, non-commercial use.
