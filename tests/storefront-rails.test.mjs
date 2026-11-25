@@ -306,3 +306,42 @@ test('every payment rail renders as a primary button, so no payment option is de
   assert.match(html, /free\.className = 'btn secondary'/u,
     'the free-download button is not a rail and should still read as secondary')
 })
+
+test('the Kenya button promises exactly the payment channels the Worker asks Paystack for', async () => {
+  // The button says "Pay by M-Pesa or card" and the note says "M-Pesa, Visa and Mastercard". Those words are a
+  // promise about a checkout page nobody on this project controls the rendering of: they are kept only if the
+  // initialize call asks for those channels, because Paystack falls back to the account's settings when `channels`
+  // is omitted, and its Initialize API does not echo the list back. So the two are checked against each other, in
+  // both directions, and an unmapped payment phrase fails rather than passing silently.
+  const cfg = payConfig(await read('index.html'))
+  const rail = cfg.methods.find((method) => method.kind === 'paystack')
+  assert.ok(rail, 'the paystack rail must exist for this check to mean anything')
+
+  const workerSource = await readFile(new URL('worker/licence/src/index.js', repo), 'utf8')
+  const declaration = /const PAYSTACK_CHANNELS = Object\.freeze\(\[([^\]]*)\]\)/u.exec(workerSource)
+  assert.ok(declaration !== null, 'PAYSTACK_CHANNELS must be declared in the Worker as a frozen array')
+  const channels = [...declaration[1].matchAll(/'([a-z_]+)'/gu)].map((match) => match[1])
+  assert.deepEqual(channels, ['card', 'mobile_money'], 'the rail requests a card channel and M-Pesa')
+
+  // Each documented Paystack channel, and the wording this storefront would use to describe it.
+  const wording = {
+    card: /card|visa|mastercard/iu,
+    mobile_money: /m-?pesa|mobile money/iu,
+    bank: /\bbank\b/iu,
+    bank_transfer: /transfer/iu,
+    ussd: /ussd/iu,
+    qr: /\bqr\b/iu,
+    apple_pay: /apple pay/iu,
+  }
+  const copy = `${rail.label} ${rail.note}`
+
+  for (const channel of channels) {
+    assert.ok(wording[channel] !== undefined, `no wording is mapped for the Paystack channel "${channel}"`)
+    assert.match(copy, wording[channel], `the checkout asks for ${channel} but the button and note never mention it`)
+  }
+  for (const [channel, pattern] of Object.entries(wording)) {
+    if (channels.includes(channel)) continue
+    assert.doesNotMatch(copy, pattern,
+      `the button or note promises ${channel} but the Worker never asks Paystack for it — the checkout would not offer it`)
+  }
+})

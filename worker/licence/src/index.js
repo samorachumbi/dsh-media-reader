@@ -193,6 +193,11 @@ async function handlePaddleWebhook(request, env) {
 // this copy exists only because a Worker cannot read a static page's JSON block cheaply.
 const PAYSTACK_AMOUNT_MINOR_DEFAULT = 1000000;
 const PAYSTACK_CURRENCY = 'KES';
+// What the storefront promises the buyer can pay with on this rail, as Paystack channel names. It is stated here
+// rather than left to the account's default settings, because the page's own wording ("M-Pesa or card", "M-Pesa,
+// Visa and Mastercard") is a promise the checkout has to keep. tests/storefront-rails.test.mjs checks the two
+// against each other in both directions, so neither side can drift.
+const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);
 const PAYSTACK_API = 'https://api.paystack.co';
 const PAYSTACK_ORDER_TTL_SECONDS = 60 * 60 * 24 * 7;
 
@@ -259,6 +264,12 @@ async function paystackInit(request, env) {
       currency: PAYSTACK_CURRENCY,
       reference,
       callback_url: `${origin}/paystack/verify/${reference}`,
+      // The button says "Pay by M-Pesa or card" and the copy on the page says "M-Pesa, Visa and Mastercard", so the
+      // checkout is told exactly that. Omitting `channels` leaves the offered methods to whatever the account happens
+      // to have enabled, which is how a page ends up promising a card option that never appears — the claim would
+      // then be kept by account configuration nobody re-checks. Paystack's Initialize API is not echoed back, so the
+      // request itself is the only thing the code can be held to; `tests/worker-paystack.test.mjs` asserts it.
+      channels: PAYSTACK_CHANNELS,
       metadata: { licensee_entity: entity, ...attribution },
     }),
   });

@@ -153,6 +153,29 @@ test('init sends KSh 10,000 as 1000000 minor units in KES, with the licence enti
   }
 })
 
+test('init asks for the channels the storefront promises: a card and M-Pesa, and nothing it does not name', async () => {
+  // The button reads "Pay by M-Pesa or card" and the copy reads "M-Pesa, Visa and Mastercard". Leaving `channels`
+  // off hands the choice to the account's settings, which nobody re-reads, and Paystack does not echo the list back
+  // — so this request is the only part of the promise the code can be held to.
+  const { env } = createEnv()
+  const stub = stubPaystack()
+  try {
+    const response = await worker.fetch(init({ email: 'buyer@example.com', entity: 'Acme Team Ltd' }), env)
+    assert.equal(response.status, 200)
+    const call = stub.calls.find((c) => c.url.endsWith('/transaction/initialize'))
+    assert.deepEqual(call.body.channels, ['card', 'mobile_money'],
+      'the checkout must be asked for a card channel and M-Pesa, in that order')
+
+    // Paystack's documented channel vocabulary. A typo here would be accepted by the API and silently ignored.
+    const documented = ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer', 'apple_pay']
+    for (const channel of call.body.channels) {
+      assert.ok(documented.includes(channel), `${channel} is not a Paystack channel name`)
+    }
+  } finally {
+    stub.restore()
+  }
+})
+
 test('every Paystack call carries a real User-Agent, because Cloudflare refuses bot-looking clients with 403/1010', async () => {
   const { env } = createEnv()
   const stub = stubPaystack()

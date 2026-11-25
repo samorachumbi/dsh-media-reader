@@ -20,6 +20,7 @@
  *        [--theme light|dark] [--reduced] [--shots 0,1000,2000,4000,8000] [--full] [--scroll 0]
  *        [--selector <css>] [--prefix <name>] [--timeout 30000] [--eval <js>]
  *        [--click '<css>@<ms>']   repeatable; clicks once when the frame clock reaches <ms> (default 0)
+ *        [--headful]              a real window instead of --headless=new (positioned off screen)
  *
  * --click exists for the states a still frame cannot otherwise reach: a paused animation, an opened panel, a
  * toggled theme. Without it "the Pause button works" can only ever be a claim about the markup.
@@ -65,6 +66,10 @@ const PREFIX = arg('prefix', 'shot')
 // reading computed style/DOM at a named moment is the only honest evidence for either. Evaluated once per frame,
 // after that frame's delay, so the trace lines up with the images.
 const EVAL = arg('eval')
+// Some third-party pages (payment checkouts) gate headless clients with a bot challenge, so their real content is
+// unreachable headless. A window that Chrome really renders passes, and the window is placed off screen so it does
+// not appear in front of whoever is using the machine. This is not a bypass: it is the same browser a buyer uses.
+const HEADFUL = flag('headful')
 // Every --click value, in the order given. Each fires once, at the first frame at or after its millisecond.
 const CLICKS = argv.reduce((list, token, index) => {
   if (token !== '--click') return list
@@ -86,11 +91,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const userDir = await mkdtemp(join(tmpdir(), 'capture-profile-'))
 const chrome = spawn('google-chrome', [
-  '--headless=new',
+  ...(HEADFUL ? [] : ['--headless=new']),
   '--remote-debugging-port=0',            // let Chrome pick a free port and write it to DevToolsActivePort
   `--user-data-dir=${userDir}`,
   '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--disable-dev-shm-usage',
   '--hide-scrollbars', '--force-device-scale-factor=1',
+  ...(HEADFUL ? ['--window-position=-32000,-32000', '--window-size=1280,900'] : []),
   'about:blank',
 ], { stdio: ['ignore', 'ignore', 'pipe'] })
 
@@ -294,6 +300,7 @@ async function main() {
     capturedAt: new Date().toISOString(),
     viewport: { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false },
     emulation: { colorScheme: THEME, reducedMotion: REDUCED ? 'reduce' : 'no-preference' },
+    mode: HEADFUL ? 'headful (off-screen window)' : 'headless=new',
     fullPage: FULL,
     scrollY: SCROLL,
     page: pageInfo,

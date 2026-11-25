@@ -255,6 +255,27 @@ const MUTATIONS = [
     expect: /must name the seller Itikia Ltd/,
   },
   {
+    name: 'paystack-channels-omitted',
+    what: 'the checkout stops being told which channels to offer, leaving the promise to the account settings',
+    file: 'worker/licence/src/index.js',
+    replace: ['      channels: PAYSTACK_CHANNELS,\n', ''],
+    expect: /must be asked for a card channel and M-Pesa/,
+  },
+  {
+    name: 'card-promised-not-requested',
+    what: 'the button promises a card option the Worker stops asking Paystack for',
+    file: 'worker/licence/src/index.js',
+    replace: ["const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);", "const PAYSTACK_CHANNELS = Object.freeze(['mobile_money']);"],
+    expect: /promises card but the Worker never asks|must be asked for a card channel/,
+  },
+  {
+    name: 'channel-the-page-never-mentions',
+    what: 'an extra channel is requested that the button and note do not describe',
+    file: 'worker/licence/src/index.js',
+    replace: ["const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);", "const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money', 'bank_transfer']);"],
+    expect: /asks for bank_transfer but the button and note never mention it|must be asked for a card channel/,
+  },
+  {
     name: 'live-check-count-overstated',
     what: 'the storefront promises more live checks than the smoke probe runs',
     file: 'store/llms.txt',
