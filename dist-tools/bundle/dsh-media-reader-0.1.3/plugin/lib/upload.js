@@ -6,6 +6,7 @@
  * always returns text, so the result can be inserted into any model's draft.
  */
 import { MediaError } from './errors.js'
+import { documentEnvelope, isSupportedDocumentPath, readDocument } from './documents.js'
 import { resolveMediaTarget } from './fsutil.js'
 import { describeAdmittedImage, descriptionWithProvenance, readImageAttachment } from './image.js'
 import { probeTarget } from './probe.js'
@@ -20,6 +21,12 @@ import { describeVideoUpload } from './video.js'
  * @returns {Promise<{kind: string, text: string, artifacts?: object}>}
  */
 export async function ingestUpload(ctx, config, input) {
+  // Documents first: they have no ffprobe kind, so probing them as media would fail with "unknown" and read
+  // like a corrupt file. A PDF or a CSV is not a broken image.
+  if (isSupportedDocumentPath(input.name)) {
+    const result = await readDocument(ctx, { path: input.path, signal: input.signal })
+    return { kind: 'document', text: documentEnvelope(input.name, result) }
+  }
   const exec = { signal: input.signal }
   const resolved = await resolveMediaTarget(ctx, exec, input.path, { artifactsDir: config.artifactsDir })
   const probe = await probeTarget(ctx, resolved.target, {

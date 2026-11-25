@@ -10,6 +10,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { MediaError } from './errors.js'
 import { isSupportedMediaPath } from './probe.js'
+import { isSupportedDocumentPath } from './documents.js'
 import { ingestUpload } from './upload.js'
 
 const ROUTE = '/media-reader/ingest'
@@ -43,8 +44,11 @@ function safeName(raw) {
     throw new MediaError('INVALID_FILENAME', 'the upload filename is not valid URI encoding')
   }
   const name = basename(decoded).replace(/[^a-zA-Z0-9._ -]+/gu, '_').slice(0, 120)
-  if (name.length === 0 || !isSupportedMediaPath(name)) {
-    throw new MediaError('UNSUPPORTED_MEDIA', `"${decoded}" is not a supported image/audio/video filename`)
+  if (name.length === 0 || (!isSupportedMediaPath(name) && !isSupportedDocumentPath(name))) {
+    throw new MediaError(
+      'UNSUPPORTED_MEDIA',
+      `"${decoded}" is not a supported media or document filename`
+    )
   }
   return name
 }

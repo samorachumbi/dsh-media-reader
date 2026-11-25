@@ -75,8 +75,20 @@ test('llms.txt routes agents through the live commercial pages and carries no fi
   const artifact = fileURLToPath(new URL(`dist/${pkg.name}-${pkg.version}.tar.gz`, repo))
   const listing = execFileSync('tar', ['tzf', artifact], { encoding: 'utf8' })
   const skills = [...new Set([...listing.matchAll(/\/([^/]+)\/SKILL\.md/gu)].map((match) => match[1]))]
-  assert.equal(skills.length, 5, `artifact must ship five skills, found ${skills.length}`)
-  assert.match(llms, /ships five skills/u, 'llms.txt skill count must match the artifact')
+  // Derive the expectation from the build script too: a literal here is the same defect this guard exists to
+  // catch — a number someone forgets to edit when a skill is added (it read 5 while the artifact shipped 6).
+  const build = await read('dist-tools/build-bundle.sh')
+  const declared = [...build.matchAll(/^copy_skill\s+(\S+)\s+(\S+)$/gmu)].map((match) => match[1])
+  assert.ok(declared.length > 0, 'build-bundle.sh must declare the skills it ships')
+  assert.equal(skills.length, declared.length,
+    `artifact must ship the ${declared.length} skills build-bundle.sh declares, found ${skills.length}`)
+  for (const name of declared) {
+    assert.ok(skills.includes(name), `the artifact must ship the declared skill "${name}"`)
+  }
+  // The wording carries the number too, so it is derived as well rather than pinned to "five".
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+  assert.match(llms, new RegExp(`ships ${words[skills.length]} skills`, 'u'),
+    `llms.txt must state "ships ${words[skills.length]} skills" to match the ${skills.length} in the artifact`)
   for (const skill of skills) {
     assert.ok(llms.includes(skill), `llms.txt must name the shipped skill ${skill}`)
   }

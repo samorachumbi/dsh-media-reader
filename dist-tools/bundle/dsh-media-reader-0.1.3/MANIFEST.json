@@ -1,6 +1,6 @@
 {
  "name": "dsh-media-reader",
- "version": "0.1.2",
+ "version": "0.1.3",
  "summary": "Read images, audio and video from DeepSeek Harness, including on a model route that cannot accept media.",
  "install": {
   "steps": [
@@ -40,8 +40,8 @@
   "path": "MANIFEST.json",
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
- "file_count": 78,
- "total_bytes": 1774335,
+ "file_count": 80,
+ "total_bytes": 1797981,
  "files": [
   {
    "path": "LICENSE",
@@ -90,8 +90,8 @@
   },
   {
    "path": "docs/README.md",
-   "bytes": 18851,
-   "sha256": "3696d236e9328d8f9d5499141e865231a9552bc885c6fdc5ba9329b49be53b6b"
+   "bytes": 20193,
+   "sha256": "0277b6eb1673fcdaabb020592adf78afdb40530192560c410b5aff777ee046e9"
   },
   {
    "path": "docs/REPLICATION-RESEARCH.md",
@@ -165,8 +165,8 @@
   },
   {
    "path": "plugin/README.md",
-   "bytes": 18851,
-   "sha256": "3696d236e9328d8f9d5499141e865231a9552bc885c6fdc5ba9329b49be53b6b"
+   "bytes": 20193,
+   "sha256": "0277b6eb1673fcdaabb020592adf78afdb40530192560c410b5aff777ee046e9"
   },
   {
    "path": "plugin/cordis.patch.yml",
@@ -205,13 +205,18 @@
   },
   {
    "path": "plugin/lib/client.js",
-   "bytes": 10922,
-   "sha256": "3b40a45990c93a9be8e42b6a4476c062728b85b877ff20979f40140dd9dda965"
+   "bytes": 12119,
+   "sha256": "7c20d48ab0d0de5154832217bf6238690ce46750ddb0a926c3fed8b50786da30"
   },
   {
    "path": "plugin/lib/describe.js",
    "bytes": 3638,
    "sha256": "aa97bd2f20048e21cbb5329e321a36b6fe935193408d39896bbdcd67a03a1475"
+  },
+  {
+   "path": "plugin/lib/documents.js",
+   "bytes": 11031,
+   "sha256": "fdf5af40d7e9252dc92450cfca6d44744355b5cac453a0e8448d44a2fc10c783"
   },
   {
    "path": "plugin/lib/errors.js",
@@ -295,8 +300,8 @@
   },
   {
    "path": "plugin/lib/index.js",
-   "bytes": 13449,
-   "sha256": "707ea87c201a74a35c68ed9a5ed04b588b57c002f2e6b74263455e9e50669dcd"
+   "bytes": 15809,
+   "sha256": "80db7a7d592ebbcdb78b4f5e077ad6b405c703cf0dae3d2b28573c0e40ceebc9"
   },
   {
    "path": "plugin/lib/kie/client.js",
@@ -325,13 +330,13 @@
   },
   {
    "path": "plugin/lib/upload-route.js",
-   "bytes": 4421,
-   "sha256": "98b9907bbe286c3376c47eef4cda44f752d02e7e4c562963ee8482d8e23f29b7"
+   "bytes": 4532,
+   "sha256": "40ba74d9b5c61198b64983f05e2141907daaa16a02e8b1996b1971050f279149"
   },
   {
    "path": "plugin/lib/upload.js",
-   "bytes": 2661,
-   "sha256": "f01997d92dd331543f6647fd84af4a7833fb0d67d6980213942feda391cc9272"
+   "bytes": 3135,
+   "sha256": "3d40d42be54d60f5a5d3866ff77ba5b471f21163e4f14bd2a0b59da875d8782b"
   },
   {
    "path": "plugin/lib/video.js",
@@ -340,8 +345,8 @@
   },
   {
    "path": "plugin/package.json",
-   "bytes": 1803,
-   "sha256": "a52d0889433322212003e1c01e027e2f74ab4271cc16fe54cc4fb91f26bc8914"
+   "bytes": 1774,
+   "sha256": "605bd65d6da5265729ffaac05a9acae9f9b67b2c77d81d6214c46db284eeffc6"
   },
   {
    "path": "plugin/probe/err-base.txt",
@@ -397,6 +402,11 @@
    "path": "plugin/python/stt_worker.py",
    "bytes": 3654,
    "sha256": "9e30e06e342bbe43bd86c5374ff6e7af3fa477a298f8098dc1492ec456917d0a"
+  },
+  {
+   "path": "skills/document-and-display-reading/SKILL.md",
+   "bytes": 5818,
+   "sha256": "9cf960a91cefe540b00c089a67acb966adc4959124ef53db5ccf252813fabeeb"
   },
   {
    "path": "skills/dsh-plugin-install-safety/SKILL.md",
