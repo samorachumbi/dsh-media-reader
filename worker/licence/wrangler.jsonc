@@ -24,6 +24,9 @@
     "ARTIFACT_URL": "https://raw.githubusercontent.com/samorachumbi/dsh-media-reader/main/dist/dsh-media-reader-0.1.2.tar.gz",
     "STORE_URL": "https://store.itikia.co.ke",
     "FROM_EMAIL": "licence@itikia.co.ke",
+    // Where the storefront contact form delivers. Must be an address that RECEIVES — checked by
+    // tools/check-buyer-contact-addresses.mjs alongside the licence template's contact line.
+    "CONTACT_TO": "samora@itikia.co.ke",
     "OPERATOR_EMAIL": "samorachumbi@gmail.com"
   }
 }

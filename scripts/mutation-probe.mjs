@@ -275,6 +275,70 @@ const MUTATIONS = [
     replace: ["const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money']);", "const PAYSTACK_CHANNELS = Object.freeze(['card', 'mobile_money', 'bank_transfer']);"],
     expect: /asks for bank_transfer but the button and note never mention it|must be asked for a card channel/,
   },
+  // ---- the contact form (2026-11-25) ----
+  // An endpoint that mails a human on behalf of any caller: an open relay, a bot loop, a silently dropped
+  // message and a reply button pointing at a robot are all one-line defects away.
+  {
+    name: 'contact-honeypot-ignored',
+    what: 'the honeypot is not checked, so every bot that fills the hidden field sends mail',
+    file: 'worker/licence/src/index.js',
+    replace: ["  if (String(payload?.website ?? '').trim() !== '') {\n    return json({ ok: true }, 200, 'POST', cors);\n  }\n", ''],
+    expect: /honeypot drops a bot silently/,
+  },
+  {
+    name: 'contact-open-relay',
+    what: 'the origin check is dropped, so any website can send mail through the Worker',
+    file: 'worker/licence/src/index.js',
+    replace: ["  if (origin !== storeOrigin) {", '  if (false) {'],
+    expect: /cannot use this Worker as a mail relay|no origin is refused/,
+  },
+  {
+    name: 'contact-rate-limit-removed',
+    what: 'the per-connection limit is gone, so one caller can loop the form',
+    file: 'worker/licence/src/index.js',
+    replace: ["    const recent = await env.LICENCES.get(minuteKey);", '    const recent = null;'],
+    expect: /second message from the same connection inside a minute is refused/,
+  },
+  {
+    name: 'contact-reply-to-dropped',
+    what: 'the operator gets the enquiry but replying would go back to the service, not the sender',
+    file: 'worker/licence/src/index.js',
+    replace: ['    await env.EMAIL.send({ to, from: env.FROM_EMAIL, replyTo: email, subject, text, html });',
+              '    await env.EMAIL.send({ to, from: env.FROM_EMAIL, subject, text, html });'],
+    expect: /Reply must reach the sender/,
+  },
+  {
+    name: 'contact-echoes-the-message',
+    what: 'the endpoint answers with a copy of what was written, putting it in every log in between',
+    file: 'worker/licence/src/index.js',
+    replace: ["  return json({ ok: true }, 200, 'POST', cors);\n}\n\n/**\n * CORS for the checkout endpoint only.",
+              "  return json({ ok: true, message }, 200, 'POST', cors);\n}\n\n/**\n * CORS for the checkout endpoint only."],
+    expect: /never echoes what the sender wrote/,
+  },
+  {
+    name: 'contact-form-honeypot-visible',
+    what: 'the honeypot is a normal visible field, so real visitors fill it and lose their message',
+    file: 'store/index.html',
+    replace: ['      <div class="contact-hp" aria-hidden="true">', '      <div class="contact-hp">'],
+    expect: /honeypot is hidden from sight/,
+  },
+  {
+    name: 'contact-form-endpoint-wrong',
+    what: 'the page posts to an endpoint the Worker does not serve, so the button does nothing',
+    file: 'store/index.html',
+    replace: ["  var ENDPOINT = 'https://dsh-licence.itikia.workers.dev/contact';",
+              "  var ENDPOINT = 'https://dsh-licence.itikia.workers.dev/enquiries';"],
+    expect: /must name the contact endpoint|posts to the endpoint the Worker actually serves/,
+  },
+  {
+    name: 'privacy-silent-about-the-form',
+    what: 'the policy keeps denying that the site collects anything while a form collects it',
+    file: 'store/privacy.html',
+    replace: ['  <h2>2. What the contact form sends</h2>', '  <h2>2. What this site does not collect</h2>'],
+    // Both assertions name it: the phrase "contact form" survives elsewhere on the page, so the section
+    // heading is what proves the disclosure cannot be buried in another paragraph.
+    expect: /must be its own numbered section|policy must mention the form/,
+  },
   {
     name: 'live-check-count-overstated',
     what: 'the storefront promises more live checks than the smoke probe runs',

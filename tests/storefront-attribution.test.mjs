@@ -98,7 +98,7 @@ test('the privacy policy discloses the channel record the storefront now makes',
     'it must state how the tags are collected, so the claim can be checked')
   assert.match(privacy, /Network Error Logging/iu,
     'the policy must name NEL — it is visible in the response headers, and a reader can check')
-  assert.match(privacy, /Last updated 2026-11-19/u, 'the date must move whenever the policy changes')
+  assert.match(privacy, /Last updated 2026-11-25/u, 'the date must move whenever the policy changes')
 })
 
 test('the Worker re-sanitises the tags, stores them, and shows the channel to the operator', async () => {

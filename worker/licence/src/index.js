@@ -57,6 +57,15 @@ export default {
     if (request.method === 'POST' && url.pathname === '/paystack/init') {
       return paystackInit(request, env);
     }
+    // The storefront's contact form. Cross-origin by design, so the same rules as the checkout: the
+    // preflight is answered, the origin is checked on the server (CORS alone would block the READ, not the
+    // write — a simple-request POST would still deliver mail), and nothing is read back.
+    if (request.method === 'OPTIONS' && url.pathname === '/contact') {
+      return new Response(null, { status: 204, headers: contactCors(env) });
+    }
+    if (request.method === 'POST' && url.pathname === '/contact') {
+      return handleContact(request, env);
+    }
     if (request.method === 'POST' && url.pathname === '/paystack/webhook') {
       return handlePaystackWebhook(request, env);
     }
@@ -734,6 +743,140 @@ function json(payload, status, method = 'GET', extra = {}) {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
   });
+}
+
+/* ───────────────────────────────────────────────────────────────────── contact form ── */
+
+const CONTACT_LIMITS = { name: 120, email: 254, entity: 160, message: 4000, topic: 40 };
+const CONTACT_TOPICS = new Set(['licence', 'purchase', 'support', 'invoice', 'other']);
+const CONTACT_MINUTE_SECONDS = 60;
+const CONTACT_DAILY_MAX = 5;
+// A human does not fill a five-field form in under 1.5s. This never rejects: a real person who autofills fast
+// still gets their message delivered, marked so the operator knows. Rejecting on a timing heuristic is how a
+// contact route silently eats the message it exists to carry.
+const CONTACT_SUSPICIOUS_MS = 1500;
+
+function contactCors(env) {
+  // Same scope as the checkout: the storefront's own origin, POST only.
+  return paystackCors(env);
+}
+
+/** Hash the caller's address for rate limiting. The raw IP is never stored and never appears in an email. */
+async function contactLimiterKey(env, request, window) {
+  const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`contact:${window}:${ip}`));
+  return `contact:${window}:${[...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function contactJson(payload, status, env) {
+  return json(payload, status, 'POST', contactCors(env));
+}
+
+async function handleContact(request, env) {
+  const cors = contactCors(env);
+
+  // The origin check is not belt-and-braces. CORS stops a foreign page READing the response; without this
+  // line a foreign page could still make the Worker send mail. A request with no Origin (curl, a form post
+  // from a mail client) is refused for the same reason: this endpoint exists for one page.
+  const origin = request.headers.get('origin') ?? '';
+  const storeOrigin = String(env.STORE_URL ?? 'https://store.itikia.co.ke');
+  if (origin !== storeOrigin) {
+    return json({ error: 'origin_not_allowed' }, 403, 'POST', cors);
+  }
+  if (!(request.headers.get('content-type') ?? '').includes('application/json')) {
+    return json({ error: 'unsupported_media_type' }, 415, 'POST', cors);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ error: 'invalid_json' }, 400, 'POST', cors);
+  }
+
+  // Honeypot. A bot fills every field it can see; the wrapper is hidden from sight, from the tab order and
+  // from assistive technology, so a value here is machine behaviour. Answer 200 and send nothing: a 4xx
+  // teaches the sender what to change.
+  if (String(payload?.website ?? '').trim() !== '') {
+    return json({ ok: true }, 200, 'POST', cors);
+  }
+
+  const name = String(payload?.name ?? '').trim();
+  const email = String(payload?.email ?? '').trim();
+  const entity = String(payload?.entity ?? '').trim();
+  const message = String(payload?.message ?? '').trim();
+  const topicRaw = String(payload?.topic ?? 'other').trim().toLowerCase();
+  const topic = CONTACT_TOPICS.has(topicRaw) ? topicRaw : 'other';
+  const elapsed = Number(payload?.elapsedMs ?? -1);
+
+  const problems = {};
+  if (name.length < 2) problems.name = 'please give a name I can use';
+  if (!isEmail(email)) problems.email = 'that does not look like an email address';
+  if (message.length < 10) problems.message = 'a sentence is enough, but ten characters is not';
+  for (const [field, value] of Object.entries({ name, email, entity, message, topic })) {
+    const limit = CONTACT_LIMITS[field];
+    if (typeof value === 'string' && value.length > limit) problems[field] = `please keep this under ${limit} characters`;
+  }
+  if (Object.keys(problems).length > 0) {
+    return json({ error: 'invalid_fields', fields: problems }, 400, 'POST', cors);
+  }
+
+  // Rate limiting is KV-based and therefore best-effort: KV is eventually consistent, so two requests in
+  // the same second from different edges can both pass. It stops a loop and a casual flood, not a
+  // determined attacker — Cloudflare's Rate Limiting rules are the exact tool for that.
+  const minuteKey = await contactLimiterKey(env, request, 'minute');
+  const dayKey = await contactLimiterKey(env, request, 'day');
+  if (env.LICENCES) {
+    const recent = await env.LICENCES.get(minuteKey);
+    if (recent) {
+      return json({ error: 'too_many', retryAfterSeconds: CONTACT_MINUTE_SECONDS }, 429, 'POST',
+        { ...cors, 'retry-after': String(CONTACT_MINUTE_SECONDS) });
+    }
+    const today = Number(await env.LICENCES.get(dayKey) ?? 0);
+    if (today >= CONTACT_DAILY_MAX) {
+      return json({ error: 'too_many_today' }, 429, 'POST', cors);
+    }
+    await env.LICENCES.put(minuteKey, '1', { expirationTtl: CONTACT_MINUTE_SECONDS });
+    await env.LICENCES.put(dayKey, String(today + 1), { expirationTtl: 60 * 60 * 24 });
+  }
+
+  const to = String(env.CONTACT_TO ?? 'samora@itikia.co.ke');
+  const labels = { licence: 'licence question', purchase: 'buying / team use', support: 'help with the plugin', invoice: 'invoice or procurement', other: 'something else' };
+  const fast = Number.isFinite(elapsed) && elapsed >= 0 && elapsed < CONTACT_SUSPICIOUS_MS;
+  const subject = `[website] ${labels[topic]} — ${name}${fast ? ' (fast submit)' : ''}`;
+
+  const lines = [
+    `Topic:    ${labels[topic]}`,
+    `Name:     ${name}`,
+    `Email:    ${email}`,
+    `Company:  ${entity || '(not given)'}`,
+    `Sent:     ${new Date().toISOString()}${fast ? ` (form filled in ${Math.round(elapsed)}ms — treat as possibly automated)` : ''}`,
+    '',
+    message,
+    '',
+    '---',
+    'Sent through the storefront contact form at https://store.itikia.co.ke/#contact',
+    'Reply directly to this message; it goes back to the sender, not to a robot.',
+  ];
+  const text = lines.join('\n');
+  const html = `<h2 style="font-family:system-ui,sans-serif;font-size:16px;margin:0 0 12px">${escapeHtml(labels[topic])} — ${escapeHtml(name)}</h2>
+<table style="font-family:system-ui,sans-serif;font-size:14px;border-collapse:collapse">
+<tr><td style="padding:2px 12px 2px 0;color:#555">Email</td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+<tr><td style="padding:2px 12px 2px 0;color:#555">Company</td><td>${escapeHtml(entity || '(not given)')}</td></tr>
+</table>
+<pre style="font-family:ui-monospace,monospace;font-size:13px;white-space:pre-wrap;background:#f6f7f9;padding:12px;border-radius:8px;margin-top:12px">${escapeHtml(message)}</pre>
+<p style="font-family:system-ui,sans-serif;font-size:12px;color:#666">Sent through the storefront contact form at
+<a href="${escapeHtml(storeOrigin)}/#contact">${escapeHtml(storeOrigin)}/#contact</a>. Reply and it goes to the sender.</p>`;
+
+  try {
+    await env.EMAIL.send({ to, from: env.FROM_EMAIL, replyTo: email, subject, text, html });
+  } catch (error) {
+    console.error('contact send failed:', error?.message ?? error);
+    return json({ error: 'send_failed' }, 502, 'POST', cors);
+  }
+
+  // Nothing is echoed back: the response proves delivery to the sender, not a copy of what they wrote.
+  return json({ ok: true }, 200, 'POST', cors);
 }
 
 /**

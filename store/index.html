@@ -217,6 +217,24 @@
   .walkthrough-btn:focus-visible, .walkthrough-cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .walkthrough-cta { margin-left: auto; border: 1px solid var(--accent); color: var(--accent); font-weight: 650; }
   .walkthrough[data-short] .walkthrough-caption { display: none; }
+
+  /* ---- the contact form ---- */
+  .contact-form { display: flex; flex-direction: column; gap: 14px; max-width: 620px; margin-top: 14px; }
+  .contact-row { display: flex; flex-direction: column; gap: 6px; }
+  .contact-row label { font-size: .82rem; font-weight: 600; color: var(--ink); }
+  .contact-form input[type="text"], .contact-form input[type="email"], .contact-form select, .contact-form textarea {
+    font: inherit; font-size: .95rem; padding: 11px 12px; min-height: 44px;
+    color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 9px; width: 100%; }
+  .contact-form textarea { min-height: 132px; resize: vertical; }
+  .contact-form input:focus-visible, .contact-form select:focus-visible, .contact-form textarea:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px; }
+  .contact-form input[aria-invalid="true"], .contact-form textarea[aria-invalid="true"] { border-color: #b42318; }
+  .contact-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0; }
+  .contact-status { font-size: .84rem; color: var(--ink-soft); }
+  .contact-status[data-tone="ok"] { color: var(--accent); font-weight: 600; }
+  .contact-status[data-tone="bad"] { color: #b42318; font-weight: 600; }
+  .contact-hint { margin: 0; font-size: .8rem; color: var(--ink-soft); }
   @media (prefers-reduced-motion: reduce) {
     .walkthrough-out span { transition: none; }
   }
@@ -329,7 +347,7 @@
         <li>5 tools + a composer drop target</li>
         <li>Works on text-only routes</li>
         <li>Nothing installed with a package manager</li>
-        <li>18/18 live checks, 186/186 unit tests</li>
+        <li>18/18 live checks, 208/208 unit tests</li>
       </ul>
 
       <figure class="walkthrough" id="walkthrough" hidden>
@@ -531,7 +549,7 @@ Details: The background is a uniform dark blue with no visible objects or patter
     <p class="lede">Every number here was measured on the artifact you download, not on a development tree.</p>
     <ul class="proof-grid">
       <li><b>18/18</b><span>live checks against a running harness, on both a vision route and a text-only route</span></li>
-      <li><b>186/186</b><span>unit tests in the shipped suite</span></li>
+      <li><b>208/208</b><span>unit tests in the shipped suite</span></li>
       <li><b>78 files</b><span>in <code>MANIFEST.json</code>, each with a sha256 you can check</span></li>
       <li><b>0</b><span>home paths or credentials inside the bundle — checked by the build</span></li>
     </ul>
@@ -653,6 +671,59 @@ Details: The background is a uniform dark blue with no visible objects or patter
        <a href="mailto:hello@itikia.co.ke?subject=Licence%20not%20received">hello@itikia.co.ke</a> with your
        order reference (<code>dsh_…</code>) and the entity the licence should name, and it is reissued the same
        day. Both addresses forward to the same inbox and are answered within one business day.</p>
+
+    <h3 id="contact-form-h">Or send it from here</h3>
+    <p class="contact-hint">No mail app needed. This goes straight to <strong>samora@itikia.co.ke</strong> and
+       nothing is stored on this site — no account, no tracker, no CRM.</p>
+    <form class="contact-form" id="contact-form"
+          action="mailto:samora@itikia.co.ke?subject=Website%20enquiry" method="post" novalidate
+          aria-labelledby="contact-form-h">
+      <div class="contact-row">
+        <label for="cf-name">Your name</label>
+        <input id="cf-name" name="name" type="text" autocomplete="name" maxlength="120" required>
+      </div>
+      <div class="contact-row">
+        <label for="cf-email">Email</label>
+        <input id="cf-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
+      </div>
+      <div class="contact-row">
+        <label for="cf-topic">What is this about?</label>
+        <select id="cf-topic" name="topic">
+          <option value="licence">A licence question</option>
+          <option value="purchase">Buying, or team / commercial use</option>
+          <option value="support">Help with the plugin</option>
+          <option value="invoice">Invoice or procurement</option>
+          <option value="other">Something else</option>
+        </select>
+      </div>
+      <div class="contact-row">
+        <label for="cf-entity">Company or team <span aria-hidden="true">(optional)</span></label>
+        <input id="cf-entity" name="entity" type="text" autocomplete="organization" maxlength="160">
+      </div>
+      <div class="contact-row">
+        <label for="cf-message">Message</label>
+        <textarea id="cf-message" name="message" rows="5" maxlength="4000" required
+                  aria-describedby="cf-message-hint"></textarea>
+        <p class="contact-hint" id="cf-message-hint">A sentence is enough. Say what you are trying to get done and
+           what you are using now — that is what makes a useful reply possible.</p>
+      </div>
+      <!-- Hidden from sight, from the tab order and from assistive technology: a value here is machine behaviour. -->
+      <div class="contact-hp" aria-hidden="true">
+        <label for="cf-website">Leave this field empty</label>
+        <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <input type="hidden" name="elapsedMs" id="cf-elapsed" value="">
+      <p class="contact-actions">
+        <button type="submit" class="btn" id="cf-send">Send the message</button>
+        <span class="contact-status" id="cf-status" role="status" aria-live="polite"></span>
+      </p>
+      <noscript>
+        <p class="contact-hint">JavaScript is off, so this form cannot send by itself — submitting it will open
+           your mail app instead. Writing to
+           <a href="mailto:samora@itikia.co.ke?subject=Website%20enquiry">samora@itikia.co.ke</a> reaches the
+           same inbox with nothing lost.</p>
+      </noscript>
+    </form>
   </section>
   <p>More from the same workbench:
      <a href="https://github.com/samorachumbi/dsh-plugin-install-guide">the install guide</a> (why
@@ -1683,6 +1754,110 @@ Details: The background is a uniform dark blue with no visible objects or patter
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
     status.textContent = 'Downloaded dsh-media-reader-agent-prompt.md — hand it to your agent as a file.';
   });
+})();
+
+
+// ---- the contact form ----
+// It posts JSON to the licence Worker, which mails samora@itikia.co.ke with reply-to set to the sender. The
+// rules that matter: never claim a message was sent when it was not, never lose one silently, and never
+// leave a submit button dead with no explanation.
+(function () {
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+  var status = document.getElementById('cf-status');
+  var button = document.getElementById('cf-send');
+  var elapsed = document.getElementById('cf-elapsed');
+  var started = Date.now();
+  var ENDPOINT = 'https://dsh-licence.itikia.workers.dev/contact';
+
+  function say(text, tone) {
+    if (!status) return;
+    status.textContent = text;
+    if (tone) status.setAttribute('data-tone', tone); else status.removeAttribute('data-tone');
+  }
+
+  function markInvalid(id, invalid) {
+    var field = document.getElementById(id);
+    if (!field) return;
+    if (invalid) field.setAttribute('aria-invalid', 'true'); else field.removeAttribute('aria-invalid');
+  }
+
+  var FIELDS = { name: 'cf-name', email: 'cf-email', message: 'cf-message' };
+
+  form.addEventListener('submit', function (event) {
+    // With JS on, the form always goes through fetch — including when the honeypot is filled, so the
+    // decision to drop a bot stays on the server where it cannot be bypassed.
+    event.preventDefault();
+    if (elapsed) elapsed.value = String(Date.now() - started);
+
+    var payload = {
+      name: form.elements.name.value.trim(),
+      email: form.elements.email.value.trim(),
+      entity: form.elements.entity.value.trim(),
+      topic: form.elements.topic.value,
+      message: form.elements.message.value.trim(),
+      website: form.elements.website.value,
+      elapsedMs: Number(elapsed && elapsed.value || 0)
+    };
+
+    // Client-side checks exist to save a round trip, not to replace the server's: the Worker validates the
+    // same fields, because the endpoint is public.
+    var problems = {};
+    if (payload.name.length < 2) problems.name = true;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) problems.email = true;
+    if (payload.message.length < 10) problems.message = true;
+    for (var key in FIELDS) markInvalid(FIELDS[key], Boolean(problems[key]));
+    if (Object.keys(problems).length > 0) {
+      say('Please fill in the name, a valid email and a message of at least ten characters.', 'bad');
+      var first = document.getElementById(FIELDS[Object.keys(problems)[0]]);
+      if (first && first.focus) first.focus();
+      return;
+    }
+
+    button.disabled = true;
+    say('Sending…');
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        return { status: response.status, body: body };
+      });
+    }).then(function (result) {
+      if (result.status === 200) {
+        // Replace the form rather than clearing it: a cleared form looks like a failure, and this way the
+        // sender keeps a record of what to follow up with if no reply arrives.
+        form.innerHTML = '<p class="contact-status" data-tone="ok" role="status">Sent — thank you. It goes to ' +
+          'a person, and you will get a reply within one business day. If it is urgent, or nothing arrives, ' +
+          'write to <a href="mailto:samora@itikia.co.ke">samora@itikia.co.ke</a> directly with what you sent.</p>';
+        return;
+      }
+      button.disabled = false;
+      if (result.status === 429) {
+        say('That is a lot of messages from this connection. Try again in a minute — or email samora@itikia.co.ke and it will be read just the same.', 'bad');
+      } else if (result.status === 400 && result.body && result.body.fields) {
+        for (var field in result.body.fields) {
+          if (FIELDS[field]) markInvalid(FIELDS[field], true);
+        }
+        say('Something in the form needs a change: ' + Object.values(result.body.fields).join('; ') + '.', 'bad');
+      } else {
+        say('That did not go through (error ' + result.status + '). Nothing was sent — email samora@itikia.co.ke instead.', 'bad');
+      }
+    }).catch(function () {
+      button.disabled = false;
+      say('No connection to the form service, so nothing was sent. Email samora@itikia.co.ke instead.', 'bad');
+    });
+  });
+
+  // A field marked invalid clears as soon as the visitor fixes it, rather than at the next submit.
+  for (var key in FIELDS) {
+    (function (id) {
+      var field = document.getElementById(id);
+      if (field) field.addEventListener('input', function () { markInvalid(id, false); });
+    })(FIELDS[key]);
+  }
 })();
 </script>
 </body>
