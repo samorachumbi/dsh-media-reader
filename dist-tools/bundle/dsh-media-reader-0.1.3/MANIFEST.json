@@ -41,7 +41,7 @@
   "note": "This file is written last, so it cannot list its own hash. The tarball's sha256 is in the .sha256 file beside it."
  },
  "file_count": 80,
- "total_bytes": 1797981,
+ "total_bytes": 1798186,
  "files": [
   {
    "path": "LICENSE",
@@ -300,8 +300,8 @@
   },
   {
    "path": "plugin/lib/index.js",
-   "bytes": 15809,
-   "sha256": "80db7a7d592ebbcdb78b4f5e077ad6b405c703cf0dae3d2b28573c0e40ceebc9"
+   "bytes": 16014,
+   "sha256": "09ddfae50f4d29dda1d4fc5a989c51c7ecefba721b2357264c500f69441fa2bc"
   },
   {
    "path": "plugin/lib/kie/client.js",

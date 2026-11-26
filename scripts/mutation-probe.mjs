@@ -300,6 +300,13 @@ const MUTATIONS = [
     expect: /binary file says so/,
   },
   {
+    name: 'document-descriptor-path',
+    what: 'the tool passes the fs descriptor instead of the process path, so stat() fails with "[object Object]"',
+    file: 'lib/index.js',
+    replace: ['          path: resolved.processPath,', '          path: resolved.target,'],
+    expect: /object Object|reads the resolved process path/,
+  },
+  {
     name: 'document-drop-not-claimed',
     what: 'a document drop is not claimed, so the composer answers "Only PNG, JPG, WebP, and GIF images are supported"',
     file: 'lib/client.js',
@@ -492,6 +499,13 @@ async function freshCopy() {
   const dir = await mkdtemp(join(tmpdir(), 'mutation-probe-'))
   const result = spawnSync('rsync', ['-a', `--files-from=${copySet()}`, `${REPO}/`, `${dir}/`], { encoding: 'utf8' })
   if (result.status !== 0) throw new Error(`rsync failed: ${result.stderr?.trim() ?? result.status}`)
+  // The copied tree must be able to import exactly what the real tree can. `node_modules` is gitignored, so it is
+  // not in the file list — and without it `lib/index.js` cannot resolve @deepseek-ai/dsh-tools, which made every
+  // test that imports the plugin fail in the copy for a reason that had nothing to do with the mutation.
+  const modules = join(REPO, 'node_modules')
+  if (existsSync(modules)) {
+    spawnSync('ln', ['-s', modules, join(dir, 'node_modules')], { encoding: 'utf8' })
+  }
   return dir
 }
 
@@ -505,7 +519,7 @@ function suite(dir, full) {
   // of the copied set, so it can only run in the real tree (the `--full` path does not use the copy either).
   const globs = full
     ? ['tests/*.test.mjs']
-    : ['tests/storefront-*.test.mjs', 'tests/worker-*.test.mjs', 'tests/document.test.mjs']
+    : ['tests/storefront-*.test.mjs', 'tests/worker-*.test.mjs', 'tests/document.test.mjs', 'tests/plugin.test.mjs']
   const result = spawnSync('node', ['--test', ...globs], { cwd: dir, encoding: 'utf8' })
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
 }

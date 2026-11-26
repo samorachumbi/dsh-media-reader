@@ -179,3 +179,61 @@ test('media keeps flowing to the harness: documents are claimed, nothing else is
   assert.doesNotMatch(clientSource, /if \(list\.some\(isMediaFile\)\) event\.stopPropagation\(\)/u,
     'media must NOT be claimed — the harness attaches a real image block itself')
 })
+
+/* ── the tool wiring: a document must be read from a real filesystem path ────────────────────── */
+
+test('media_document reads the resolved process path, not the fs descriptor', async () => {
+  // This is the bug a live session found and no unit test did: `resolved.target` is a descriptor object, so
+  // stat() on it fails with '"[object Object]" does not exist' and the model sees an error instead of a
+  // document. The guard executes the real tool against a real file, so the wiring is covered, not just the
+  // reader.
+  const { apply } = await import('../lib/index.js')
+  const register = new Map()
+  const fsStub = {
+    resolve: async (requestedPath) => ({ targetKey: requestedPath, displayPath: requestedPath }),
+    stat: async () => ({ type: 'file', size: 8 }),
+    processPath: (target) => target.targetKey,
+    readBytes: async () => Buffer.from('x')
+  }
+  const ctx = {
+    fs: fsStub,
+    tools: { register: (tool) => { register.set(tool.name, tool) } },
+    get: () => undefined,
+    effect: () => {},
+    on: () => {}
+  }
+  apply(ctx, {})
+
+  const tool = register.get('media_document')
+  assert.ok(tool !== undefined, 'media_document must be registered')
+
+  const licence = '# Licence\n\nIssued to ACME Ltd under sha256 6bf9255b.\n'
+  const path = await write('wired.md', licence)
+  const exec = { signal: undefined, agent: { session: { header: { cwd: dir } } } }
+  const out = await tool.execute({ path }, exec)
+  assert.match(out, /<type>document-text<\/type>/u)
+  assert.match(out, /Issued to ACME Ltd/u, 'the tool must read the real file through the resolved path')
+  assert.doesNotMatch(out, /object Object/u, 'the descriptor object must never reach stat()')
+})
+
+test('media_document refuses a media path and names the right tool', async () => {
+  const { apply } = await import('../lib/index.js')
+  const register = new Map()
+  const fsStub = {
+    resolve: async (p) => ({ targetKey: p, displayPath: p }),
+    stat: async () => ({ type: 'file', size: 8 }),
+    processPath: (t) => t.targetKey
+  }
+  apply({
+    fs: fsStub,
+    tools: { register: (t) => register.set(t.name, t) },
+    get: () => undefined,
+    effect: () => {},
+    on: () => {}
+  }, {})
+  const tool = register.get('media_document')
+  await assert.rejects(
+    tool.execute({ path: 'photo.png' }, { signal: undefined, agent: { session: { header: { cwd: dir } } } }),
+    (error) => /not a supported document extension/u.test(String(error?.message ?? error))
+  )
+})
