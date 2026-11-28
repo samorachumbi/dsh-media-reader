@@ -36,7 +36,10 @@ const product = [...pricing.matchAll(/<script type="application\/ld\+json">([\s\
   .find((b) => b['@type'] === 'Product')
 assert.ok(product, 'pricing.html must carry a Product — the structured fact surface')
 
-const text = (html) => html.replace(/<[^>]+>/gu, ' ')
+// Tags become spaces, so `<strong>Paddle</strong>,` reads as " Paddle ," — collapse runs of whitespace or every
+// phrase assertion silently misses. (This exact bug is already in this project's lessons ledger: a tag-strip
+// that left double spaces made a guard match nothing while staying green.)
+const text = (html) => html.replace(/<[^>]+>/gu, ' ').replace(/\s+/gu, ' ')
 
 /** Pull one number out of llms.txt, failing loudly if the sentence has been rewritten beyond recognition. */
 function numberFromLlms(pattern, what) {
